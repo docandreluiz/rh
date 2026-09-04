@@ -1,0 +1,1938 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GEDEP-RH - Gestão e Relatórios de Recursos Humanos v3.0.0</title>
+    <!-- Bibliotecas externas: SheetJS, PDF.js e Tesseract.js (OCR) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-dark: #172554;
+            --accent: #2563eb;
+            --bg-main: #f9fafb;
+            --text-main: #1f2937;
+            --border: #e5e7eb;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        body { background-color: var(--bg-main); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; line-height: 1.25; }
+        
+        header { background-color: var(--primary); color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .header-container { max-width: 1200px; margin: 0 auto; padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        h1 { font-size: 1.35rem; font-weight: bold; }
+        .badge { font-size: 0.75rem; background: #2563eb; padding: 0.2rem 0.5rem; border-radius: 0.25rem; margin-left: 0.5rem; }
+        .file-status { font-size: 0.8rem; background: #1e40af; padding: 0.3rem 0.6rem; border-radius: 0.375rem; border: 1px solid #3b82f6; }
+
+        /* MENU SUPERIOR AJUSTADO SEM BARRA DE ROLAGEM */
+        nav { background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border-bottom: 1px solid var(--border); padding: 0.5rem; }
+        .nav-container { max-width: 1200px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
+        .tab-btn { padding: 0.45rem 0.75rem; font-size: 0.8rem; font-weight: 600; background: #f3f4f6; border: 1px solid var(--border); border-radius: 0.3rem; color: #4b5563; cursor: pointer; transition: all 0.2s; }
+        .tab-btn:hover { background: #e5e7eb; color: var(--primary); }
+        .tab-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+        main { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem; flex-grow: 1; width: 100%; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .card { background: white; padding: 1.5rem; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--border); margin-bottom: 1.5rem; }
+        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1.5rem; }
+        
+        .stat-card { background: white; padding: 1.25rem; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--border); }
+        .stat-title { font-size: 0.75rem; text-transform: uppercase; font-weight: bold; color: #6b7280; }
+        .stat-value { font-size: 1.875rem; font-weight: 800; color: var(--primary); margin-top: 0.5rem; }
+
+        .btn { padding: 0.5rem 1rem; border-radius: 0.375rem; font-size: 0.875rem; font-weight: 600; border: none; cursor: pointer; transition: background 0.2s; text-decoration: none; display: inline-block; }
+        .btn-blue { background: var(--accent); color: white; }
+        .btn-blue:hover { background: #1d4ed8; }
+        .btn-green { background: #059669; color: white; }
+        .btn-green:hover { background: #047857; }
+        .btn-dark { background: #374151; color: white; }
+        .btn-dark:hover { background: #1f2937; }
+        .btn-red { background: #dc2626; color: white; }
+        .btn-red:hover { background: #b91c1c; }
+        .btn-gray { background: #e5e7eb; color: #374151; }
+        .btn-gray:hover { background: #d1d5db; }
+
+        input[type="text"], input[type="date"], select, textarea { width: 100%; padding: 0.25rem 0.4rem; border: 1px solid var(--border); border-radius: 0.25rem; font-size: 0.8rem; outline: none; background: white; }
+        input[type="text"]:focus, select:focus, textarea:focus { border-color: var(--accent); }
+
+        .table-responsive { overflow-x: auto; background: white; border-radius: 0.5rem; border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.875rem; }
+        th { background: #f3f4f6; padding: 0.75rem; border-bottom: 1px solid var(--border); color: #4b5563; font-weight: 600; }
+        td { padding: 0.75rem; border-bottom: 1px solid var(--border); }
+        tr:hover { background: #f9fafb; }
+        tr.highlight-red { background: #fef2f2; }
+
+        .flex-row { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+        .space-between { justify-content: space-between; }
+        .text-center { text-align: center; }
+        .mt-4 { margin-top: 1rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        
+        #lotacao-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 1.5rem; border-radius: 0.5rem; width: 90%; max-width: 900px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+
+        footer { background: white; border-top: 1px solid var(--border); padding: 1rem; text-align: center; font-size: 0.75rem; color: #6b7280; }
+
+        /* REGRAS DE IMPRESSÃO EXATA (2 PÁGINAS) */
+        @media print {
+            body * { visibility: hidden !important; }
+            body.printing-form #form-printable-area,
+            body.printing-form #form-printable-area *,
+            body.printing-server #printable-area,
+            body.printing-server #printable-area *,
+            body.printing-unit #unit-printable-area,
+            body.printing-unit #unit-printable-area * { visibility: visible !important; }
+            body.printing-server #printable-area,
+            body.printing-unit #unit-printable-area { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; margin: 0 !important; padding: 10mm !important; background: white !important; border: none !important; box-shadow: none !important; }
+            body.printing-server #printable-area,
+            body.printing-unit #unit-printable-area { font-size: 9pt !important; }
+            body.printing-server #printable-area .print-hide { display: block !important; }
+            body.printing-form #form-printable-area, body.printing-form #form-printable-area * { visibility: visible !important; }
+            body.printing-form #form-printable-area {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 10mm !important;
+                background: white !important;
+                border: none !important;
+                box-shadow: none !important;
+                font-size: 8.5pt !important;
+            }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            input[type="text"] {
+                border: none !important;
+                border-bottom: 1px solid #000 !important;
+                border-radius: 0 !important;
+                padding: 0 2px !important;
+                background: transparent !important;
+                font-size: 8.5pt !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="no-print">
+        <div class="header-container">
+            <div>
+                <h1>GEDEP-RH <span class="badge">v3.0.0 portátil</span></h1>
+                <p style="font-size: 0.75rem; color: #93c5fd; margin-top: 0.25rem;">Gestão, Ramais, Processos SEI e Relatórios de RH</p>
+            </div>
+            <div id="file-status" class="file-status">Nenhum arquivo carregado</div>
+        </div>
+    </header>
+
+    <nav class="no-print">
+        <div class="nav-container">
+            <button onclick="switchTab('import-tab')" class="tab-btn active">1. Importação</button>
+            <button onclick="switchTab('dashboard-tab')" class="tab-btn">2. Dashboard</button>
+            <button onclick="switchTab('servers-tab')" class="tab-btn">3. Consulta Analítica</button>
+            <button onclick="switchTab('lotacao-tab')" class="tab-btn">4. Relatório por Lotação</button>
+            <button onclick="switchTab('ficha-tab')" class="tab-btn">5. Ficha Cadastral</button>
+            <button onclick="switchTab('unit-ficha-tab')" class="tab-btn">6. Ficha Unidade &amp; Ramais</button>
+            <button onclick="switchTab('custom-reports-tab')" class="tab-btn">7. Relatório Personalizado</button>
+            <button onclick="switchTab('age-alert-tab')" class="tab-btn">8. Alerta &gt; 75 Anos</button>
+            <button onclick="switchTab('probation-tab')" class="tab-btn">9. Estágio Probatório</button>
+            <button onclick="switchTab('form-tab')" class="tab-btn">10. Ficha Cadastral Oficial (PDF)</button>
+        </div>
+    </nav>
+
+    <main>
+        <!-- ABA 1: IMPORTAÇÃO -->
+        <div id="import-tab" class="tab-content active">
+            <div class="card">
+                <h2 style="font-size: 1.125rem; font-weight: bold; margin-bottom: 0.5rem;">Passo 1: Importar Base de Pessoal (RH NET / CSV / TXT)</h2>
+                <p style="font-size: 0.875rem; color: #4b5563; margin-bottom: 1rem;">Selecione o arquivo de servidores. O motor de leitura em lotes otimizado impede qualquer travamento do navegador.</p>
+                
+                <div class="flex-row space-between">
+                    <div style="border: 2px dashed #d1d5db; border-radius: 0.5rem; padding: 1.5rem; text-align: center; flex-grow: 1;">
+                        <input type="file" id="csv-file-input" accept=".csv,.txt" style="font-size: 0.875rem; cursor: pointer;"/>
+                    </div>
+                    <button onclick="resetData()" class="btn btn-red" style="height: fit-content;">Reset / Limpar Dados</button>
+                </div>
+                <div id="import-stats" style="margin-top: 1rem; display: none; padding: 1rem; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 0.375rem; color: #065f46; font-size: 0.875rem;"></div>
+            </div>
+
+            <div class="card">
+                <h2 style="font-size: 1.125rem; font-weight: bold; margin-bottom: 0.5rem;">Passo 2: Importar Planilha de Ramais (`ramais.xlsx` ou CSV)</h2>
+                <p style="font-size: 0.875rem; color: #4b5563; margin-bottom: 1rem;">Selecione o arquivo contendo os ramais. O cruzamento é feito automaticamente por CPF ou Nome.</p>
+                
+                <div style="border: 2px dashed #d1d5db; border-radius: 0.5rem; padding: 1.5rem; text-align: center;">
+                    <input type="file" id="ramais-file-input" accept=".xlsx,.xls,.csv" style="font-size: 0.875rem; cursor: pointer;" onchange="importRamaisFile(event)"/>
+                </div>
+                <div id="ramais-stats" style="margin-top: 1rem; display: none; padding: 1rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 0.375rem; color: #1e40af; font-size: 0.875rem;"></div>
+            </div>
+
+            <div class="card">
+                <h2 style="font-size: 1.125rem; font-weight: bold; margin-bottom: 0.5rem;">Passo 3: Importar Controle de Processos SEI (`Controle GEDEP(PROCESSOS SEI) (3).csv`)</h2>
+                <p style="font-size: 0.875rem; color: #4b5563; margin-bottom: 1rem;">Selecione o arquivo CSV de controle de processos SEI para vincular automaticamente os processos aos servidores.</p>
+                
+                <div style="border: 2px dashed #d1d5db; border-radius: 0.5rem; padding: 1.5rem; text-align: center;">
+                    <input type="file" id="sei-file-input" accept=".csv" style="font-size: 0.875rem; cursor: pointer;" onchange="importSEIFile(event)"/>
+                </div>
+                <div id="sei-stats" style="margin-top: 1rem; display: none; padding: 1rem; background: #fdf4ff; border: 1px solid #f5d0fe; border-radius: 0.375rem; color: #86198f; font-size: 0.875rem;"></div>
+            </div>
+
+            <div class="card">
+                <h3 style="font-size: 1rem; font-weight: bold; margin-bottom: 0.75rem;">Backup do Sistema</h3>
+                <div class="flex-row">
+                    <button onclick="exportJSONBackup()" class="btn btn-dark">Baixar Backup JSON</button>
+                    <label class="btn btn-gray" style="cursor: pointer;">
+                        Restaurar JSON <input type="file" id="json-restore-input" accept=".json" style="display: none;" onchange="restoreJSONBackup(event)"/>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABA 2: DASHBOARD -->
+        <div id="dashboard-tab" class="tab-content">
+            <div class="grid-4">
+                <div class="stat-card">
+                    <div class="stat-title">Total de Servidores</div>
+                    <div id="dash-total" class="stat-value">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Órgãos / Lotações</div>
+                    <div id="dash-orgaos" class="stat-value" style="color: #4f46e5;">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Ramais Mapeados</div>
+                    <div id="dash-ramais" class="stat-value" style="color: #059669;">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Processos SEI Carregados</div>
+                    <div id="dash-processos" class="stat-value" style="color: #9333ea;">0</div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <h3 style="font-size: 1rem; font-weight: bold; margin-bottom: 0.75rem;">Distribuição por Sexo</h3>
+                    <div id="dash-sexo-list" style="font-size: 0.875rem;"></div>
+                </div>
+                <div class="card">
+                    <h3 style="font-size: 1rem; font-weight: bold; margin-bottom: 0.75rem;">Principais Situações Funcionais</h3>
+                    <div id="dash-situacao-list" style="font-size: 0.875rem;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABA 3: CONSULTA ANALÍTICA -->
+        <div id="servers-tab" class="tab-content">
+            <div class="card" style="padding: 1rem;">
+                <div class="flex-row space-between">
+                    <input type="text" id="search-input" placeholder="Filtrar por nome, CPF, cargo, ramal ou órgão..." style="max-width: 400px;" oninput="filterServers()"/>
+                    <span id="table-count" style="font-size: 0.875rem; color: #6b7280;">Exibindo 0 registros</span>
+                </div>
+            </div>
+
+            <div class="table-responsive" style="margin-bottom: 1rem;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nome Servidor</th>
+                            <th>CPF</th>
+                            <th>Cargo Efetivo / Função</th>
+                            <th>Órgão Lotação</th>
+                            <th>Ramal</th>
+                            <th>Processos SEI</th>
+                            <th>Situação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="servers-tbody">
+                        <tr><td colspan="7" class="text-center" style="padding: 2rem; color: #6b7280;">Nenhum dado importado. Vá para a aba "1. Importação".</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex-row space-between">
+                <button onclick="changePage(-1)" class="btn btn-gray">Anterior</button>
+                <span id="page-indicator" style="font-size: 0.875rem; color: #4b5563;">Página 1 de 1</span>
+                <button onclick="changePage(1)" class="btn btn-gray">Próxima</button>
+            </div>
+        </div>
+
+        <!-- ABA 4: RELATÓRIO POR LOTAÇÃO -->
+        <div id="lotacao-tab" class="tab-content">
+            <div class="card">
+                <div class="flex-row space-between mb-4">
+                    <div>
+                        <h3 style="font-size: 1.125rem; font-weight: bold;">Relatório Consolidado por Lotação (Superior e Inferior)</h3>
+                        <p style="font-size: 0.875rem; color: #4b5563; margin-top: 0.25rem;">Clique no número total da unidade para abrir a relação detalhada dos servidores.</p>
+                    </div>
+                    <button onclick="exportLotacaoCSV()" class="btn btn-green">Exportar Lotações (CSV)</button>
+                </div>
+                
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Unidade Administrativa Superior</th>
+                                <th>Unidade de Lotação</th>
+                                <th style="text-align: right;">Total de Servidores</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lotacao-tbody">
+                            <tr><td colspan="3" class="text-center" style="padding: 2rem; color: #6b7280;">Nenhum dado importado.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABA 5: FICHA CADASTRAL INDIVIDUAL -->
+        <div id="ficha-tab" class="tab-content">
+            <div class="card">
+                <h3 style="font-size: 1.125rem; font-weight: bold; margin-bottom: 0.5rem;">Ficha Cadastral Individual do Servidor</h3>
+                <p style="font-size: 0.875rem; color: #4b5563; margin-bottom: 1rem;">Selecione um servidor para visualizar dados cadastrais, funcionais, ramal e processos SEI vinculados.</p>
+                
+                <div style="margin-bottom: 1.5rem;" class="no-print">
+                    <select id="server-select" onchange="renderServerFicha(this.value)">
+                        <option value="">Selecione um servidor...</option>
+                    </select>
+                </div>
+
+                <div id="printable-area" style="background: #fff; border: 1px solid var(--border); border-radius: 0.5rem; padding: 1.5rem;">
+                    <p class="text-center" style="color: #6b7280; padding: 2rem;">Nenhum servidor selecionado.</p>
+                </div>
+
+                <div class="mt-4 no-print text-center">
+                    <button onclick="printSection('server')" class="btn btn-dark">Imprimir Ficha / Salvar PDF</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABA 6: FICHA POR UNIDADE & RAMAIS -->
+        <div id="unit-ficha-tab" class="tab-content">
+            <div class="card no-print">
+                <h3 style="font-size: 1.125rem; font-weight: bold; margin-bottom: 0.5rem;">Ficha Coletiva por Unidade Administrativa (com Ramais)</h3>
+                <p style="font-size: 0.875rem; color: #4b5563; margin-bottom: 1rem;">Selecione uma Unidade de Lotação para gerar o relatório oficial contendo todos os servidores lotados e seus respectivos ramais.</p>
+                
+                <div style="margin-bottom: 1rem;">
+                    <select id="unit-select" onchange="renderUnitFicha(this.value)">
+                        <option value="">Selecione uma Unidade de Lotação...</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="unit-printable-area" class="card">
+                <p class="text-center" style="color: #6b7280; padding: 2rem;">Selecione uma unidade acima para exibir a ficha correspondente.</p>
+            </div>
+
+            <div class="mt-4 no-print text-center">
+                <button onclick="printSection('unit')" class="btn btn-dark">Imprimir Ficha da Unidade / PDF</button>
+            </div>
+        </div>
+
+        <!-- ABA 7: RELATÓRIO PERSONALIZADO -->
+        <div id="custom-reports-tab" class="tab-content">
+            <div class="card">
+                <h3 style="font-size: 1.125rem; font-weight: bold; margin-bottom: 0.5rem;">Construtor de Relatório Personalizado</h3>
+                <p style="font-size: 0.875rem; color: #4b5563; margin-bottom: 1rem;">Selecione abaixo as colunas que deseja exibir e exportar:</p>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; background: #f9fafb; padding: 1rem; border-radius: 0.375rem; border: 1px solid var(--border); font-size: 0.875rem; margin-bottom: 1rem;">
+                    <label><input type="checkbox" value="NOME SERVIDOR" checked class="col-check"> Nome Servidor</label>
+                    <label><input type="checkbox" value="CPF" checked class="col-check"> CPF</label>
+                    <label><input type="checkbox" value="RAMAL" checked class="col-check"> Ramal</label>
+                    <label><input type="checkbox" value="TOTAL_PROCESSOS" checked class="col-check"> Qtd Processos SEI</label>
+                    <label><input type="checkbox" value="DATA NASCIMENTO" checked class="col-check"> Data Nascimento</label>
+                    <label><input type="checkbox" value="SEXO DO SERVIDOR" class="col-check"> Sexo</label>
+                    <label><input type="checkbox" value="NOME ÓRGÃO" checked class="col-check"> Órgão Lotação</label>
+                    <label><input type="checkbox" value="UNID. ADM.SUPER" checked class="col-check"> Unid. Adm. Superior</label>
+                    <label><input type="checkbox" value="UNID ADM DE LOTAÇÃO" checked class="col-check"> Unid. Adm. Lotação</label>
+                    <label><input type="checkbox" value="DESC CARGO EFETIVO" checked class="col-check"> Cargo Efetivo</label>
+                    <label><input type="checkbox" value="DESC REGIME JURÍDICO" checked class="col-check"> Regime Jurídico</label>
+                    <label><input type="checkbox" value="DESC SIT FUNCIONAL" checked class="col-check"> Situação Funcional</label>
+                    <label><input type="checkbox" value="EMAIL" class="col-check"> E-mail</label>
+                    <label><input type="checkbox" value="TELEFONE" class="col-check"> Telefone</label>
+                </div>
+
+                <div class="flex-row">
+                    <button onclick="generateCustomReport()" class="btn btn-blue">Gerar Relatório</button>
+                    <button onclick="exportCustomReportCSV()" class="btn btn-green">Exportar para Excel (CSV)</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="text-center mb-4">
+                    <h2 style="font-size: 1.25rem; font-weight: bold;">Relatório Personalizado de Recursos Humanos</h2>
+                    <p style="font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem;">Gerado pelo sistema GEDEP-RH</p>
+                </div>
+                <div id="custom-report-result" class="text-center" style="color: #6b7280; padding: 2rem; font-size: 0.875rem;">Clique em "Gerar Relatório" para visualizar os dados selecionados.</div>
+            </div>
+        </div>
+
+        <!-- ABA 8: ALERTA > 75 ANOS -->
+        <div id="age-alert-tab" class="tab-content">
+            <div class="card">
+                <div class="flex-row space-between mb-4">
+                    <div>
+                        <h3 style="font-size: 1.125rem; font-weight: bold; color: #b91c1c;">Servidores com 75 Anos ou Mais (Aposentadoria Compulsória)</h3>
+                        <p style="font-size: 0.875rem; color: #4b5563; margin-top: 0.25rem;">Relação de servidores que atingiram ou ultrapassaram a idade limite (EC 103/2019).</p>
+                    </div>
+                    <button onclick="exportAgeAlertCSV()" class="btn btn-green">Exportar Lista (CSV)</button>
+                </div>
+                
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Servidor</th>
+                                <th>CPF</th>
+                                <th>Ramal</th>
+                                <th>Data Nascimento</th>
+                                <th>Idade</th>
+                                <th>Cargo Efetivo</th>
+                                <th>Órgão Lotação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="age-alert-tbody">
+                            <tr><td colspan="7" class="text-center" style="padding: 2rem; color: #6b7280;">Nenhum dado importado.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABA 9: ESTÁGIO PROBATÓRIO -->
+        <div id="probation-tab" class="tab-content">
+            <div class="card">
+                <h3 style="font-size: 1.125rem; font-weight: bold; margin-bottom: 0.5rem;">Acompanhamento de Estágio Probatório</h3>
+                <p style="font-size: 0.875rem; color: #4b5563; margin-bottom: 1rem;">Servidores com data de término de estágio probatório registrada ou vinculada ao exercício.</p>
+                
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Servidor</th>
+                                <th>Cargo Efetivo</th>
+                                <th>Ramal</th>
+                                <th>Data Exercício</th>
+                                <th>Término Estágio Probatório</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="probation-tbody">
+                            <tr><td colspan="6" class="text-center" style="padding: 2rem; color: #6b7280;">Nenhum registro de estágio probatório encontrado.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABA 10: FICHA DE CADASTRAMENTO OFICIAL COM CAMPOS 100% EDITÁVEIS -->
+        <div id="form-tab" class="tab-content">
+            <div class="card no-print">
+                <h3 style="font-size: 1.125rem; font-weight: bold; margin-bottom: 0.5rem;">Ficha Cadastral Oficial (Layout GOINFRA/SEINFRA/DGI)</h3>
+                <p style="font-size: 0.875rem; color: #4b5563; margin-bottom: 1rem;">Escolha o método de preenchimento abaixo:</p>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                    <div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--border);">
+                        <h4 style="font-size: 0.85rem; font-weight: bold; margin-bottom: 0.5rem; color: var(--primary);">1. Selecionar da Base de Pessoal</h4>
+                        <select id="form-server-select" onchange="autoFillForm(this.value)">
+                            <option value="">-- Selecionar Servidor --</option>
+                        </select>
+                    </div>
+
+                    <div style="background: #eff6ff; padding: 1rem; border-radius: 0.5rem; border: 1px solid #bfdbfe;">
+                        <h4 style="font-size: 0.85rem; font-weight: bold; margin-bottom: 0.5rem; color: #1e40af;">2. Ler PDF (Com ou sem OCR) ou Imagem</h4>
+                        <input type="file" id="doc-ocr-input" accept=".pdf,image/*" style="font-size: 0.8rem;" onchange="readDocumentAndAutoFill(event)"/>
+                        <div id="ocr-status" style="font-size: 0.75rem; color: #2563eb; margin-top: 0.3rem;"></div>
+                    </div>
+                </div>
+
+                <div style="background: #f3f4f6; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                    <h4 style="font-size: 0.9rem; font-weight: bold; margin-bottom: 0.5rem;">Captura de Foto / Imagem 3x4 (Webcam ou Arquivo de Foto)</h4>
+                    <div class="flex-row">
+                        <button onclick="startWebcam()" class="btn btn-blue">Ligar Câmera</button>
+                        <button onclick="takeSnapshot()" class="btn btn-green">Tirar Foto / Snapshot</button>
+                        <input type="file" id="photo-file-input" accept="image/*" onchange="loadPhotoFromFile(event)" style="font-size: 0.875rem;"/>
+                    </div>
+                    <div style="margin-top: 1rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+                        <div id="webcam-container" style="display: none; border: 2px solid #ccc; border-radius: 0.375rem; overflow: hidden; width: 200px; height: 150px; background: #000;">
+                            <video id="webcam-video" width="200" height="150" autoplay playsinline style="object-fit: cover;"></video>
+                        </div>
+                        <div id="snapshot-preview-container" style="border: 2px dashed #9ca3af; border-radius: 0.375rem; width: 150px; height: 150px; display: flex; align-items: center; justify-content: center; background: white; text-align: center; font-size: 0.75rem; color: #6b7280; overflow: hidden;">
+                            <span id="photo-placeholder">Sem foto</span>
+                            <img id="captured-photo" style="display: none; width: 100%; height: 100%; object-fit: cover;"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ÁREA DO FORMULÁRIO IMPRIMÍVEL COM TODOS OS CAMPOS EDITÁVEIS -->
+            <div id="form-printable-area" class="card" style="border: 2px solid #000; padding: 1rem; font-size: 8pt; background: #fff; color: #000;">
+                
+                <!-- CABEÇALHO OFICIAL COM LOGOS EXATAS -->
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 0.4rem; margin-bottom: 0.6rem;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="font-size: 6.5pt; font-weight: bold; color: #1e3a8a; line-height: 1.2;">
+                            DGI<br>
+                            <span style="font-size: 5.5pt; color: #4b5563; font-weight: normal;">Diretoria de<br>Gestão Integrada</span>
+                        </div>
+                        <div style="border-left: 1px solid #ccc; padding-left: 8px;">
+                            <svg width="110" height="32" viewBox="0 0 220 60" xmlns="http://www.w3.org/2000/svg">
+                                <text x="0" y="24" font-family="Arial, sans-serif" font-weight="bold" font-size="22" fill="#1e3a8a">GO</text>
+                                <path d="M38 10 L48 10 L52 24 L56 10 L66 10 L60 30 L50 30 Z" fill="#22c55e"/>
+                                <text x="0" y="52" font-family="Arial, sans-serif" font-weight="bold" font-size="22" fill="#2563eb">INFRA</text>
+                            </svg>
+                        </div>
+                        <div style="border-left: 1px solid #ccc; padding-left: 8px; font-size: 6.5pt; font-weight: bold; color: #333; line-height: 1.2;">
+                            SEINFRA<br>
+                            <span style="font-size: 5pt; color: #555; font-weight: normal;">Secretaria de Estado<br>da Infraestrutura</span>
+                        </div>
+                    </div>
+
+                    <div style="text-align: right;">
+                        <svg width="130" height="38" viewBox="0 0 260 70" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="0" y="5" width="45" height="30" fill="#005a36"/>
+                            <rect x="0" y="11" width="45" height="6" fill="#ffcc00"/>
+                            <rect x="0" y="23" width="45" height="6" fill="#ffcc00"/>
+                            <text x="55" y="32" font-family="Arial, sans-serif" font-weight="800" font-size="32" fill="#008542">GOIÁS</text>
+                            <text x="55" y="48" font-family="Arial, sans-serif" font-weight="bold" font-size="9" fill="#333" letter-spacing="0.5">O ESTADO QUE DÁ CERTO</text>
+                        </svg>
+                    </div>
+
+                    <div id="form-photo-box" style="width: 75px; height: 95px; border: 1px solid #000; display: flex; align-items: center; justify-content: center; background: #f9fafb; font-size: 6.5pt; color: #6b7280; overflow: hidden;">
+                        <span id="form-photo-text">Foto 3x4</span>
+                        <img id="form-photo-img" style="display: none; width: 100%; height: 100%; object-fit: cover;"/>
+                    </div>
+                </div>
+
+                <div class="text-center" style="font-weight: bold; font-size: 9.5pt; margin-bottom: 0.6rem; letter-spacing: 0.5px;">FORMULÁRIO CADASTRO DE PESSOAL</div>
+
+                <!-- 1. IDENTIFICAÇÃO -->
+                <div style="background: #e5e7eb; padding: 0.2rem 0.4rem; font-weight: bold; font-size: 8pt; margin-bottom: 0.4rem; text-align: center; border: 1px solid #000;">IDENTIFICAÇÃO</div>
+                
+                <div style="display: grid; grid-template-columns: 4fr 2fr; gap: 0.4rem; margin-bottom: 0.35rem;">
+                    <div><strong>NOME:</strong> <input type="text" id="f-nome" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem; font-weight: bold;"/></div>
+                    <div><strong>DATA DE NASCIMENTO:</strong> <input type="text" id="f-nasc" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem;"/></div>
+                </div>
+                <div style="margin-bottom: 0.35rem;">
+                    <strong>E-MAIL PESSOAL:</strong> <input type="text" id="f-email" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem;"/>
+                </div>
+                <div style="margin-bottom: 0.35rem;">
+                    <strong>ÓRGÃO DE ORIGEM:</strong> <input type="text" id="f-orgao" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem;"/>
+                </div>
+                <div style="display: grid; grid-template-columns: 2fr 2fr 2fr; gap: 0.4rem; margin-bottom: 0.35rem;">
+                    <div><strong>DATA ADMISSÃO / EXERCÍCIO:</strong> <input type="text" id="f-admissao" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem;"/></div>
+                    <div><strong>CARGO:</strong> <input type="text" id="f-cargo" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem;"/></div>
+                    <div><strong>REGIME JURÍDICO:</strong> <input type="text" id="f-regime" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem;"/></div>
+                </div>
+                
+                <!-- Estado Civil Editável com Inputs/Radios -->
+                <div style="margin-bottom: 0.35rem; font-size: 7.5pt; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <strong>ESTADO CIVIL:</strong>
+                    <label><input type="radio" name="f-estadocivil" value="solteiro"> SOLTEIRO</label>
+                    <label><input type="radio" name="f-estadocivil" value="casado"> CASADO</label>
+                    <label><input type="radio" name="f-estadocivil" value="divorciado"> DIVORCIADO</label>
+                    <label><input type="radio" name="f-estadocivil" value="viuvo"> VIÚVO</label>
+                    <span>(Obs. Anexar documento comprobatório)</span>
+                </div>
+
+                <!-- Situação Familiar Editável -->
+                <div style="margin-bottom: 0.35rem; font-size: 7.5pt; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <span>Situação familiar para fins de cadastro e benefícios:</span>
+                    <label><input type="radio" name="f-uniao" value="sim"> Possui companheiro(a) em união estável</label>
+                    <label><input type="radio" name="f-uniao" value="nao"> Não possui</label>
+                </div>
+
+                <div style="margin-bottom: 0.35rem;">
+                    <strong>Raça/cor:</strong> <input type="text" id="f-raca" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem;"/>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1.5fr 2fr 2fr 3fr; gap: 0.4rem; margin-bottom: 0.5rem; font-size: 7.5pt; align-items: center;">
+                    <div><strong>SEXO:</strong> M <input type="checkbox" id="f-sexom"/> F <input type="checkbox" id="f-sexof"/></div>
+                    <div><strong>TELEFONE PRINCIPAL:</strong> <input type="text" id="f-tel" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem;"/></div>
+                    <div><strong>TELEFONE ALTERNATIVO:</strong> <input type="text" id="f-tel2" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem;"/></div>
+                    <div><strong>CONTATO PARA EMERGÊNCIA (nome e tel.):</strong> <input type="text" id="f-emergencia" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem;"/></div>
+                </div>
+
+                <!-- 2. INFORMAÇÕES PESSOAIS -->
+                <div style="background: #e5e7eb; padding: 0.2rem 0.4rem; font-weight: bold; font-size: 8pt; margin-bottom: 0.4rem; text-align: center; border: 1px solid #000;">INFORMAÇÕES PESSOAIS</div>
+                <div style="margin-bottom: 0.35rem;">
+                    <strong>ENDEREÇO:</strong> <input type="text" id="f-end" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem;"/>
+                </div>
+                <div style="display: grid; grid-template-columns: 4fr 1fr; gap: 0.4rem; margin-bottom: 0.35rem;">
+                    <div><strong>BAIRRO:</strong> <input type="text" id="f-bairro" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem;"/></div>
+                    <div><strong>UF:</strong> <input type="text" id="f-uf" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem;"/></div>
+                </div>
+                <div style="display: grid; grid-template-columns: 4fr 2fr; gap: 0.4rem; margin-bottom: 0.35rem;">
+                    <div><strong>CIDADE:</strong> <input type="text" id="f-cidade" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem;"/></div>
+                    <div><strong>CEP:</strong> <input type="text" id="f-cep" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem;"/></div>
+                </div>
+
+                <div style="font-weight: bold; margin-top: 0.4rem; margin-bottom: 0.2rem; font-size: 7.5pt;">ESCOLARIDADE (Anexar documento comprobatório)</div>
+                <div style="margin-bottom: 0.35rem; font-size: 7.5pt; display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                    <span>FUNDAMENTAL: <label><input type="checkbox" id="f-fund-comp"> Completo</label> <label><input type="checkbox" id="f-fund-incomp"> Incompleto</label></span>
+                    <span>MÉDIO: <label><input type="checkbox" id="f-med-comp"> Completo</label> <label><input type="checkbox" id="f-med-incomp"> Incompleto</label></span>
+                </div>
+                <div style="margin-bottom: 0.35rem;">
+                    <strong>SUPERIOR:</strong> <input type="text" id="f-sup" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem;"/>
+                </div>
+                <div style="margin-bottom: 0.35rem;">
+                    <strong>ESPECIALIZAÇÃO:</strong> <input type="text" id="f-esp" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem;"/>
+                </div>
+                <div style="margin-bottom: 0.35rem;">
+                    <strong>MESTRADO:</strong> <input type="text" id="f-mest" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem;"/>
+                </div>
+                <div style="margin-bottom: 0.5rem;">
+                    <strong>DOUTORADO:</strong> <input type="text" id="f-dout" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem;"/>
+                </div>
+
+                <!-- 3. DEPENDENTES ECONÔMICOS -->
+                <div style="background: #e5e7eb; padding: 0.2rem 0.4rem; font-weight: bold; font-size: 8pt; margin-bottom: 0.4rem; text-align: center; border: 1px solid #000;">DEPENDENTES ECONÔMICOS (Anexar documento comprobatório)</div>
+                
+                <!-- Dependente 1 -->
+                <div style="border: 1px dashed #999; padding: 0.3rem; margin-bottom: 0.3rem; font-size: 7.5pt;">
+                    <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 0.4rem; margin-bottom: 0.2rem;">
+                        <div>NOME: <input type="text" id="dep1-nome" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem;"/></div>
+                        <div><label><input type="checkbox" id="dep1-ir"> IMPOSTO DE RENDA</label></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 2fr 2fr 1fr; gap: 0.4rem;">
+                        <div>CPF: <input type="text" id="dep1-cpf" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem;"/></div>
+                        <div>Data Nasc: <input type="text" id="dep1-nasc" placeholder="DD/MM/AAAA" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem; width: 100px;"/></div>
+                        <div><label><input type="checkbox" id="dep1-pre"> PRÉ-ESCOLAR</label></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 0.4rem; margin-top: 0.2rem;">
+                        <div>PARENTESCO: <input type="text" id="dep1-parentesco" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem;"/></div>
+                        <div><label><input type="checkbox" id="dep1-sal"> SALÁRIO FAMÍLIA</label></div>
+                    </div>
+                </div>
+
+                <!-- Dependente 2 -->
+                <div style="border: 1px dashed #999; padding: 0.3rem; margin-bottom: 0.3rem; font-size: 7.5pt;">
+                    <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 0.4rem; margin-bottom: 0.2rem;">
+                        <div>NOME: <input type="text" id="dep2-nome" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem;"/></div>
+                        <div><label><input type="checkbox" id="dep2-ir"> IMPOSTO DE RENDA</label></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 2fr 2fr 1fr; gap: 0.4rem;">
+                        <div>CPF: <input type="text" id="dep2-cpf" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem;"/></div>
+                        <div>Data Nasc: <input type="text" id="dep2-nasc" placeholder="DD/MM/AAAA" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem; width: 100px;"/></div>
+                        <div><label><input type="checkbox" id="dep2-pre"> PRÉ-ESCOLAR</label></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 0.4rem; margin-top: 0.2rem;">
+                        <div>PARENTESCO: <input type="text" id="dep2-parentesco" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem;"/></div>
+                        <div><label><input type="checkbox" id="dep2-sal"> SALÁRIO FAMÍLIA</label></div>
+                    </div>
+                </div>
+
+                <!-- Dependente 3 -->
+                <div style="border: 1px dashed #999; padding: 0.3rem; margin-bottom: 0.5rem; font-size: 7.5pt;">
+                    <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 0.4rem; margin-bottom: 0.2rem;">
+                        <div>NOME: <input type="text" id="dep3-nome" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem;"/></div>
+                        <div><label><input type="checkbox" id="dep3-ir"> IMPOSTO DE RENDA</label></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 2fr 2fr 1fr; gap: 0.4rem;">
+                        <div>CPF: <input type="text" id="dep3-cpf" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem;"/></div>
+                        <div>Data Nasc: <input type="text" id="dep3-nasc" placeholder="DD/MM/AAAA" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem; width: 100px;"/></div>
+                        <div><label><input type="checkbox" id="dep3-pre"> PRÉ-ESCOLAR</label></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 0.4rem; margin-top: 0.2rem;">
+                        <div>PARENTESCO: <input type="text" id="dep3-parentesco" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem;"/></div>
+                        <div><label><input type="checkbox" id="dep3-sal"> SALÁRIO FAMÍLIA</label></div>
+                    </div>
+                </div>
+
+                <!-- 4. OUTRAS INFORMAÇÕES -->
+                <div style="background: #e5e7eb; padding: 0.2rem 0.4rem; font-weight: bold; font-size: 8pt; margin-bottom: 0.4rem; text-align: center; border: 1px solid #000;">OUTRAS INFORMAÇÕES</div>
+                <div style="display: grid; grid-template-columns: 2fr 3fr; gap: 0.4rem; margin-bottom: 0.5rem; font-size: 7.5pt; align-items: center;">
+                    <div>É APOSENTADO?: <label><input type="radio" name="f-aposentado" value="sim"> SIM</label> <label><input type="radio" name="f-aposentado" value="nao"> NÃO</label></div>
+                    <div>A PARTIR DE <input type="text" id="f-aposentadodata" placeholder="DD/MM/AAAA" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem; width: 120px; display: inline-block;"/></div>
+                </div>
+
+                <div style="border-top: 1px solid #000; padding-top: 0.4rem; margin-bottom: 0.6rem; font-size: 6.8pt; color: #000; text-align: justify; line-height: 1.3;">
+                    Eu, acima identificado, declaro, sob as penas da lei, que todas as informações aqui apresentadas são verdadeiras.<br>
+                    Declaro também estar ciente da necessidade de apresentar os documentos comprobatórios das informações, bem como, cópia legível dos documentos relacionados no “ANEXO ÚNICO” deste formulário, para fins de inclusão no Sistema de Gestão de Pessoas e Folha de Pagamento. Dou fé e assino:
+                </div>
+
+                <div style="display: flex; justify-content: space-between; margin-top: 1rem; font-size: 7.5pt; text-align: center; align-items: center;">
+                    <div style="width: 35%;">
+                        DATA: <input type="text" id="f-datager" placeholder="DD/MM/AAAA" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem; width: 120px; text-align: center; display: inline-block;"/>
+                    </div>
+                    <div style="width: 55%;">
+                        ASSINATURA: <input type="text" id="f-assinatura" style="border: none; border-bottom: 1px solid #000; border-radius: 0; padding: 0.1rem; width: 100%;"/>
+                    </div>
+                </div>
+
+                <div class="page-break" style="margin-top: 2rem;"></div>
+
+                <!-- ANEXO ÚNICO -->
+                <div style="border: 2px solid #000; padding: 1rem; margin-bottom: 1rem; font-size: 8pt;">
+                    <div class="text-center" style="font-weight: bold; font-size: 9.5pt; margin-bottom: 0.75rem;">ANEXO ÚNICO</div>
+                    <p style="margin-bottom: 0.5rem; font-size: 8pt;">O nomeado deverá apresentar cópia dos documentos pessoais abaixo relacionados, bem como de seus dependentes:</p>
+                    <ul style="list-style-type: disc; margin-left: 1.5rem; font-size: 7.5pt; line-height: 1.4;">
+                        <li>CPF</li>
+                        <li>Carteira de Identidade</li>
+                        <li>CNH</li>
+                        <li>Certidão de Nascimento, Casamento ou União Estável</li>
+                        <li>Certificado de Reservista ou Dispensa de Incorporação (para o sexo masculino até 45 anos)</li>
+                        <li>Título Eleitoral</li>
+                        <li>PIS/PASEP</li>
+                        <li>Carteira Conselho Profissional</li>
+                        <li>Comprovante de Endereço Atualizado (até 90 dias)</li>
+                        <li>Declarações emitidas no Ato de Posse:
+                            <ul style="list-style-type: circle; margin-left: 1.2rem;">
+                                <li>a) Para Investidura em Cargo Público;</li>
+                                <li>b) Negativa de Nepotismo;</li>
+                                <li>c) Negativa de Impedimentos.</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+
+                <div style="font-size: 6.8pt; color: #000; text-align: justify; margin-bottom: 1rem; line-height: 1.3;">
+                    Os dados pessoais coletados nesta ficha destinam-se exclusivamente à instrução de atos de admissão, cadastro funcional, gestão de vínculo, processamento de folha de pagamento e cumprimento de obrigações legais e regulatórias no âmbito da Administração Pública. O tratamento das informações observará os princípios da finalidade, adequação e necessidade, nos termos da Lei nº 13.709/2018 (Lei Geral de Proteção de Dados Pessoais – LGPD), sendo vedada a utilização para finalidade diversa da aqui estabelecida.
+                </div>
+
+                <table style="width: 100%; border-collapse: collapse; border: 1px solid #000; font-size: 7.5pt;">
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 6px; width: 25%; font-weight: bold; vertical-align: top;">Salário-família</td>
+                        <td style="border: 1px solid #000; padding: 6px; width: 75%; vertical-align: top;">Devido aos servidores efetivos, comissionados, empregados públicos e contratados temporários que possuam renda bruta mensal de até R$ 1.980,38, sendo R$ 67,54 por filho ou enteado de até 14 anos incompletos (ou de qualquer idade, se inválido), conforme os parâmetros vigentes para 2026.</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 6px; font-weight: bold; vertical-align: top;">Assistência pré-escolar<br>Art. 111 da Lei nº 20.756/2020</td>
+                        <td style="border: 1px solid #000; padding: 6px; vertical-align: top;">Concedido ao servidor com remuneração ou subsídio no valor de até R$ 5.500,00 (cinco mil e quinhentos reais), que possua dependente na faixa etária de 6 (seis) meses a 5 (cinco) anos de idade ou que seja pessoa com deficiência (preencha requerimento próprio).</td>
+                    </tr>
+                </table>
+
+            </div>
+
+            <div class="mt-4 no-print text-center">
+                <button onclick="printSection('form')" class="btn btn-dark">Imprimir Ficha Oficial / Salvar PDF</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL DE DETALHES DE LOTAÇÃO -->
+    <div id="lotacao-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 id="modal-title" style="font-size: 1.125rem; font-weight: bold; color: var(--primary);">Servidores da Lotação</h3>
+                <button onclick="closeLotacaoModal()" class="btn btn-gray" style="padding: 0.25rem 0.5rem;">Fechar ✕</button>
+            </div>
+            <div class="table-responsive" style="flex-grow: 1; overflow-y: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nome Servidor</th>
+                            <th>CPF</th>
+                            <th>Ramal</th>
+                            <th>Cargo Efetivo</th>
+                            <th>Situação Funcional</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modal-tbody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <footer class="no-print">
+        GEDEP-RH - Sistema de Relatórios Administrativos de Pessoal • Arquivo Único HTML
+    </footer>
+
+    <script>
+        const APP_VERSION = '3.0.0';
+        let appData = { records: [], headers: [], ramaisMap: {}, seiProcessos: [] };
+        let currentPage = 1;
+        const pageSize = 50;
+        let filteredRecords = [];
+        let mediaStream = null;
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function switchTab(tabId, button) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            const target = document.getElementById(tabId);
+            if (!target) return;
+            target.classList.add('active');
+            const activeButton = button || document.querySelector(`.tab-btn[onclick*="${tabId}"]`);
+            if (activeButton) activeButton.classList.add('active');
+            if (tabId !== 'form-tab' && mediaStream) stopWebcam();
+        }
+
+        function printSection(section) {
+            const classes = ['printing-form', 'printing-server', 'printing-unit'];
+            document.body.classList.remove(...classes);
+            const selected = `printing-${section}`;
+            document.body.classList.add(selected);
+            window.setTimeout(() => window.print(), 0);
+            const cleanup = () => document.body.classList.remove(selected);
+            window.addEventListener('afterprint', cleanup, { once: true });
+            window.setTimeout(cleanup, 3000);
+        }
+
+        function normalizeText(value) {
+            return String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
+        }
+
+        function csvCell(value) {
+            return `"${String(value ?? '').replace(/"/g, '""')}"`;
+        }
+
+        function parseDateBR(value) {
+            const match = String(value ?? '').trim().match(/^(\d{2})[\/.-](\d{2})[\/.-](\d{4})$/);
+            if (!match) return null;
+            const date = new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
+            return date.getFullYear() === Number(match[3]) && date.getMonth() === Number(match[2]) - 1 && date.getDate() === Number(match[1]) ? date : null;
+        }
+
+        function formatDateBR(date) {
+            return date ? date.toLocaleDateString('pt-BR') : '-';
+        }
+
+        function resetData() {
+            if (confirm('Deseja realmente limpar todos os dados carregados e reiniciar o sistema?')) {
+                appData = { records: [], headers: [], ramaisMap: {}, seiProcessos: [] };
+                filteredRecords = [];
+                localStorage.removeItem('gedep_rh_cache');
+                localStorage.removeItem('gedep_rh_ramais');
+                localStorage.removeItem('gedep_rh_sei');
+                updateAllModules();
+                document.getElementById('import-stats').style.display = 'none';
+                document.getElementById('ramais-stats').style.display = 'none';
+                document.getElementById('sei-stats').style.display = 'none';
+                document.getElementById('file-status').innerText = 'Nenhum arquivo carregado';
+                document.getElementById('csv-file-input').value = '';
+                document.getElementById('ramais-file-input').value = '';
+                document.getElementById('sei-file-input').value = '';
+                document.getElementById('server-select').innerHTML = '<option value="">Selecione um servidor...</option>';
+                document.getElementById('unit-select').innerHTML = '<option value="">Selecione uma Unidade de Lotação...</option>';
+                document.getElementById('form-server-select').innerHTML = '<option value="">-- Selecionar Servidor --</option>';
+                alert('Dados limpos com sucesso.');
+            }
+        }
+
+        document.getElementById('csv-file-input').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (appData.records.length && !confirm('Uma base já está carregada. Deseja substituí-la pela nova importação?')) {
+                e.target.value = '';
+                return;
+            }
+            appData.records = [];
+            const statsEl = document.getElementById('import-stats');
+            statsEl.style.display = 'block';
+            statsEl.innerHTML = `<strong>Lendo arquivo...</strong> Preparando leitura em lotes assíncronos.`;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const text = evt.target.result;
+                parseCSVIncremental(text);
+            };
+            reader.readAsText(file, 'ISO-8859-1');
+        });
+
+        function parseCSVIncremental(text) {
+            const statsEl = document.getElementById('import-stats');
+            statsEl.innerHTML = `<strong>Processando...</strong> Analisando linhas do arquivo.`;
+
+            setTimeout(() => {
+                let records = [];
+                let headers = [];
+                let headerIndex = -1;
+                
+                let textLength = text.length;
+                let pos = 0;
+                let linesCount = 0;
+
+                while (pos < textLength) {
+                    let nextNewLine = text.indexOf('\n', pos);
+                    if (nextNewLine === -1) nextNewLine = textLength;
+                    let line = text.substring(pos, nextNewLine).trim();
+                    if (line) {
+                        linesCount++;
+                        if (headerIndex === -1 && (line.includes('NOME SERVIDOR') || line.includes('CPF'))) {
+                            headerIndex = linesCount - 1;
+                            headers = line.split(';').map((h, idx) => {
+                                let clean = h.trim();
+                                if (idx === 0) clean = clean.replace(/^\uFEFF/, '');
+                                return clean;
+                            });
+                        }
+                    }
+                    pos = nextNewLine + 1;
+                }
+
+                if (headerIndex === -1) headerIndex = 0;
+
+                pos = 0;
+                let currentLine = 0;
+                let batchSize = 2000;
+                let batchRecords = [];
+
+                function processNextBatch() {
+                    let processedInBatch = 0;
+                    while (pos < textLength && processedInBatch < batchSize) {
+                        let nextNewLine = text.indexOf('\n', pos);
+                        if (nextNewLine === -1) nextNewLine = textLength;
+                        let line = text.substring(pos, nextNewLine).trim();
+                        pos = nextNewLine + 1;
+                        currentLine++;
+
+                        if (currentLine <= headerIndex || !line) continue;
+                        const cols = line.split(';');
+                        if (cols.length < 3) continue;
+
+                        let record = {};
+                        headers.forEach((header, index) => {
+                            const upperH = header.toUpperCase();
+                            if (
+                                upperH.startsWith('R100') || upperH.startsWith('R200') || upperH.startsWith('R300') || 
+                                upperH.startsWith('R400') || upperH.startsWith('R700') || upperH.startsWith('D100') || 
+                                upperH.startsWith('D200') || upperH.startsWith('D300') || upperH.startsWith('D400') || 
+                                upperH.startsWith('D600') || upperH.startsWith('D800') || upperH.startsWith('D900') || 
+                                upperH.includes('VALOR BRUTO') || upperH.includes('VALOR LIQUIDO') || 
+                                upperH.includes('MARGEM') || upperH.includes('BASE CALCULO MARGEM') || 
+                                upperH.includes('TOTAL DESCONTADO') || upperH.includes('DIF.')
+                            ) {
+                                return;
+                            }
+                            record[header] = cols[index] ? cols[index].trim() : '';
+                        });
+                        
+                        if (record['NOME SERVIDOR'] || record['CPF']) {
+                            let cpfClean = (record['CPF'] || '').replace(/\D/g, '');
+                            let nomeUpper = (record['NOME SERVIDOR'] || '').trim().toUpperCase();
+                            record['RAMAL'] = appData.ramaisMap[cpfClean] || appData.ramaisMap[nomeUpper] || '-';
+                            batchRecords.push(record);
+                        }
+                        processedInBatch++;
+                    }
+
+                    appData.headers = headers;
+                    appData.records = appData.records.concat(batchRecords);
+                    batchRecords = [];
+
+                    let pct = Math.round((pos / textLength) * 100);
+                    statsEl.innerHTML = `<strong>Processando...</strong> ${appData.records.length} servidores carregados (${pct}%)`;
+
+                    if (pos < textLength) {
+                        setTimeout(processNextBatch, 2);
+                    } else {
+                        processSEILinks();
+                        filteredRecords = [...appData.records];
+                        updateAllModules();
+                        const quality = getDataQualitySummary(appData.records);
+                        const qualityMsg = quality.duplicates || quality.invalidBirthDates ? ` Atenção: ${quality.duplicates} CPF(s) duplicado(s) e ${quality.invalidBirthDates} data(s) de nascimento inválida(s).` : '';
+                        statsEl.innerHTML = `<strong>Sucesso!</strong> ${appData.records.length} registros de pessoal carregados sem travamento.${qualityMsg}`;
+                        document.getElementById('file-status').innerText = `${appData.records.length} servidores carregados`;
+                        saveCache();
+                    }
+                }
+
+                processNextBatch();
+            }, 50);
+        }
+
+        function importRamaisFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const json = XLSX.utils.sheet_to_json(worksheet, {raw: false});
+
+                    appData.ramaisMap = {};
+                    json.forEach(row => {
+                        let keys = Object.keys(row);
+                        let cpfKey = keys.find(k => k.toUpperCase().includes('CPF'));
+                        let nomeKey = keys.find(k => k.toUpperCase().includes('NOME') || k.toUpperCase().includes('SERVIDOR'));
+                        let ramalKey = keys.find(k => k.toUpperCase().includes('RAMAL') || k.toUpperCase().includes('TELEFONE') || k.toUpperCase().includes('FONE') || k.toUpperCase().includes('EXT'));
+                        
+                        if (ramalKey) {
+                            let ramalVal = row[ramalKey];
+                            if (cpfKey && row[cpfKey]) {
+                                let cleanCpf = String(row[cpfKey]).replace(/\D/g, '');
+                                if (cleanCpf) appData.ramaisMap[cleanCpf] = ramalVal;
+                            }
+                            if (nomeKey && row[nomeKey]) {
+                                let cleanNome = String(row[nomeKey]).trim().toUpperCase();
+                                if (cleanNome) appData.ramaisMap[cleanNome] = ramalVal;
+                            }
+                        }
+                    });
+
+                    let countMapped = 0;
+                    appData.records.forEach(r => {
+                        let cpfClean = (r['CPF'] || '').replace(/\D/g, '');
+                        let nomeUpper = (r['NOME SERVIDOR'] || '').trim().toUpperCase();
+                        let ramal = appData.ramaisMap[cpfClean] || appData.ramaisMap[nomeUpper];
+                        if (ramal) {
+                            r['RAMAL'] = ramal;
+                            countMapped++;
+                        } else {
+                            if (!r['RAMAL']) r['RAMAL'] = '-';
+                        }
+                    });
+
+                    updateAllModules();
+
+                    const statsEl = document.getElementById('ramais-stats');
+                    statsEl.style.display = 'block';
+                    statsEl.innerHTML = `<strong>Sucesso!</strong> ${Object.keys(appData.ramaisMap).length} ramais lidos. ${countMapped} servidores cruzados.`;
+
+                    saveCache();
+                } catch (err) {
+                    alert('Erro ao processar arquivo de ramais: ' + err.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function importSEIFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                parseSEICSV(evt.target.result);
+            };
+            reader.readAsText(file, 'utf-8');
+        }
+
+        function parseSEICSV(text) {
+            const lines = text.split(/\r\n|\n/);
+            if (lines.length < 2) {
+                alert('Arquivo SEI inválido ou vazio.');
+                return;
+            }
+
+            let headerIndex = -1;
+            let headers = [];
+
+            for (let i = 0; i < Math.min(lines.length, 5); i++) {
+                if (lines[i].includes('PROCESSO SEI') || lines[i].includes('Interessados') || lines[i].includes('ASSUNTO')) {
+                    headerIndex = i;
+                    headers = lines[i].split(';').map(h => h.trim().replace(/^\uFEFF/, ''));
+                    break;
+                }
+            }
+
+            if (headerIndex === -1) {
+                headerIndex = 1;
+                headers = lines[headerIndex].split(';').map(h => h.trim().replace(/^\uFEFF/, ''));
+            }
+
+            appData.seiProcessos = [];
+            let procIdx = headers.findIndex(h => h.toUpperCase().includes('PROCESSO SEI') || h.toUpperCase().includes('PROCESSO'));
+            let assuntoIdx = headers.findIndex(h => h.toUpperCase().includes('ASSUNTO'));
+            let interessadosIdx = headers.findIndex(h => h.toUpperCase().includes('INTERESSAD'));
+            let statusIdx = headers.findIndex(h => h.toUpperCase().includes('STATUS'));
+
+            for (let i = headerIndex + 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                const cols = line.split(';');
+                if (cols.length < 2) continue;
+
+                let processo = procIdx !== -1 && cols[procIdx] ? cols[procIdx].trim() : (cols[7] ? cols[7].trim() : '');
+                let assunto = assuntoIdx !== -1 && cols[assuntoIdx] ? cols[assuntoIdx].trim() : (cols[8] ? cols[8].trim() : '');
+                let interessados = interessadosIdx !== -1 && cols[interessadosIdx] ? cols[interessadosIdx].trim() : (cols[10] ? cols[10].trim() : '');
+                let status = statusIdx !== -1 && cols[statusIdx] ? cols[statusIdx].trim() : (cols[4] ? cols[4].trim() : '');
+
+                if (processo) {
+                    appData.seiProcessos.push({
+                        processo: processo,
+                        assunto: assunto,
+                        interessados: interessados,
+                        status: status
+                    });
+                }
+            }
+
+            processSEILinks();
+            updateAllModules();
+
+            const statsEl = document.getElementById('sei-stats');
+            statsEl.style.display = 'block';
+            statsEl.innerHTML = `<strong>Sucesso!</strong> ${appData.seiProcessos.length} processos SEI carregados e cruzados com sucesso.`;
+
+            saveCache();
+        }
+
+        function processSEILinks() {
+            if (!appData.seiProcessos || appData.seiProcessos.length === 0) {
+                appData.records.forEach(r => { r['PROCESSOS_SEI'] = []; r['TOTAL_PROCESSOS'] = 0; });
+                return;
+            }
+
+            appData.records.forEach(r => {
+                const nomeServidor = normalizeText(r['NOME SERVIDOR']);
+                const cpfServidor = String(r['CPF'] || '').replace(/\D/g, '');
+                const processosDoServidor = [];
+
+                appData.seiProcessos.forEach(p => {
+                    const interessados = normalizeText(p.interessados);
+                    const interessadosCpf = String(p.interessados || '').replace(/\D/g, '');
+                    const nomeExato = nomeServidor && interessados.split(/\s*[,;]\s*/).some(item => normalizeText(item) === nomeServidor);
+                    const cpfExato = cpfServidor.length >= 9 && interessadosCpf.includes(cpfServidor);
+                    if (nomeExato || cpfExato) processosDoServidor.push(p);
+                });
+
+                r['PROCESSOS_SEI'] = processosDoServidor;
+                r['TOTAL_PROCESSOS'] = processosDoServidor.length;
+            });
+        }
+
+        function getDataQualitySummary(records) {
+            const cpfs = records.map(r => String(r['CPF'] || '').replace(/\D/g, '')).filter(Boolean);
+            const duplicates = cpfs.filter((cpf, i) => cpfs.indexOf(cpf) !== i).length;
+            const invalidBirthDates = records.filter(r => r['DATA NASCIMENTO'] && !parseDateBR(r['DATA NASCIMENTO'])).length;
+            return { duplicates, invalidBirthDates };
+        }
+
+        function calculateAge(birthDateStr, referenceDate = new Date()) {
+            const birthDate = parseDateBR(birthDateStr);
+            if (!birthDate) return null;
+            let age = referenceDate.getFullYear() - birthDate.getFullYear();
+            const beforeBirthday = referenceDate.getMonth() < birthDate.getMonth() || (referenceDate.getMonth() === birthDate.getMonth() && referenceDate.getDate() < birthDate.getDate());
+            if (beforeBirthday) age--;
+            return age >= 0 && age <= 150 ? age : null;
+        }
+
+        function updateAllModules() {
+            updateDashboard();
+            updateServersTable();
+            updateLotacaoTable();
+            updateServerSelect();
+            updateUnitSelect();
+            updateAgeAlertTable();
+            updateProbationTable();
+            updateFormSelect();
+        }
+
+        function updateDashboard() {
+            const total = appData.records.length;
+            document.getElementById('dash-total').innerText = total;
+
+            const orgaos = new Set(appData.records.map(r => r['NOME ÓRGÃO'] || r['NOME ORGÃO'])).size;
+            document.getElementById('dash-orgaos').innerText = orgaos;
+
+            const ramaisCount = appData.records.filter(r => r['RAMAL'] && r['RAMAL'] !== '-').length;
+            document.getElementById('dash-ramais').innerText = ramaisCount;
+
+            document.getElementById('dash-processos').innerText = appData.seiProcessos.length;
+
+            let sexCounts = {};
+            appData.records.forEach(r => {
+                let s = r['SEXO DO SERVIDOR'] || 'Não informado';
+                sexCounts[s] = (sexCounts[s] || 0) + 1;
+            });
+            let sexHtml = '';
+            for (let [k, v] of Object.entries(sexCounts)) {
+                let pct = ((v / (total || 1)) * 100).toFixed(1);
+                sexHtml += `<div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 0.25rem 0;"><span>${escapeHtml(k)}</span><span style="font-weight: bold;">${v} (${pct}%)</span></div>`;
+            }
+            document.getElementById('dash-sexo-list').innerHTML = sexHtml || 'Sem dados';
+
+            let sitCounts = {};
+            appData.records.forEach(r => {
+                let s = r['DESC SIT FUNCIONAL'] || 'Não informada';
+                sitCounts[s] = (sitCounts[s] || 0) + 1;
+            });
+            let sortedSit = Object.entries(sitCounts).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            let sitHtml = '';
+            for (let [k, v] of sortedSit) {
+                sitHtml += `<div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 0.25rem 0;"><span>${escapeHtml(k)}</span><span style="font-weight: bold;">${v}</span></div>`;
+            }
+            document.getElementById('dash-situacao-list').innerHTML = sitHtml || 'Sem dados';
+        }
+
+        function updateServersTable() {
+            const tbody = document.getElementById('servers-tbody');
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            const pageItems = filteredRecords.slice(startIndex, endIndex);
+
+            if (pageItems.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center" style="padding: 2rem; color: #6b7280;">Nenhum registro encontrado.</td></tr>`;
+                document.getElementById('table-count').innerText = `Exibindo 0 de ${filteredRecords.length} registros`;
+                document.getElementById('page-indicator').innerText = `Página 1 de 1`;
+                return;
+            }
+
+            let html = '';
+            pageItems.forEach(r => {
+                let procCount = r['TOTAL_PROCESSOS'] || 0;
+                html += `<tr>
+                    <td style="font-weight: 500;">${escapeHtml(r['NOME SERVIDOR'])}</td>
+                    <td>${escapeHtml(r['CPF'])}</td>
+                    <td>${escapeHtml(r['DESC CARGO EFETIVO'] || r['DESC CARGO COMISSIONADO'] || 'N/D')}</td>
+                    <td>${escapeHtml(r['NOME ÓRGÃO'] || r['NOME ORGÃO'])}</td>
+                    <td><span style="background: #eff6ff; color: #1e40af; padding: 0.2rem 0.5rem; border-radius: 0.25rem; font-weight: bold;">${escapeHtml(r['RAMAL'] || '-')}</span></td>
+                    <td><span style="background: #fdf4ff; color: #86198f; padding: 0.2rem 0.5rem; border-radius: 0.25rem; font-weight: bold;">${procCount} proc(s)</span></td>
+                    <td>${escapeHtml(r['DESC SIT FUNCIONAL'])}</td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+
+            const totalPages = Math.ceil(filteredRecords.length / pageSize) || 1;
+            document.getElementById('table-count').innerText = `Exibindo ${startIndex + 1} a ${Math.min(endIndex, filteredRecords.length)} de ${filteredRecords.length} registros`;
+            document.getElementById('page-indicator').innerText = `Página ${currentPage} de ${totalPages}`;
+        }
+
+        function filterServers() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            filteredRecords = appData.records.filter(r => {
+                const name = (r['NOME SERVIDOR'] || '').toLowerCase();
+                const cpf = (r['CPF'] || '').toLowerCase();
+                const cargo = (r['DESC CARGO EFETIVO'] || '').toLowerCase();
+                const orgao = (r['NOME ÓRGÃO'] || r['NOME ORGÃO'] || '').toLowerCase();
+                const ramal = (r['RAMAL'] || '').toLowerCase();
+                return name.includes(query) || cpf.includes(query) || cargo.includes(query) || orgao.includes(query) || ramal.includes(query);
+            });
+            currentPage = 1;
+            updateServersTable();
+        }
+
+        function changePage(direction) {
+            const totalPages = Math.ceil(filteredRecords.length / pageSize) || 1;
+            currentPage += direction;
+            if (currentPage < 1) currentPage = 1;
+            if (currentPage > totalPages) currentPage = totalPages;
+            updateServersTable();
+        }
+
+        function updateLotacaoTable() {
+            const tbody = document.getElementById('lotacao-tbody');
+            let groups = {};
+
+            appData.records.forEach(r => {
+                let sup = r['UNID. ADM.SUPER'] || 'Não informada';
+                let inf = r['UNID ADM DE LOTAÇÃO'] || r['NOME ÓRGÃO'] || r['NOME ORGÃO'] || 'Não informada';
+                let key = sup + '|||' + inf;
+                groups[key] = (groups[key] || 0) + 1;
+            });
+
+            let sorted = Object.entries(groups).sort((a,b) => b[1] - a[1]);
+
+            if (sorted.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="text-center" style="padding: 2rem; color: #6b7280;">Nenhum dado encontrado.</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            sorted.forEach(([key, count]) => {
+                let [sup, inf] = key.split('|||');
+                html += `<tr>
+                    <td>${escapeHtml(sup)}</td>
+                    <td style="font-weight: 500;">${escapeHtml(inf)}</td>
+                    <td style="text-align: right;">
+                        <button onclick="openLotacaoDetailsEncoded('${encodeURIComponent(sup)}', '${encodeURIComponent(inf)}')" class="btn btn-blue" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; cursor: pointer;">
+                            ${count} servidor(es) 🔍
+                        </button>
+                    </td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+        }
+
+        function openLotacaoDetailsEncoded(supEncoded, infEncoded) {
+            openLotacaoDetails(decodeURIComponent(supEncoded), decodeURIComponent(infEncoded));
+        }
+
+        function openLotacaoDetails(sup, inf) {
+            const modal = document.getElementById('lotacao-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalTbody = document.getElementById('modal-tbody');
+
+            modalTitle.innerText = `Superior: ${sup} | Lotação: ${inf}`;
+
+            let filtered = appData.records.filter(r => {
+                let rSup = r['UNID. ADM.SUPER'] || 'Não informada';
+                let rInf = r['UNID ADM DE LOTAÇÃO'] || r['NOME ÓRGÃO'] || r['NOME ORGÃO'] || 'Não informada';
+                return rSup === sup && rInf === inf;
+            });
+
+            let html = '';
+            filtered.forEach(r => {
+                html += `<tr>
+                    <td style="font-weight: 500;">${escapeHtml(r['NOME SERVIDOR'])}</td>
+                    <td>${escapeHtml(r['CPF'])}</td>
+                    <td><span style="background: #eff6ff; color: #1e40af; padding: 0.15rem 0.4rem; border-radius: 0.25rem; font-weight: bold;">${escapeHtml(r['RAMAL'] || '-')}</span></td>
+                    <td>${escapeHtml(r['DESC CARGO EFETIVO'] || 'N/D')}</td>
+                    <td>${escapeHtml(r['DESC SIT FUNCIONAL'])}</td>
+                </tr>`;
+            });
+            modalTbody.innerHTML = html || '<tr><td colspan="5" class="text-center">Nenhum servidor encontrado.</td></tr>';
+            modal.style.display = 'flex';
+        }
+
+        function closeLotacaoModal() {
+            document.getElementById('lotacao-modal').style.display = 'none';
+        }
+
+        function exportLotacaoCSV() {
+            let groups = {};
+            appData.records.forEach(r => {
+                let sup = r['UNID. ADM.SUPER'] || 'Não informada';
+                let inf = r['UNID ADM DE LOTAÇÃO'] || r['NOME ÓRGÃO'] || r['NOME ORGÃO'] || 'Não informada';
+                let key = sup + '|||' + inf;
+                groups[key] = (groups[key] || 0) + 1;
+            });
+
+            let csvContent = "\uFEFFUnidade Administrativa Superior;Unidade de Lotação;Total de Servidores\n";
+            for (let [key, count] of Object.entries(groups)) {
+                let [sup, inf] = key.split('|||');
+                csvContent += [sup, inf, count].map(csvCell).join(';') + '\n';
+            }
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'relatorio_por_lotacao.csv');
+            a.click();
+        }
+
+        function updateServerSelect() {
+            const select = document.getElementById('server-select');
+            let options = '<option value="">Selecione um servidor...</option>';
+            let sorted = [...appData.records].sort((a,b) => (a['NOME SERVIDOR'] || '').localeCompare(b['NOME SERVIDOR'] || ''));
+
+            sorted.forEach((r, idx) => {
+                let name = r['NOME SERVIDOR'] || 'Sem Nome';
+                let cpf = r['CPF'] || 'Sem CPF';
+                options += `<option value="${idx}">${escapeHtml(name)} - CPF: ${escapeHtml(cpf)}</option>`;
+            });
+            select.innerHTML = options;
+        }
+
+        function renderServerFicha(index) {
+            const container = document.getElementById('printable-area');
+            if (index === '') {
+                container.innerHTML = '<p class="text-center" style="color: #6b7280; padding: 2rem;">Nenhum servidor selecionado.</p>';
+                return;
+            }
+
+            let sorted = [...appData.records].sort((a,b) => (a['NOME SERVIDOR'] || '').localeCompare(b['NOME SERVIDOR'] || ''));
+            let r = sorted[index];
+            if (!r) return;
+
+            let age = calculateAge(r['DATA NASCIMENTO']);
+            let processos = r['PROCESSOS_SEI'] || [];
+
+            let processosHtml = '';
+            if (processos.length === 0) {
+                processosHtml = '<p style="font-size: 0.875rem; color: #6b7280; font-style: italic;">Nenhum processo SEI vinculado a este servidor.</p>';
+            } else {
+                processosHtml = `
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Processo SEI</th>
+                                    <th>Status</th>
+                                    <th>Assunto / Descrição</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                processos.forEach(p => {
+                    processosHtml += `
+                        <tr>
+                            <td style="font-weight: bold; color: var(--accent);">${escapeHtml(p.processo)}</td>
+                            <td><span style="background: #fdf4ff; color: #86198f; padding: 0.15rem 0.4rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: bold;">${escapeHtml(p.status || 'Ativo')}</span></td>
+                            <td>${escapeHtml(p.assunto)}</td>
+                        </tr>
+                    `;
+                });
+                processosHtml += `</tbody></table></div>`;
+            }
+
+            container.innerHTML = `
+                <div style="border-bottom: 2px solid var(--primary); padding-bottom: 0.75rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                    <h2 style="font-size: 1.25rem; font-weight: bold; color: var(--primary);">${escapeHtml(r['NOME SERVIDOR'])}</h2>
+                    <div>
+                        <span style="font-size: 0.875rem; background: #eff6ff; color: #1e40af; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-weight: bold; margin-right: 0.5rem;">Ramal: ${escapeHtml(r['RAMAL'] || '-')}</span>
+                        <span style="font-size: 0.875rem; background: #e0e7ff; color: #3730a3; padding: 0.25rem 0.75rem; border-radius: 0.25rem; font-weight: bold;">CPF: ${escapeHtml(r['CPF'])}</span>
+                    </div>
+                </div>
+
+                <h3 style="font-size: 1rem; font-weight: bold; margin-bottom: 0.5rem; color: #4b5563;">1. Dados Pessoais</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem; font-size: 0.875rem;">
+                    <div><strong>Data de Nascimento:</strong> ${escapeHtml(r['DATA NASCIMENTO'])} ${age !== null ? '(' + age + ' anos)' : ''}</div>
+                    <div><strong>Sexo:</strong> ${escapeHtml(r['SEXO DO SERVIDOR'])}</div>
+                    <div><strong>RG:</strong> ${escapeHtml(r['RG'])}</div>
+                    <div><strong>Mãe:</strong> ${escapeHtml(r['NOME MAE'])}</div>
+                    <div><strong>Escolaridade:</strong> ${escapeHtml(r['NÍVEL ESCOLARIDADE SERVIDOR'])}</div>
+                    <div><strong>Instrução:</strong> ${escapeHtml(r['GRAU INSTRUÇÃO SERVIDOR'])}</div>
+                </div>
+
+                <h3 style="font-size: 1rem; font-weight: bold; margin-bottom: 0.5rem; color: #4b5563;">2. Dados Funcionais &amp; Lotação</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem; font-size: 0.875rem;">
+                    <div><strong>Órgão Lotação:</strong> ${escapeHtml(r['NOME ÓRGÃO'] || r['NOME ORGÃO'])}</div>
+                    <div><strong>Unid. Adm. Superior:</strong> ${escapeHtml(r['UNID. ADM.SUPER'])}</div>
+                    <div><strong>Unid. Adm. Lotação:</strong> ${escapeHtml(r['UNID ADM DE LOTAÇÃO'])}</div>
+                    <div><strong>Município Lotação:</strong> ${escapeHtml(r['MUNICÍPIO LOTAÇÃO'])}</div>
+                    <div><strong>Regime Jurídico:</strong> ${escapeHtml(r['DESC REGIME JURÍDICO'])}</div>
+                    <div><strong>Situação Funcional:</strong> ${escapeHtml(r['DESC SIT FUNCIONAL'])}</div>
+                    <div><strong>Cargo Efetivo:</strong> ${escapeHtml(r['DESC CARGO EFETIVO'])}</div>
+                    <div><strong>Cargo Comissionado:</strong> ${escapeHtml(r['DESC CARGO COMISSIONADO'] || 'Nenhum')}</div>
+                    <div><strong>Data Exercício Efetivo:</strong> ${escapeHtml(r['DATA EXERCÍCIO CARGO EFETIVO'] || '-')}</div>
+                    <div><strong>Término Estágio Probatório:</strong> ${escapeHtml(r['DATA TÉRMINO ESTAGIO PROBATÓRIO'] || '-')}</div>
+                </div>
+
+                <h3 style="font-size: 1rem; font-weight: bold; margin-bottom: 0.5rem; color: #4b5563;">3. Contato &amp; Endereço</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem; font-size: 0.875rem;">
+                    <div><strong>Logradouro:</strong> ${escapeHtml(r['TIPO LOGRADOURO'])} ${escapeHtml(r['NOME LOGRADOURO'])}, Nº ${escapeHtml(r['NUM. IMÓVEL'])}</div>
+                    <div><strong>Bairro:</strong> ${escapeHtml(r['BAIRRO'])} - ${escapeHtml(r['MUNICÍPIO'])} / ${escapeHtml(r['UF'])}</div>
+                    <div><strong>CEP:</strong> ${escapeHtml(r['CEP'])}</div>
+                    <div><strong>Telefone:</strong> (${escapeHtml(r['DDD'])}) ${escapeHtml(r['TELEFONE'])} ${escapeHtml(r['TELEFONE 2'] ? '/ ' + r['TELEFONE 2'] : '')}</div>
+                    <div><strong>E-mail:</strong> ${escapeHtml(r['EMAIL'])}</div>
+                </div>
+
+                <div class="print-hide">
+                    <h3 style="font-size: 1rem; font-weight: bold; margin-bottom: 0.5rem; color: #4b5563;">4. Processos SEI Vinculados (${processos.length})</h3>
+                    <div style="margin-bottom: 0.5rem;">
+                        ${processosHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateUnitSelect() {
+            const select = document.getElementById('unit-select');
+            let units = new Set();
+            appData.records.forEach(r => {
+                let unit = r['UNID ADM DE LOTAÇÃO'] || r['NOME ÓRGÃO'] || r['NOME ORGÃO'];
+                if (unit) units.add(unit);
+            });
+
+            let sortedUnits = Array.from(units).sort();
+            let options = '<option value="">Selecione uma Unidade de Lotação...</option>';
+            sortedUnits.forEach(u => {
+                options += `<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`;
+            });
+            select.innerHTML = options;
+        }
+
+        function renderUnitFicha(unitName) {
+            const container = document.getElementById('unit-printable-area');
+            if (!unitName) {
+                container.innerHTML = '<p class="text-center" style="color: #6b7280; padding: 2rem;">Selecione uma unidade acima para exibir a ficha correspondente.</p>';
+                return;
+            }
+
+            let unitServers = appData.records.filter(r => {
+                let u = r['UNID ADM DE LOTAÇÃO'] || r['NOME ÓRGÃO'] || r['NOME ORGÃO'];
+                return u === unitName;
+            });
+
+            let superior = unitServers.length > 0 ? (unitServers[0]['UNID. ADM.SUPER'] || 'Não informada') : 'Não informada';
+            let orgao = unitServers.length > 0 ? (unitServers[0]['NOME ÓRGÃO'] || unitServers[0]['NOME ORGÃO'] || 'Não informado') : 'Não informado';
+
+            let html = `
+                <div style="border-bottom: 2px solid var(--primary); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+                    <h2 style="font-size: 1.25rem; font-weight: bold; color: var(--primary);">FICHA DA UNIDADE ADMINISTRATIVA</h2>
+                    <p style="font-size: 0.875rem; color: #4b5563; margin-top: 0.25rem;"><strong>Órgão:</strong> ${escapeHtml(orgao)}</p>
+                    <p style="font-size: 0.875rem; color: #4b5563;"><strong>Unidade Superior:</strong> ${escapeHtml(superior)}</p>
+                    <p style="font-size: 0.875rem; color: #4b5563;"><strong>Unidade de Lotação:</strong> ${escapeHtml(unitName)}</p>
+                    <p style="font-size: 0.875rem; color: var(--accent); margin-top: 0.25rem; font-weight: bold;">Total de Servidores Lotados: ${unitServers.length}</p>
+                </div>
+
+                <h3 style="font-size: 1rem; font-weight: bold; margin-bottom: 0.75rem; color: #4b5563;">Relação Nominal de Servidores, Ramais e Processos SEI</h3>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Servidor</th>
+                                <th>CPF</th>
+                                <th>Ramal</th>
+                                <th>Proc. SEI</th>
+                                <th>Cargo Efetivo</th>
+                                <th>Situação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            if (unitServers.length === 0) {
+                html += `<tr><td colspan="6" class="text-center">Nenhum servidor encontrado nesta unidade.</td></tr>`;
+            } else {
+                unitServers.forEach(r => {
+                    let pCount = r['TOTAL_PROCESSOS'] || 0;
+                    html += `<tr>
+                        <td style="font-weight: 500;">${escapeHtml(r['NOME SERVIDOR'])}</td>
+                        <td>${escapeHtml(r['CPF'])}</td>
+                        <td><span style="background: #eff6ff; color: #1e40af; padding: 0.2rem 0.5rem; border-radius: 0.25rem; font-weight: bold;">${escapeHtml(r['RAMAL'] || '-')}</span></td>
+                        <td><span style="background: #fdf4ff; color: #86198f; padding: 0.2rem 0.5rem; border-radius: 0.25rem; font-weight: bold;">${pCount}</span></td>
+                        <td>${escapeHtml(r['DESC CARGO EFETIVO'] || 'N/D')}</td>
+                        <td>${escapeHtml(r['DESC SIT FUNCIONAL'])}</td>
+                    </tr>`;
+                });
+            }
+
+            html += `</tbody></table></div>`;
+            container.innerHTML = html;
+        }
+
+        function generateCustomReport() {
+            const checkboxes = document.querySelectorAll('.col-check');
+            let selectedCols = [];
+            checkboxes.forEach(cb => { if (cb.checked) selectedCols.push(cb.value); });
+
+            if (selectedCols.length === 0) {
+                alert('Selecione pelo menos uma coluna para gerar o relatório.');
+                return;
+            }
+
+            if (appData.records.length === 0) {
+                document.getElementById('custom-report-result').innerHTML = '<p style="color: #6b7280; padding: 2rem;">Nenhum dado importado.</p>';
+                return;
+            }
+
+            let html = `<table><thead><tr>`;
+            selectedCols.forEach(col => { html += `<th>${escapeHtml(col)}</th>`; });
+            html += `</tr></thead><tbody>`;
+
+            appData.records.slice(0, 100).forEach(r => {
+                html += `<tr>`;
+                selectedCols.forEach(col => {
+                    let val = r[col];
+                    if (!val && col === 'NOME ÓRGÃO') val = r['NOME ORGÃO'];
+                    html += `<td>${escapeHtml(val || '-')}</td>`;
+                });
+                html += `</tr>`;
+            });
+            html += `</tbody></table>`;
+            if (appData.records.length > 100) {
+                html += `<p style="font-size: 0.75rem; color: #6b7280; margin-top: 1rem; text-align: center;">* Exibindo as primeiras 100 linhas. A exportação em CSV conterá todos os ${appData.records.length} registros.</p>`;
+            }
+
+            document.getElementById('custom-report-result').innerHTML = html;
+        }
+
+        function exportCustomReportCSV() {
+            const checkboxes = document.querySelectorAll('.col-check');
+            let selectedCols = [];
+            checkboxes.forEach(cb => { if (cb.checked) selectedCols.push(cb.value); });
+
+            if (selectedCols.length === 0 || appData.records.length === 0) {
+                alert('Sem dados ou colunas selecionadas para exportação.');
+                return;
+            }
+
+            let csvContent = "\uFEFF" + selectedCols.join(";") + "\n";
+            appData.records.forEach(r => {
+                let row = selectedCols.map(col => {
+                    let val = r[col];
+                    if (!val && col === 'NOME ÓRGÃO') val = r['NOME ORGÃO'];
+                    return csvCell(val);
+                });
+                csvContent += row.join(";") + "\n";
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'relatorio_rh_personalizado.csv');
+            a.click();
+        }
+
+        function updateAgeAlertTable() {
+            const tbody = document.getElementById('age-alert-tbody');
+            let list75 = appData.records.filter(r => {
+                let age = calculateAge(r['DATA NASCIMENTO']);
+                return age !== null && age >= 75;
+            });
+
+            if (list75.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center" style="padding: 2rem; color: #6b7280;">Nenhum servidor com 75 anos ou mais encontrado na base.</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            list75.forEach(r => {
+                let age = calculateAge(r['DATA NASCIMENTO']);
+                html += `<tr class="highlight-red">
+                    <td style="font-weight: 500;">${escapeHtml(r['NOME SERVIDOR'])}</td>
+                    <td>${escapeHtml(r['CPF'])}</td>
+                    <td><span style="background: #eff6ff; color: #1e40af; padding: 0.2rem 0.5rem; border-radius: 0.25rem; font-weight: bold;">${escapeHtml(r['RAMAL'] || '-')}</span></td>
+                    <td>${escapeHtml(r['DATA NASCIMENTO'])}</td>
+                    <td style="font-weight: bold; color: #b91c1c;">${age} anos</td>
+                    <td>${escapeHtml(r['DESC CARGO EFETIVO'])}</td>
+                    <td>${escapeHtml(r['NOME ÓRGÃO'] || r['NOME ORGÃO'])}</td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+        }
+
+        function exportAgeAlertCSV() {
+            let list75 = appData.records.filter(r => {
+                let age = calculateAge(r['DATA NASCIMENTO']);
+                return age !== null && age >= 75;
+            });
+
+            if (list75.length === 0) {
+                alert('Nenhum registro para exportar.');
+                return;
+            }
+
+            let csvContent = "\uFEFFNome Servidor;CPF;Ramal;Data Nascimento;Idade;Cargo Efetivo;Órgão Lotação\n";
+            list75.forEach(r => {
+                let age = calculateAge(r['DATA NASCIMENTO']);
+                csvContent += [r['NOME SERVIDOR'], r['CPF'], r['RAMAL'], r['DATA NASCIMENTO'], age, r['DESC CARGO EFETIVO'], r['NOME ÓRGÃO'] || r['NOME ORGÃO']].map(csvCell).join(';') + '\n';
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'servidores_acima_75_anos.csv');
+            a.click();
+        }
+
+        function updateProbationTable() {
+            const tbody = document.getElementById('probation-tbody');
+            let probationList = appData.records.filter(r => r['DATA TÉRMINO ESTAGIO PROBATÓRIO'] || r['DATA EXERCÍCIO CARGO EFETIVO']);
+            
+            if (probationList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center" style="padding: 2rem; color: #6b7280;">Nenhum registro de estágio probatório encontrado.</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            probationList.slice(0, 50).forEach(r => {
+                const exercicio = parseDateBR(r['DATA EXERCÍCIO CARGO EFETIVO']);
+                const terminoInformado = parseDateBR(r['DATA TÉRMINO ESTAGIO PROBATÓRIO']);
+                const terminoDate = terminoInformado || (exercicio ? new Date(exercicio.getFullYear() + 3, exercicio.getMonth(), exercicio.getDate()) : null);
+                const termino = terminoDate ? formatDateBR(terminoDate) : 'Não informada';
+                const hoje = new Date();
+                const status = !terminoDate ? 'Sem data' : terminoDate < hoje ? 'Prazo vencido' : 'Em acompanhamento';
+                const statusColor = status === 'Prazo vencido' ? '#b91c1c' : '#3730a3';
+                html += `<tr>
+                    <td style="font-weight: 500;">${escapeHtml(r['NOME SERVIDOR'])}</td>
+                    <td>${escapeHtml(r['DESC CARGO EFETIVO'])}</td>
+                    <td><span style="background: #eff6ff; color: #1e40af; padding: 0.2rem 0.5rem; border-radius: 0.25rem; font-weight: bold;">${escapeHtml(r['RAMAL'] || '-')}</span></td>
+                    <td>${escapeHtml(r['DATA EXERCÍCIO CARGO EFETIVO'] || '-')}</td>
+                    <td style="font-weight: bold; color: var(--accent);">${escapeHtml(termino)}</td>
+                    <td><span style="background: #e0e7ff; color: ${statusColor}; padding: 0.2rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">${status}</span></td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+        }
+
+        function updateFormSelect() {
+            const select = document.getElementById('form-server-select');
+            if (!select) return;
+            let options = '<option value="">-- Selecionar Servidor --</option>';
+            let sorted = [...appData.records].sort((a,b) => (a['NOME SERVIDOR'] || '').localeCompare(b['NOME SERVIDOR'] || ''));
+
+            sorted.forEach((r, idx) => {
+                let name = r['NOME SERVIDOR'] || 'Sem Nome';
+                let cpf = r['CPF'] || 'Sem CPF';
+                options += `<option value="${idx}">${escapeHtml(name)} - CPF: ${escapeHtml(cpf)}</option>`;
+            });
+            select.innerHTML = options;
+        }
+
+        function autoFillForm(index) {
+            if (index === '') return;
+            let sorted = [...appData.records].sort((a,b) => (a['NOME SERVIDOR'] || '').localeCompare(b['NOME SERVIDOR'] || ''));
+            let r = sorted[index];
+            if (!r) return;
+
+            document.querySelectorAll('#form-printable-area input[type="text"]').forEach(el => { el.value = ''; });
+            document.querySelectorAll('#form-printable-area input[type="checkbox"], #form-printable-area input[type="radio"]').forEach(el => { el.checked = false; });
+            let setVal = (id, val) => { let el = document.getElementById(id); if (el) el.value = val || ''; };
+            setVal('f-nome', r['NOME SERVIDOR']);
+            setVal('f-nasc', r['DATA NASCIMENTO']);
+            setVal('f-email', r['EMAIL']);
+            setVal('f-orgao', r['NOME ÓRGÃO'] || r['NOME ORGÃO']);
+            setVal('f-admissao', r['DATA EXERCÍCIO CARGO EFETIVO']);
+            setVal('f-cargo', r['DESC CARGO EFETIVO']);
+            setVal('f-regime', r['DESC REGIME JURÍDICO']);
+            setVal('f-tel', '(' + (r['DDD'] || '') + ') ' + (r['TELEFONE'] || ''));
+            setVal('f-tel2', r['TELEFONE 2']);
+            setVal('f-end', (r['TIPO LOGRADOURO'] || '') + ' ' + (r['NOME LOGRADOURO'] || '') + ', Nº ' + (r['NUM. IMÓVEL'] || ''));
+            setVal('f-bairro', r['BAIRRO']);
+            setVal('f-cidade', r['MUNICÍPIO']);
+            setVal('f-uf', r['UF']);
+            setVal('f-cep', r['CEP']);
+            setVal('f-sup', r['NÍVEL ESCOLARIDADE SERVIDOR'] || r['GRAU INSTRUÇÃO SERVIDOR']);
+
+            let sexo = (r['SEXO DO SERVIDOR'] || '').toUpperCase();
+            if (sexo.startsWith('M')) {
+                let cbM = document.getElementById('f-sexom'); if(cbM) cbM.checked = true;
+            } else if (sexo.startsWith('F')) {
+                let cbF = document.getElementById('f-sexof'); if(cbF) cbF.checked = true;
+            }
+        }
+
+        async function readDocumentAndAutoFill(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const statusEl = document.getElementById('ocr-status');
+            statusEl.innerText = 'Lendo arquivo PDF ou Imagem...';
+
+            let extractedText = '';
+
+            try {
+                if (file.type === 'application/pdf') {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                    
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const textContent = await page.getTextContent();
+                        let pageText = textContent.items.map(item => item.str).join(' ');
+                        
+                        if (pageText.trim().length < 10) {
+                            statusEl.innerText = `PDF escaneado detectado na página ${i}. Executando OCR...`;
+                            const viewport = page.getViewport({ scale: 2.0 });
+                            const canvas = document.createElement('canvas');
+                            const context = canvas.getContext('2d');
+                            canvas.height = viewport.height;
+                            canvas.width = viewport.width;
+
+                            await page.render({ canvasContext: context, viewport: viewport }).promise;
+                            
+                            const imageUrl = canvas.toDataURL('image/png');
+                            const ocrResult = await Tesseract.recognize(imageUrl, 'por+eng', {
+                                logger: m => {
+                                    if (m.status === 'recognizing text') {
+                                        statusEl.innerText = `OCR Página ${i} (${Math.round(m.progress * 100)}%)...`;
+                                    }
+                                }
+                            });
+                            pageText += ' ' + ocrResult.data.text;
+                        }
+
+                        extractedText += pageText + '\n';
+                    }
+                } else if (file.type.startsWith('image/')) {
+                    statusEl.innerText = 'Executando OCR na imagem...';
+                    const result = await Tesseract.recognize(file, 'por+eng', {
+                        logger: m => {
+                            if (m.status === 'recognizing text') {
+                                statusEl.innerText = `Reconhecendo texto (${Math.round(m.progress * 100)}%)...`;
+                            }
+                        }
+                    });
+                    extractedText = result.data.text;
+                } else {
+                    alert('Formato de arquivo não suportado.');
+                    statusEl.innerText = '';
+                    return;
+                }
+
+                statusEl.innerText = 'Texto extraído com sucesso! Preenchendo formulário...';
+                parseTextAndFillForm(extractedText);
+                setTimeout(() => { statusEl.innerText = 'Preenchimento concluído!'; }, 2000);
+
+            } catch (err) {
+                console.warn('Aviso OCR (file:// restrição de worker):', err);
+                statusEl.innerText = 'Dica: Para OCR perfeito sem restrição file://, abra o arquivo via servidor local ou use a seleção direta.';
+            }
+        }
+
+        function parseTextAndFillForm(text) {
+            const cpfRegex = /\b\d{3}\.\d{3}\.\d{3}-\d{2}\b|\b\d{11}\b/;
+            const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/;
+            const cepRegex = /\b\d{5}-\d{3}\b|\b\d{8}\b/;
+            const dateRegex = /\b\d{2}\/\d{2}\/\d{4}\b/;
+
+            const cpfMatch = text.match(cpfRegex);
+            const emailMatch = text.match(emailRegex);
+            const cepMatch = text.match(cepRegex);
+            const dateMatch = text.match(dateRegex);
+
+            let setVal = (id, val) => { let el = document.getElementById(id); if (el && val) el.value = val; };
+
+            if (emailMatch) setVal('f-email', emailMatch[0]);
+            if (cepMatch) setVal('f-cep', cepMatch[0]);
+            if (dateMatch) setVal('f-nasc', dateMatch[0]);
+
+            if (cpfMatch) {
+                let cleanCpf = cpfMatch[0].replace(/\D/g, '');
+                let found = appData.records.find(r => (r['CPF'] || '').replace(/\D/g, '') === cleanCpf);
+                if (found) {
+                    setVal('f-nome', found['NOME SERVIDOR']);
+                    setVal('f-orgao', found['NOME ÓRGÃO'] || found['NOME ORGÃO']);
+                    setVal('f-cargo', found['DESC CARGO EFETIVO']);
+                    setVal('f-regime', found['DESC REGIME JURÍDICO']);
+                    setVal('f-admissao', found['DATA EXERCÍCIO CARGO EFETIVO']);
+                    setVal('f-tel', '(' + (found['DDD'] || '') + ') ' + (found['TELEFONE'] || ''));
+                    setVal('f-end', (found['TIPO LOGRADOURO'] || '') + ' ' + (found['NOME LOGRADOURO'] || '') + ', Nº ' + (found['NUM. IMÓVEL'] || ''));
+                    setVal('f-bairro', found['BAIRRO']);
+                    setVal('f-cidade', found['MUNICÍPIO']);
+                    setVal('f-uf', found['UF']);
+                }
+            }
+        }
+
+        async function startWebcam() {
+            const video = document.getElementById('webcam-video');
+            const container = document.getElementById('webcam-container');
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                video.srcObject = mediaStream;
+                container.style.display = 'block';
+            } catch (err) {
+                alert('Não foi possível acessar a câmera: ' + err.message);
+            }
+        }
+
+        function stopWebcam() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+            document.getElementById('webcam-container').style.display = 'none';
+        }
+
+        function takeSnapshot() {
+            const video = document.getElementById('webcam-video');
+            if (!mediaStream) {
+                alert('Ligue a câmera primeiro.');
+                return;
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth || 200;
+            canvas.height = video.videoHeight || 150;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            let dataUrl = canvas.toDataURL('image/png');
+            setFormPhoto(dataUrl);
+            stopWebcam();
+        }
+
+        function loadPhotoFromFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                setFormPhoto(e.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function setFormPhoto(dataUrl) {
+            const previewImg = document.getElementById('captured-photo');
+            const placeholder = document.getElementById('photo-placeholder');
+            if (previewImg) { previewImg.src = dataUrl; previewImg.style.display = 'block'; }
+            if (placeholder) { placeholder.style.display = 'none'; }
+
+            const formImg = document.getElementById('form-photo-img');
+            const formText = document.getElementById('form-photo-text');
+            if (formImg) { formImg.src = dataUrl; formImg.style.display = 'block'; }
+            if (formText) { formText.style.display = 'none'; }
+        }
+
+        function saveCache() {
+            try {
+                localStorage.setItem('gedep_rh_cache', JSON.stringify(appData.records));
+                localStorage.setItem('gedep_rh_ramais', JSON.stringify(appData.ramaisMap));
+                localStorage.setItem('gedep_rh_sei', JSON.stringify(appData.seiProcessos));
+            } catch (err) {
+                console.warn('Armazenamento local excedeu 5MB.');
+            }
+        }
+
+        function exportJSONBackup() {
+            if (appData.records.length === 0) {
+                alert('Não há dados para exportar.');
+                return;
+            }
+            const dataObj = { app: 'GEDEP-RH', version: APP_VERSION, exportedAt: new Date().toISOString(), headers: appData.headers, records: appData.records, ramaisMap: appData.ramaisMap, seiProcessos: appData.seiProcessos };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataObj));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", "gedep_rh_backup.json");
+            dlAnchorElem.click();
+        }
+
+        function restoreJSONBackup(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const parsed = JSON.parse(evt.target.result);
+                    const records = Array.isArray(parsed) ? parsed : parsed.records;
+                    if (!Array.isArray(records)) throw new Error('estrutura inválida');
+                    if (!confirm(`Substituir os dados atuais por ${records.length} registros do backup?`)) return;
+                    appData.records = records.filter(r => r && typeof r === 'object');
+                    appData.headers = Array.isArray(parsed.headers) ? parsed.headers : Object.keys(appData.records[0] || {});
+                    appData.ramaisMap = Array.isArray(parsed) ? {} : (parsed.ramaisMap && typeof parsed.ramaisMap === 'object' ? parsed.ramaisMap : {});
+                    appData.seiProcessos = Array.isArray(parsed) ? [] : (Array.isArray(parsed.seiProcessos) ? parsed.seiProcessos : []);
+                    processSEILinks();
+                    filteredRecords = [...appData.records];
+                    updateAllModules();
+                    saveCache();
+                    document.getElementById('file-status').innerText = `${appData.records.length} servidores (backup restaurado)`;
+                    alert('Backup restaurado e salvo no cache local com sucesso!');
+                } catch(err) {
+                    alert('Erro ao processar arquivo JSON.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        document.getElementById('lotacao-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeLotacaoModal();
+        });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeLotacaoModal();
+        });
+
+        window.onload = function() {
+            const cachedRamais = localStorage.getItem('gedep_rh_ramais');
+            if (cachedRamais) {
+                try { appData.ramaisMap = JSON.parse(cachedRamais); } catch(e) {}
+            }
+            const cachedSei = localStorage.getItem('gedep_rh_sei');
+            if (cachedSei) {
+                try { appData.seiProcessos = JSON.parse(cachedSei); } catch(e) {}
+            }
+            const cached = localStorage.getItem('gedep_rh_cache');
+            if (cached) {
+                try {
+                    appData.records = JSON.parse(cached);
+                    appData.records.forEach(r => {
+                        let cpfClean = (r['CPF'] || '').replace(/\D/g, '');
+                        let nomeUpper = (r['NOME SERVIDOR'] || '').trim().toUpperCase();
+                        r['RAMAL'] = appData.ramaisMap[cpfClean] || appData.ramaisMap[nomeUpper] || '-';
+                    });
+                    processSEILinks();
+                    filteredRecords = [...appData.records];
+                    updateAllModules();
+                    document.getElementById('file-status').innerText = `${appData.records.length} servidores (via cache)`;
+                } catch(e) {}
+            }
+        };
+    </script>
+</body>
+</html>
