@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central de Sistemas - GOINFRA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
+
+    <!-- Top Bar -->
+    <header class="bg-slate-800 border-b border-slate-700 shadow-md">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-network-wired text-3xl text-blue-400"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wide">Central de Sistemas Offline</h1>
+                    <p class="text-xs text-slate-400">Ambiente Integrado de Gestão Administrativa - GOINFRA</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <span class="bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full text-xs font-semibold flex items-center space-x-1">
+                    <i class="fa-solid fa-circle text-[8px] animate-pulse"></i> <span>Modo Offline Ativo</span>
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-6xl mx-auto px-6 py-8 flex-grow w-full space-y-8">
+
+        <!-- Seção de Acesso aos Sistemas -->
+        <div class="space-y-4">
+            <h2 class="text-lg font-bold text-slate-200 border-b border-slate-800 pb-2 flex items-center space-x-2">
+                <i class="fa-solid fa-cubes text-blue-400"></i> <span>Sistemas Disponíveis</span>
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                
+                <!-- Card do Sistema GEDEP-FCPE -->
+                <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg hover:border-blue-500 transition flex flex-col justify-between space-y-4">
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-start">
+                            <div class="p-3 bg-blue-600/20 text-blue-400 rounded-lg text-xl">
+                                <i class="fa-solid fa-file-shield"></i>
+                            </div>
+                            <span class="bg-slate-700 text-slate-300 px-2 py-0.5 rounded text-xs font-mono">v1.8.3</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white">GEDEP - FCPEs</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            Gestão de Funções Comissionadas, controle de cotas, elaboração de minutas de portarias e importação SEI.
+                        </p>
+                    </div>
+                    <div class="pt-4 border-t border-slate-700 flex items-center justify-between">
+                        <span class="text-xs text-emerald-400 font-semibold"><i class="fa-solid fa-check mr-1"></i> Pronto para uso</span>
+                        <a href="gedep_fcpe.html" class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 py-2 rounded-lg text-xs transition flex items-center space-x-1 shadow">
+                            <span>Acessar Sistema</span> <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Exemplo de segundo sistema futuro (basta duplicar e alterar) -->
+                <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg hover:border-blue-500 transition flex flex-col justify-between space-y-4">
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-start">
+                            <div class="p-3 bg-indigo-600/20 text-indigo-400 rounded-lg text-xl">
+                                <i class="fa-solid fa-folder-tree"></i>
+                            </div>
+                            <span class="bg-slate-700 text-slate-300 px-2 py-0.5 rounded text-xs font-mono">Modelo</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white">Próximo Sistema</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            Espaço reservado para o próximo sistema independente que você adicionar nesta pasta do Windows.
+                        </p>
+                    </div>
+                    <div class="pt-4 border-t border-slate-700 flex items-center justify-between">
+                        <span class="text-xs text-slate-500 font-semibold">Aguardando arquivo</span>
+                        <button disabled class="bg-slate-700 text-slate-500 font-medium px-4 py-2 rounded-lg text-xs cursor-not-allowed">
+                            Indisponível
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Seção de Gerenciamento de Backups -->
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg space-y-4">
+            <h2 class="text-lg font-bold text-slate-200 flex items-center space-x-2">
+                <i class="fa-solid fa-database text-amber-400"></i> <span>Gerenciamento de Backups da Pasta</span>
+            </h2>
+            <p class="text-xs text-slate-400 leading-relaxed">
+                Como os sistemas rodam de forma totalmente offline utilizando o armazenamento local (LocalStorage) do seu navegador, recomenda-se compactar a pasta periodicamente ou utilizar o script de backup automatizado para garantir que nenhum dado seja perdido.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <div class="p-4 bg-slate-900/50 border border-slate-700 rounded-lg space-y-2">
+                    <div class="font-bold text-sm text-slate-200 flex items-center space-x-2">
+                        <i class="fa-solid fa-file-zipper text-blue-400"></i> <span>Rotina Recomendada</span>
+                    </div>
+                    <p class="text-xs text-slate-400">
+                        Crie um arquivo compactado (.zip) contendo toda esta pasta do Windows semanalmente e armazene em um drive externo ou nuvem institucional.
+                    </p>
+                </div>
+                <div class="p-4 bg-slate-900/50 border border-slate-700 rounded-lg space-y-2">
+                    <div class="font-bold text-sm text-slate-200 flex items-center space-x-2">
+                        <i class="fa-solid fa-terminal text-emerald-400"></i> <span>Automação por Script</span>
+                    </div>
+                    <p class="text-xs text-slate-400">
+                        Você pode colocar o arquivo <code class="bg-slate-800 px-1.5 py-0.5 rounded text-amber-300">backup.bat</code> na mesma pasta para gerar cópias de segurança instantâneas.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-800 border-t border-slate-700 py-4 text-center text-xs text-slate-500">
+        Central Offline GOINFRA — Gerenciamento Local de Aplicações Portáteis
+    </footer>
+
+</body>
+</html>

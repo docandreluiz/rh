@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central de Sistemas - GOINFRA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
+
+    <!-- Top Bar -->
+    <header class="bg-slate-800 border-b border-slate-700 shadow-md">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-network-wired text-3xl text-blue-400"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wide">Central de Sistemas Offline</h1>
+                    <p class="text-xs text-slate-400">Ambiente Integrado de Gestão Administrativa — GOINFRA</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 flex-wrap gap-2">
+                <button onclick="gerarBackupGeral()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center space-x-1 shadow">
+                    <i class="fa-solid fa-download"></i> <span>Baixar Backup (JSON)</span>
+                </button>
+                <label class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center space-x-1 cursor-pointer shadow">
+                    <i class="fa-solid fa-upload"></i> <span>Restaurar Backup</span>
+                    <input type="file" id="importJsonFile" class="hidden" accept=".json" onchange="restaurarBackupGeral(event)">
+                </label>
+                <span class="bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full text-xs font-semibold flex items-center space-x-1">
+                    <i class="fa-solid fa-circle text-[8px] animate-pulse"></i> <span>Offline Ativo</span>
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-6 py-8 flex-grow w-full space-y-8">
+
+        <!-- Seção de Acesso aos Sistemas -->
+        <div class="space-y-4">
+            <h2 class="text-lg font-bold text-slate-200 border-b border-slate-800 pb-2 flex items-center space-x-2">
+                <i class="fa-solid fa-cubes text-blue-400"></i> <span>Módulos e Sistemas Disponíveis</span>
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                
+                <!-- 1. GEDEP -->
+                <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg hover:border-blue-500 transition flex flex-col justify-between space-y-4">
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-start">
+                            <div class="p-3 bg-blue-600/20 text-blue-400 rounded-lg text-xl"><i class="fa-solid fa-folder-tree"></i></div>
+                            <span class="bg-slate-700 text-slate-300 px-2 py-0.5 rounded text-xs font-mono">Módulo 1</span>
+                        </div>
+                        <h3 class="text-base font-bold text-white">Gerenciamento de Processos GEDEP</h3>
+                        <p class="text-xs text-slate-400">Controle e andamento de processos específicos da diretoria.</p>
+                    </div>
+                    <div class="pt-4 border-t border-slate-700 flex items-center justify-between">
+                        <span class="text-xs text-emerald-400 font-semibold"><i class="fa-solid fa-folder-open mr-1"></i> Local</span>
+                        <a href="./1 - Sistema de gerenciamento de processos da GEDEP/index.html" class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 py-2 rounded-lg text-xs transition flex items-center space-x-1 shadow">
+                            <span>Acessar</span> <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 2. Templates -->
+                <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg hover:border-blue-500 transition flex flex-col justify-between space-y-4">
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-start">
+                            <div class="p-3 bg-indigo-600/20 text-indigo-400 rounded-lg text-xl"><i class="fa-solid fa-file-lines"></i></div>
+                            <span class="bg-slate-700 text-slate-300 px-2 py-0.5 rounded text-xs font-mono">Módulo 2</span>
+                        </div>
+                        <h3 class="text-base font-bold text-white">Templates para Documentos Complexos</h3>
+                        <p class="text-xs text-slate-400">Modelos padronizados de despachos, portarias e termos.</p>
+                    </div>
+                    <div class="pt-4 border-t border-slate-700 flex items-center justify-between">
+                        <span class="text-xs text-emerald-400 font-semibold"><i class="fa-solid fa-folder-open mr-1"></i> Local</span>
+                        <a href="./2 - Sistema de templates para documentos complexos/index.html" class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 py-2 rounded-lg text-xs transition flex items-center space-x-1 shadow">
+                            <span>Acessar</span> <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 3.  a criar>
+               
+               
+               
+               
+               
+               
+               
+               
+               
+               
+               
+               
+    
+    
+        
+                
+
+                <!-- 4. Diário Oficial -->
+                <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg hover:border-blue-500 transition flex flex-col justify-between space-y-4">
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-start">
+                            <div class="p-3 bg-amber-600/20 text-amber-400 rounded-lg text-xl"><i class="fa-solid fa-newspaper"></i></div>
+                            <span class="bg-slate-700 text-slate-300 px-2 py-0.5 rounded text-xs font-mono">Módulo 4</span>
+                        </div>
+                        <h3 class="text-base font-bold text-white">Monitoramento do Diário Oficial</h3>
+                        <p class="text-xs text-slate-400">Acompanhamento e varredura de publicações de interesse.</p>
+                    </div>
+                    <div class="pt-4 border-t border-slate-700 flex items-center justify-between">
+                        <span class="text-xs text-emerald-400 font-semibold"><i class="fa-solid fa-folder-open mr-1"></i> Local</span>
+                        <a href="./4 - Sistema de monitoramento do Diário Oficial/index.html" class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 py-2 rounded-lg text-xs transition flex items-center space-x-1 shadow">
+                            <span>Acessar</span> <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 5. FCPE -->
+                <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg hover:border-blue-500 transition flex flex-col justify-between space-y-4">
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-start">
+                            <div class="p-3 bg-emerald-600/20 text-emerald-400 rounded-lg text-xl"><i class="fa-solid fa-file-shield"></i></div>
+                            <span class="bg-slate-700 text-slate-300 px-2 py-0.5 rounded text-xs font-mono">Módulo 5</span>
+                        </div>
+                        <h3 class="text-base font-bold text-white">Gestão de FCPE</h3>
+                        <p class="text-xs text-slate-400">Funções Comissionadas, cotas, minutas e importação SEI.</p>
+                    </div>
+                    <div class="pt-4 border-t border-slate-700 flex items-center justify-between">
+                        <span class="text-xs text-emerald-400 font-semibold"><i class="fa-solid fa-folder-open mr-1"></i> Local</span>
+                        <a href="./5 - Sistema de Gestão de FCPE/index.html" class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 py-2 rounded-lg text-xs transition flex items-center space-x-1 shadow">
+                            <span>Acessar</span> <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 6. LAP -->
+                <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg hover:border-blue-500 transition flex flex-col justify-between space-y-4">
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-start">
+                            <div class="p-3 bg-cyan-600/20 text-cyan-400 rounded-lg text-xl"><i class="fa-solid fa-scale-balanced"></i></div>
+                            <span class="bg-slate-700 text-slate-300 px-2 py-0.5 rounded text-xs font-mono">Módulo 6</span>
+                        </div>
+                        <h3 class="text-base font-bold text-white">Gestão de LAP</h3>
+                        <p class="text-xs text-slate-400">Controle e acompanhamento de Licenciamentos e Atos.</p>
+                    </div>
+                    <div class="pt-4 border-t border-slate-700 flex items-center justify-between">
+                        <span class="text-xs text-emerald-400 font-semibold"><i class="fa-solid fa-folder-open mr-1"></i> Local</span>
+                        <a href="./6 - Sistema de Gestão de LAP/index.html" class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 py-2 rounded-lg text-xs transition flex items-center space-x-1 shadow">
+                            <span>Acessar</span> <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 7. Folha -->
+                <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg hover:border-blue-500 transition flex flex-col justify-between space-y-4">
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-start">
+                            <div class="p-3 bg-rose-600/20 text-rose-400 rounded-lg text-xl"><i class="fa-solid fa-calculator"></i></div>
+                            <span class="bg-slate-700 text-slate-300 px-2 py-0.5 rounded text-xs font-mono">Módulo 7</span>
+                        </div>
+                        <h3 class="text-base font-bold text-white">Sistema Auxiliar à Folha</h3>
+                        <p class="text-xs text-slate-400">Conferência de dados, encargos e verbas de pessoal.</p>
+                    </div>
+                    <div class="pt-4 border-t border-slate-700 flex items-center justify-between">
+                        <span class="text-xs text-emerald-400 font-semibold"><i class="fa-solid fa-folder-open mr-1"></i> Local</span>
+                        <a href="./7 - Sistema auxiliar a Folha/index.html" class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 py-2 rounded-lg text-xs transition flex items-center space-x-1 shadow">
+                            <span>Acessar</span> <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 8. Pente Fino -->
+                <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg hover:border-blue-500 transition flex flex-col justify-between space-y-4">
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-start">
+                            <div class="p-3 bg-orange-600/20 text-orange-400 rounded-lg text-xl"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
+                            <span class="bg-slate-700 text-slate-300 px-2 py-0.5 rounded text-xs font-mono">Módulo 8</span>
+                        </div>
+                        <h3 class="text-base font-bold text-white">Pente Fino de Processos</h3>
+                        <p class="text-xs text-slate-400">Auditoria interna, verificação de pendências e conformidade.</p>
+                    </div>
+                    <div class="pt-4 border-t border-slate-700 flex items-center justify-between">
+                        <span class="text-xs text-emerald-400 font-semibold"><i class="fa-solid fa-folder-open mr-1"></i> Local</span>
+                        <a href="./8 - Pente fino de processos/index.html" class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 py-2 rounded-lg text-xs transition flex items-center space-x-1 shadow">
+                            <span>Acessar</span> <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 8. Biblioteca -->
+                <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg hover:border-blue-500 transition flex flex-col justify-between space-y-4">
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-start">
+                            <div class="p-3 bg-teal-600/20 text-teal-400 rounded-lg text-xl"><i class="fa-solid fa-book-bookmark"></i></div>
+                            <span class="bg-slate-700 text-slate-300 px-2 py-0.5 rounded text-xs font-mono">Módulo 8</span>
+                        </div>
+                        <h3 class="text-base font-bold text-white">Biblioteca</h3>
+                        <p class="text-xs text-slate-400">Acervo de normativas, leis, decretos e manuais de apoio.</p>
+                    </div>
+                    <div class="pt-4 border-t border-slate-700 flex items-center justify-between">
+                        <span class="text-xs text-emerald-400 font-semibold"><i class="fa-solid fa-folder-open mr-1"></i> Local</span>
+                        <a href="./8 - Biblioteca/index.html" class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 py-2 rounded-lg text-xs transition flex items-center space-x-1 shadow">
+                            <span>Acessar</span> <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Gerenciamento de Backups -->
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg space-y-4">
+            <h2 class="text-lg font-bold text-slate-200 flex items-center space-x-2">
+                <i class="fa-solid fa-database text-amber-400"></i> <span>Central de Dados e Salvamento Local</span>
+            </h2>
+            <p class="text-xs text-slate-400 leading-relaxed">
+                O arquivo JSON gerado unifica os dados armazenados por todos os sistemas no navegador. Para restaurar um backup anterior, utilize o botão <strong>Restaurar Backup</strong> no topo da página.
+            </p>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-800 border-t border-slate-700 py-4 text-center text-xs text-slate-500">
+        Central Offline GOINFRA — Gerenciamento Local de Aplicações Portáteis
+    </footer>
+
+    <!-- Script para exportar e restaurar dados do LocalStorage -->
+    <script>
+        function gerarBackupGeral() {
+            let dadosGerais = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                let chave = localStorage.key(i);
+                try {
+                    dadosGerais[chave] = JSON.parse(localStorage.getItem(chave));
+                } catch (e) {
+                    dadosGerais[chave] = localStorage.getItem(chave);
+                }
+            }
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dadosGerais, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `backup_geral_sistemas_goinfra_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function restaurarBackupGeral(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.readAsText(file, "UTF-8");
+            reader.onload = function(e) {
+                try {
+                    const dados = JSON.parse(e.target.result);
+                    if (confirm("Tem certeza que deseja restaurar este backup? Os dados atuais do navegador serão substituídos.")) {
+                        for (let chave in dados) {
+                            let valor = dados[chave];
+                            localStorage.setItem(chave, typeof valor === 'object' ? JSON.stringify(valor) : valor);
+                        }
+                        alert("Backup restaurado com sucesso! A página será recarregada.");
+                        location.reload();
+                    }
+                } catch (err) {
+                    alert("Erro ao processar o arquivo JSON de backup.");
+                }
+            };
+        }
+    </script>
+</body>
+</html>
