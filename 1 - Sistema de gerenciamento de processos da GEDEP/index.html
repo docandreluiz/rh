@@ -1,0 +1,1643 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestão de Pessoas e Processos GEDEP (v59.2)</title>
+    <!-- RASTREADOR DE ERROS GLOBAL -->
+    <script>
+        window.onerror = function(message, source, lineno, colno, error) {
+            const errorMsg = `ERRO FATAL NA PÁGINA:\n\nMensagem: ${message}\nArquivo: ${source}\nLinha: ${lineno}\n\nO SCRIPT FOI INTERROMPIDO.`;
+            alert(errorMsg); console.error(errorMsg); return false;
+        };
+        window.onunhandledrejection = function(event) {
+            const errorMsg = `ERRO DE PROCESSAMENTO (PROMISE):\n\nMotivo: ${event.reason}`;
+            alert(errorMsg); console.error(errorMsg);
+        };
+    </script>
+    <!-- BIBLIOTECAS EXTERNAS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --secondary: #3b82f6;
+            --bg-color: #f4f6f8;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+            --border-color: #cbd5e1;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 1300px; margin: 20px auto; padding: 20px; background-color: var(--bg-color); color: var(--text-color); }
+        h1, h3, h4 { color: #2c3e50; margin-top: 0; }
+        .nav-tabs { display: flex; border-bottom: 2px solid #ccc; margin-bottom: 20px; flex-wrap: wrap; gap: 5px; }
+        .tab-btn { padding: 10px 18px; font-weight: bold; border: none; background: none; cursor: pointer; font-size: 14px; color: #7f8c8d; border-bottom: 3px solid transparent; transition: all 0.2s; }
+        .tab-btn.active { color: #2c3e50; border-bottom-color: #3498db; background-color: #fff; border-radius: 6px 6px 0 0; }
+        .tab-content { display: none; } .tab-content.active { display: block; }
+        .card { background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; border: 1px solid var(--border-color); }
+        .action-bar { margin: 15px 0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .btn { border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; transition: background 0.2s; }
+        .btn-pdf { background-color: #e74c3c; color: white; } .btn-zip { background-color: #d35400; color: white; } .btn-excel { background-color: #27ae60; color: white; } .btn-nominal { background-color: #2c3e50; color: white; } .btn-log { background-color: #7f8c8d; color: white; } .btn-clear { background-color: #c0392b; color: white; } .btn-view { background-color: #2980b9; color: white; } .btn-sm { padding: 5px 10px; font-size: 12px; }
+        .badge { display: inline-block; background-color: #eef2f7; color: #34495e; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; border: 1px solid #dcdfe6; }
+        textarea, select, input[type="text"], input[type="date"] { width: 100%; padding: 9px; border-radius: 6px; border: 1px solid #ccc; font-family: inherit; font-size: 13px; box-sizing: border-box; margin-top: 5px; }
+        textarea { height: 90px; resize: vertical; }
+        .log-container { background-color: #1e1e1e; color: #00ff66; font-family: 'Consolas', Courier, monospace; font-size: 13px; padding: 15px; border-radius: 6px; height: 450px; overflow-y: auto; }
+        .log-entry { margin-bottom: 4px; border-bottom: 1px dashed #333; padding-bottom: 2px; }
+        .status-msg { font-weight: bold; font-size: 14px; margin-top:10px; display:inline-block; } .success { color: #27ae60; } .loading { color: #e67e22; } .error { color: #e74c3c; }
+        .table-responsive { max-height: 450px; overflow: auto; border: 1px solid #e2e8f0; border-radius: 6px; margin-top: 10px; background: #fff; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; white-space: nowrap; }
+        th, td { border: 1px solid #e2e8f0; padding: 8px 12px; text-align: left; }
+        th { background-color: #1f4e78; color: white; position: sticky; top: 0; z-index: 10; cursor: pointer; user-select: none; }
+        th:hover { background-color: #163857; }
+        th::after { content: ' ↕'; font-size: 0.8rem; color: #cbd5e1; }
+        tr.processed { background-color: #f0fdf4 !important; color: #166534; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-top: 10px; }
+
+        /* BOTÃO COPIAR SEI */
+        .copy-btn { background: none; border: 1px solid var(--border-color); padding: 2px 6px; border-radius: 4px; cursor: pointer; font-size: 11px; margin-left: 6px; transition: all 0.2s; }
+        .copy-btn:hover { background-color: #e2e8f0; }
+        .copy-btn.copied { background-color: var(--success); color: white; border-color: var(--success); }
+
+        /* DROPDOWN DE COLUNAS */
+        .table-controls-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px; }
+        .column-toggle-dropdown { position: relative; display: inline-block; }
+        .dropdown-content { display: none; position: absolute; right: 0; background-color: white; min-width: 200px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); padding: 12px; border-radius: 6px; z-index: 100; border: 1px solid var(--border-color); }
+        .dropdown-content.show { display: block; }
+        .dropdown-content label { display: block; margin-bottom: 6px; cursor: pointer; font-size: 12px; font-weight: normal; }
+
+        /* DASHBOARD METRICS CARDS */
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .metric-card { background: #fff; padding: 18px; border-radius: 8px; border: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.04); display: flex; flex-direction: column; align-items: flex-start; }
+        .metric-card.vencidos { border-left: 5px solid var(--danger); }
+        .metric-card.urgentes { border-left: 5px solid var(--warning); }
+        .metric-card.andamento { border-left: 5px solid var(--secondary); }
+        .metric-card.concluidos { border-left: 5px solid var(--success); }
+        .metric-title { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 5px; }
+        .metric-value { font-size: 24px; font-weight: bold; color: #1e293b; }
+        .production-config { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px 15px; }
+        .production-config label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: #475569; }
+        .production-config input { margin-top: 4px; }
+        .bar-chart { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+        .bar-row { display: grid; grid-template-columns: minmax(140px, 1fr) 3fr 90px; align-items: center; gap: 10px; font-size: 12px; }
+        .bar-track { height: 18px; background: #e2e8f0; border-radius: 10px; overflow: hidden; }
+        .bar-fill { height: 100%; background: linear-gradient(90deg, var(--secondary), var(--primary)); border-radius: 10px; min-width: 2px; }
+        .production-note { color: #64748b; font-size: 12px; line-height: 1.5; }
+
+        /* REFINAMENTO VISUAL EXECUTIVO */
+        :root { --primary: #123b6d; --secondary: #2276b9; --bg-color: #edf3f8; --text-color: #1f2937; --border-color: #d9e2ec; --success: #16866a; --warning: #c77716; --danger: #c94b4b; }
+        * { box-sizing: border-box; }
+        body { max-width: 1440px; margin: 0 auto; padding: 28px 32px 48px; background: radial-gradient(circle at top left, #f8fbff 0%, var(--bg-color) 48%, #e7eef5 100%); color: var(--text-color); line-height: 1.45; }
+        h1 { margin: 0 0 22px; padding: 22px 26px; color: #fff; font-size: clamp(22px, 3vw, 34px); letter-spacing: -0.02em; background: linear-gradient(120deg, #102f55 0%, #17518a 58%, #2489b9 100%); border-radius: 18px; box-shadow: 0 12px 28px rgba(18, 59, 109, 0.22); }
+        h1 span { color: #cbe7f8 !important; }
+        h3 { color: #173f6b; font-size: 17px; letter-spacing: -0.01em; }
+        .nav-tabs { position: sticky; top: 12px; z-index: 20; display: flex; gap: 8px; padding: 8px; margin: 0 0 22px; border: 1px solid rgba(190, 207, 222, .85); border-radius: 14px; background: rgba(255,255,255,.92); box-shadow: 0 8px 22px rgba(35, 63, 89, .10); backdrop-filter: blur(10px); }
+        .tab-btn { flex: 1 1 auto; min-height: 42px; padding: 10px 14px; border: 1px solid transparent; border-radius: 9px; color: #60748a; font-size: 12px; transition: transform .16s ease-out, background .16s ease-out, color .16s ease-out, box-shadow .16s ease-out; }
+        .tab-btn:hover { color: #174c80; background: #f1f7fc; transform: translateY(-1px); }
+        .tab-btn.active { color: #fff; background: linear-gradient(135deg, #1e5c96, #123b6d); border-bottom: 0; box-shadow: 0 5px 12px rgba(18, 59, 109, .20); }
+        .card { padding: 24px; border: 1px solid rgba(210, 222, 233, .9); border-radius: 14px; box-shadow: 0 8px 24px rgba(44, 70, 93, .08); }
+        .card + .card { margin-top: 18px; }
+        .metrics-grid { gap: 16px; }
+        .metric-card { min-height: 104px; padding: 18px 20px; border: 1px solid #dce6ef; border-radius: 12px; box-shadow: 0 5px 14px rgba(35, 63, 89, .06); justify-content: center; }
+        .metric-title { letter-spacing: .06em; }
+        .metric-value { margin-top: 4px; font-size: 29px; color: #183c63; }
+        .btn { box-shadow: 0 3px 8px rgba(24, 55, 84, .10); }
+        .btn:hover { filter: brightness(1.04); transform: translateY(-1px); }
+        .btn:active { transform: scale(.97); }
+        input, textarea, select { border-color: #c8d6e3; background: #fbfdff; transition: border-color .16s ease-out, box-shadow .16s ease-out; }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: #2a7ab6; box-shadow: 0 0 0 3px rgba(42, 122, 182, .14); }
+        .table-responsive { border: 1px solid #d9e3ec; border-radius: 10px; box-shadow: inset 0 1px 0 rgba(255,255,255,.8); }
+        table { font-size: 12px; }
+        th { background: linear-gradient(135deg, #173f6b, #215c8c); letter-spacing: .02em; }
+        td { background: rgba(255,255,255,.86); }
+        tbody tr:hover td { background: #f1f8fd; }
+        .bar-chart { padding: 4px 2px; }
+        .bar-row { grid-template-columns: minmax(170px, 1fr) 3fr 110px; min-height: 28px; }
+        .bar-track { height: 14px; background: #dfeaf2; }
+        .bar-fill { background: linear-gradient(90deg, #2d91c9, #174f88); }
+        #tab-producao > .card:first-child { background: linear-gradient(135deg, #f8fcff 0%, #eef6fb 100%); border-top: 4px solid #2382b8; }
+        #tab-producao .production-config { padding: 16px; background: #f7fafc; border: 1px solid #e0e9f1; border-radius: 10px; }
+        #tab-producao .production-config input { background: #fff; }
+        #tab-producao .metrics-grid { margin-top: 20px; }
+        #tab-producao .metric-card { background: rgba(255,255,255,.94); }
+        @media (max-width: 760px) { body { padding: 16px 12px 32px; } h1 { padding: 18px; font-size: 23px; } .nav-tabs { position: static; overflow-x: auto; flex-wrap: nowrap; } .tab-btn { min-width: 145px; flex: 0 0 auto; } .card { padding: 17px; } .bar-row { grid-template-columns: 1fr; gap: 5px; } .bar-row span { text-align: right; } }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+        .editor-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+        .editor-grid .full { grid-column: 1 / -1; }
+        .editor-grid label { display: flex; flex-direction: column; gap: 5px; font-size: 12px; font-weight: 700; color: #40566d; }
+        .editor-help { margin: 0 0 16px; color: #64748b; font-size: 12px; line-height: 1.5; }
+        .btn-edit { background: #386b91; color: white; }
+        @media (max-width: 650px) { .editor-grid { grid-template-columns: 1fr; } .editor-grid .full { grid-column: auto; } }
+
+        /* ESTILOS PARA OS CARDS DE PROCESSOS */
+        .fichas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px; margin-top: 15px; max-height: 550px; overflow-y: auto; padding: 5px; }
+        .ficha-card { background: #ffffff; border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s; position: relative; }
+        .ficha-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .status-concluido { border-left: 6px solid var(--success); background-color: #fdfdfd; }
+        .status-andamento { border-left: 6px solid var(--secondary); background-color: #fdfdfd; }
+        .status-pendente { border-left: 6px solid var(--warning); background-color: #fffbeb; }
+        .status-atrasado { border-left: 6px solid var(--danger); background-color: #fef2f2; }
+        .ficha-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 10px; }
+        .ficha-processo { font-weight: bold; color: var(--primary); font-size: 14px; display: flex; align-items: center; gap: 8px; }
+        .ficha-status { font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+        .status-badge-concluido { background: #d1fae5; color: #065f46; }
+        .status-badge-andamento { background: #dbeafe; color: #1e40af; }
+        .status-badge-pendente { background: #fef3c7; color: #92400e; }
+        .status-badge-atrasado { background: #fee2e2; color: #991b1b; }
+        .ficha-body { font-size: 12px; color: #475569; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px; }
+        .ficha-body div span { font-weight: 600; color: #1e293b; display: block; font-size: 11px; text-transform: uppercase; color: #64748b; }
+        .ficha-full { grid-column: span 2; }
+        .ficha-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 8px; }
+
+        /* MODAL DE DETALHES */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; padding: 16px; overflow-y: auto; background-color: rgba(0,0,0,0.7); justify-content: flex-start; align-items: flex-start; }
+        .modal-content { background-color: #fff; padding: 20px; border-radius: 8px; width: min(900px, 100%); max-height: calc(100vh - 32px); overflow-y: auto; margin: 0 auto; display: flex; flex-direction: column; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        #editorProcessoModal .modal-content { max-height: calc(100vh - 32px); }
+        #editorProcessoModal .modal-content > .action-bar { position: sticky; bottom: -20px; z-index: 2; padding-top: 12px; padding-bottom: 0; background: #fff; border-top: 1px solid #e2e8f0; }
+        .file-protocol-notice { display: none; align-items: flex-start; gap: 10px; margin: -8px 0 18px; padding: 12px 15px; color: #694c12; background: #fff8df; border: 1px solid #ead28b; border-radius: 10px; font-size: 12px; line-height: 1.45; }
+        .file-protocol-notice strong { color: #4d390d; }
+        .report-toolbar { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; padding: 15px; background: #f7fafc; border: 1px solid #dce7f0; border-radius: 10px; }
+        .report-toolbar label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: #40566d; }
+        .report-output { min-height: 120px; }
+        .report-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 18px 0; }
+        .report-summary .metric-card { min-height: 88px; }
+        .report-title { color: #173f6b; margin: 0; }
+        .gerencial-tab { display: none; }
+        body.gerencial-desbloqueado .gerencial-tab { display: block; }
+        .gerencial-access-note { display: none; position: fixed; right: 18px; bottom: 18px; z-index: 500; padding: 9px 13px; border-radius: 9px; background: #173f6b; color: #fff; font-size: 12px; box-shadow: 0 6px 16px rgba(18,59,109,.22); }
+        .flow-toolbar { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; padding: 15px; background: #f7fafc; border: 1px solid #dce7f0; border-radius: 10px; }
+        .flow-toolbar label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: #40566d; }
+        .flow-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 16px 0; }
+        .flow-canvas { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(190px, .8fr) minmax(220px, 1fr); gap: 18px; align-items: center; padding: 18px; border-radius: 14px; background: linear-gradient(135deg, #f7fbff 0%, #eef5fa 100%); border: 1px solid #d9e5ef; overflow-x: auto; }
+        .flow-column { display: flex; flex-direction: column; gap: 9px; min-width: 210px; }
+        .flow-column h4 { margin: 0 0 4px; font-size: 13px; color: #173f6b; }
+        .flow-row { display: grid; grid-template-columns: minmax(110px, 1fr) 90px; gap: 8px; align-items: center; font-size: 11px; }
+        .flow-row-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #40566d; font-weight: 700; }
+        .flow-track { height: 10px; margin-top: 4px; background: #dbe8f2; border-radius: 8px; overflow: hidden; }
+        .flow-bar { height: 100%; min-width: 3px; border-radius: 8px; background: linear-gradient(90deg, #3297c8, #174f88); }
+        .flow-bar.out { background: linear-gradient(90deg, #2c8a72, #126044); }
+        .flow-value { text-align: right; color: #173f6b; font-weight: 800; white-space: nowrap; }
+        .flow-center { min-height: 150px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px 14px; text-align: center; border-radius: 16px; color: #fff; background: linear-gradient(145deg, #123b6d, #2276b9); box-shadow: 0 12px 22px rgba(18,59,109,.20); }
+        .flow-center .flow-center-label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; opacity: .8; }
+        .flow-center strong { margin: 7px 0; font-size: 18px; line-height: 1.2; }
+        .flow-center span { font-size: 12px; opacity: .9; }
+        .flow-empty { grid-column: 1 / -1; padding: 28px; text-align: center; color: #64748b; font-size: 13px; }
+        @media (max-width: 850px) { .flow-canvas { grid-template-columns: 1fr; } .flow-center { order: -1; } }
+        body.gerencial-desbloqueado .gerencial-access-note { display: block; }
+        .report-meta { color: #64748b; font-size: 12px; margin: 5px 0 0; }
+        .sei-search-bar { display: grid; grid-template-columns: minmax(260px, 2fr) minmax(150px, 1fr) auto; gap: 10px; align-items: end; padding: 15px; background: #f7fafc; border: 1px solid #dce7f0; border-radius: 10px; }
+        .sei-search-bar label, .sei-event-form label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: #40566d; }
+        .sei-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 18px 0; }
+        .sei-event-form { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; padding: 15px; background: #f7fafc; border: 1px solid #dce7f0; border-radius: 10px; }
+        .sei-event-form .full { grid-column: 1 / -1; }
+        .sei-event { display: grid; grid-template-columns: 120px 1fr; gap: 12px; padding: 13px 0; border-bottom: 1px solid #e2e8f0; }
+        .sei-event:last-child { border-bottom: 0; }
+        .sei-event-date { color: #1f5b8b; font-weight: 700; font-size: 12px; }
+        .sei-event-body strong { color: #173f6b; }
+        @media (max-width: 760px) { .sei-search-bar, .sei-event-form { grid-template-columns: 1fr; } .sei-event-form .full { grid-column: auto; } .sei-event { grid-template-columns: 1fr; gap: 4px; } }
+        @media print { body { background: #fff !important; padding: 0; max-width: none; } .nav-tabs, .file-protocol-notice, .report-toolbar, .action-bar, #tab-relatorios > .card:first-child { display: none !important; } #tab-relatorios { display: block !important; } .card { box-shadow: none !important; border: 0 !important; } }
+        @media (max-width: 650px) { .modal { padding: 8px; } .modal-content { max-height: calc(100vh - 16px); padding: 16px; } }
+    
+        .change-link-cell { border-left: 4px solid #2563eb; background: #eff6ff; color: #1d4ed8; font-weight: 800; text-align:center; white-space:nowrap; }
+        .change-row td { border-top: 0; background: #f8fbff; font-size: 12px; }
+        .change-row { box-shadow: inset 4px 0 0 #93c5fd; }
+        .change-before { background:#fff1f2 !important; color:#b42318; text-decoration:line-through; font-weight:700; }
+        .change-after { background:#ecfdf3 !important; color:#087443; font-weight:800; }
+        .change-process-link { color:#1d4ed8; font-weight:700; cursor:pointer; border-bottom:1px dotted currentColor; }
+    </style>
+</head>
+<body>
+
+    <h1>Sistema de Gestão de Pessoas e Processos GEDEP <span id="versaoSistema" title="Acesso reservado" onclick="registrarCliqueGerencial()" style="font-size: 14px; color: #cbe7f8; cursor: pointer; user-select: none;">(v59.2)</span></h1>
+
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('tab-rotina')">📌 Rotina & Prazos Hoje</button>
+        <button class="tab-btn" onclick="switchTab('tab-consulta')">📂 Consulta de Histórico</button>
+        <button class="tab-btn" onclick="switchTab('tab-prazos')">⏱️ Caixa SEI & Prazos</button>
+        <button class="tab-btn gerencial-tab" onclick="switchTab('tab-producao')">📈 Produção por Servidor</button>
+        <button class="tab-btn gerencial-tab" onclick="switchTab('tab-fluxo')">🔀 Desenho de Fluxo</button>
+        <button class="tab-btn gerencial-tab" onclick="switchTab('tab-relatorios')">🧾 Relatórios</button>
+        <button class="tab-btn gerencial-tab" onclick="switchTab('tab-historico-sei')">🗂️ Histórico SEI</button>
+        <button class="tab-btn" onclick="switchTab('tab-extracao')">📊 Extração TXT/Excel</button>
+    </div>
+    <div class="gerencial-access-note">Módulo gerencial desbloqueado · cinco cliques na versão para ocultar</div>
+
+        <!-- ABA 1: ROTINA DIÁRIA -->
+    <div id="tab-rotina" class="tab-content active">
+        <div class="card">
+            <h3>📌 Painel de Rotina Diária e Alertas de Prazos</h3>
+            <div class="metrics-grid">
+                <div class="metric-card vencidos">
+                    <span class="metric-title">⚠️ Processos Vencidos</span>
+                    <span class="metric-value" id="kpiVencidos">0</span>
+                </div>
+                <div class="metric-card urgentes">
+                    <span class="metric-title">⏰ Vencem em Breve (≤ 3 dias)</span>
+                    <span class="metric-value" id="kpiUrgentes">0</span>
+                </div>
+                <div class="metric-card andamento">
+                    <span class="metric-title">📊 Em Andamento</span>
+                    <span class="metric-value" id="kpiAndamento">0</span>
+                </div>
+                <div class="metric-card concluidos">
+                    <span class="metric-title">✓ Concluídos</span>
+                    <span class="metric-value" id="kpiConcluidos">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="table-controls-top">
+                <h3 style="margin:0;">🚨 Ações Prioritárias para Hoje (Vencidos e Urgentes)</h3>
+                <div class="column-toggle-dropdown">
+                    <button class="btn btn-sm btn-nominal" onclick="toggleDropdown('dropdownPrioritarios')">Mostrar/Ocultar Colunas</button>
+                    <div id="dropdownPrioritarios" class="dropdown-content">
+                        <label><input type="checkbox" checked data-column="0" onchange="toggleColumn('tabelaPrioritarios', this)"> Processado</label>
+                        <label><input type="checkbox" checked data-column="1" onchange="toggleColumn('tabelaPrioritarios', this)"> Ações</label>
+                        <label><input type="checkbox" checked data-column="2" onchange="toggleColumn('tabelaPrioritarios', this)"> Processo SEI</label>
+                        <label><input type="checkbox" checked data-column="3" onchange="toggleColumn('tabelaPrioritarios', this)"> Interessado(a)</label>
+                        <label><input type="checkbox" checked data-column="4" onchange="toggleColumn('tabelaPrioritarios', this)"> Assessor Resp.</label>
+                        <label><input type="checkbox" checked data-column="5" onchange="toggleColumn('tabelaPrioritarios', this)"> Recebimento</label>
+                        <label><input type="checkbox" checked data-column="6" onchange="toggleColumn('tabelaPrioritarios', this)"> Prazo Limite</label>
+                        <label><input type="checkbox" checked data-column="7" onchange="toggleColumn('tabelaPrioritarios', this)"> Situação</label>
+                    </div>
+                </div>
+            </div>
+            <div class="table-responsive"><table id="tabelaPrioritarios"><thead><tr><th>Processado</th><th>Ações</th><th>Processo SEI</th><th>Interessado(a)</th><th>Assessor Resp.</th><th>Recebimento</th><th>Prazo Limite</th><th>Situação</th></tr></thead><tbody><tr><td colspan="8" class="empty-state">Nenhum arquivo histórico carregado para análise de rotina.</td></tr></tbody></table></div>
+        </div>
+
+        <div class="card operational-output-card">
+            <div class="table-controls-top">
+                <div><h3 style="margin:0; color:var(--primary);">📝 Registro das Alterações do Histórico</h3><p class="production-note" style="margin:6px 0 0;">Espelho automático da linha acima: cada alteração permanece ligada ao mesmo Processo SEI, com valor anterior, novo valor e observação para lançamento nas tabelas oficiais.</p></div>
+                <div class="action-bar" style="margin:0;"><button class="btn btn-sm btn-excel" onclick="exportarAlteracoesHistoricoExcel()">📥 Exportar Excel</button><button class="btn btn-sm btn-nominal" onclick="exportarAlteracoesHistoricoCSV()">📄 Exportar CSV</button></div>
+            </div>
+            <div class="table-responsive"><table id="tabelaAlteracoesHistorico"><thead><tr><th>↳ Vínculo</th><th>Data</th><th>Processo SEI</th><th>Campo alterado</th><th>Antes</th><th>Novo valor</th><th>Observações</th><th>Responsável / tabela oficial</th></tr></thead><tbody><tr><td colspan="8" class="empty-state">Nenhuma alteração registrada.</td></tr></tbody></table></div>
+        </div>
+        <div style="text-align:right; margin-top:8px;"><button type="button" class="btn btn-sm" style="font-size:10px; opacity:.58;" onclick="switchTab('tab-logs')" title="Monitoramento técnico">monitoramento</button></div>
+
+    </div>
+
+    <!-- ABA 2: CONSULTA HISTÓRICO & FICHAS -->
+    <div id="tab-consulta" class="tab-content">
+        <div class="card">
+            <h3>📂 Consulta, Filtros por Coluna e Fichas de Processos (GEDEP)</h3>
+            <div class="action-bar">
+                <input type="file" id="historicoExcelInput" accept=".xlsx, .xls, .csv,text/csv" style="display: none;" onchange="handleHistoricoExcelUpload(event)">
+                <button class="btn btn-excel" onclick="document.getElementById('historicoExcelInput').click()">📊 Carregar Relatório Histórico (.XLSX ou .CSV)</button>
+                <span id="historicoBadge" class="badge">Nenhum histórico carregado</span>
+                
+                <div style="margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button class="btn btn-sm btn-excel" onclick="copiarSelecionadosGeral()">📋 Copiar Selecionados (Múltiplos)</button>
+                    <button class="btn btn-sm btn-edit" onclick="exportarProcessosEstruturadosExcel()">📥 Exportar Dados Estruturados</button>
+                    <button class="btn btn-sm btn-nominal" onclick="alternarModoExibicao('tabela')">📊 Ver Tabela</button>
+                    <button class="btn btn-sm btn-pdf" onclick="alternarModoExibicao('cards')">📇 Ver Fichas</button>
+                </div>
+            </div>
+
+            <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid var(--border-color);">
+                <div style="font-weight: bold; margin-bottom: 10px; color: var(--primary); font-size: 13px;">🔎 Filtros por Coluna:</div>
+                <div class="form-grid">
+                    <div>
+                        <label style="font-size: 11px; font-weight: bold;">Pesquisa Geral (Texto):</label>
+                        <input type="text" id="filtroGeral" placeholder="Procure por nome, processo, assunto..." oninput="aplicarFiltrosColuna()" style="font-size: 12px;">
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; font-weight: bold;">Assessor Responsável:</label>
+                        <select id="filtroAssessor" onchange="aplicarFiltrosColuna()" style="font-size: 12px;">
+                            <option value="">-- Todos os Assessores --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; font-weight: bold;">Status (Consolidado):</label>
+                        <select id="filtroStatus" onchange="aplicarFiltrosColuna()" style="font-size: 12px;">
+                            <option value="">-- Todos os Status --</option>
+                            <option value="CONCLUÍDO">CONCLUÍDO</option>
+                            <option value="EM ANDAMENTO">EM ANDAMENTO</option>
+                            <option value="AGENDADO / EVENTO">AGENDADO / EVENTO</option>
+                            <option value="PARA INICIAR">PARA INICIAR</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; font-weight: bold;">Destino (Consolidado):</label>
+                        <select id="filtroDestino" onchange="aplicarFiltrosColuna()" style="font-size: 12px;">
+                            <option value="">-- Todos os Destinos --</option>
+                            <option value="MÚLTIPLOS SETORES (GEDEP)">MÚLTIPLOS SETORES (GEDEP)</option>
+                            <option value="FOLHA DE PAGAMENTO (FOP)">FOLHA DE PAGAMENTO (FOP)</option>
+                            <option value="CONTROLE DE FREQUÊNCIA (CFF)">CONTROLE DE FREQUÊNCIA (CFF)</option>
+                            <option value="DIREITOS E BENEFÍCIOS (DEB)">DIREITOS E BENEFÍCIOS (DEB)</option>
+                            <option value="APOIO TÉCNICO (ATD)">APOIO TÉCNICO (ATD)</option>
+                            <option value="PLANEJAMENTO E DESENV. (PDP)">PLANEJAMENTO E DESENV. (PDP)</option>
+                            <option value="OUTRAS GERÊNCIAS GEDEP">OUTRAS GERÊNCIAS GEDEP</option>
+                            <option value="PRESIDÊNCIA / GABINETE / CASA CIVIL">PRESIDÊNCIA / GABINETE / CASA CIVIL</option>
+                            <option value="ÓRGÃOS EXTERNOS">ÓRGÃOS EXTERNOS</option>
+                            <option value="OUTROS / INTERNO">OUTROS / INTERNO</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="table-controls-top">
+                <h3 id="tituloSecaoResultados" style="margin:0;">Registros Históricos Encontrados</h3>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <span id="contadorRegistros" class="badge">0 registros exibidos</span>
+                    <div class="column-toggle-dropdown">
+                        <button class="btn btn-sm btn-nominal" onclick="toggleDropdown('dropdownHistorico')">Mostrar/Ocultar Colunas</button>
+                        <div id="dropdownHistorico" class="dropdown-content">
+                            <label><input type="checkbox" checked data-column="0" onchange="toggleColumn('tabelaHistorico', this)"> Processado</label>
+                            <label><input type="checkbox" checked data-column="1" onchange="toggleColumn('tabelaHistorico', this)"> Seleção</label>
+                            <label><input type="checkbox" checked data-column="2" onchange="toggleColumn('tabelaHistorico', this)"> Ações</label>
+                            <label><input type="checkbox" checked data-column="3" onchange="toggleColumn('tabelaHistorico', this)"> Assessor Resp.</label>
+                            <label><input type="checkbox" checked data-column="4" onchange="toggleColumn('tabelaHistorico', this)"> Recebimento</label>
+                            <label><input type="checkbox" checked data-column="5" onchange="toggleColumn('tabelaHistorico', this)"> Envio</label>
+                            <label><input type="checkbox" checked data-column="6" onchange="toggleColumn('tabelaHistorico', this)"> Prazo Limite</label>
+                            <label><input type="checkbox" checked data-column="7" onchange="toggleColumn('tabelaHistorico', this)"> Status</label>
+                            <label><input type="checkbox" checked data-column="8" onchange="toggleColumn('tabelaHistorico', this)"> Procedência</label>
+                            <label><input type="checkbox" checked data-column="9" onchange="toggleColumn('tabelaHistorico', this)"> Destino</label>
+                            <label><input type="checkbox" checked data-column="10" onchange="toggleColumn('tabelaHistorico', this)"> Processo SEI</label>
+                            <label><input type="checkbox" checked data-column="11" onchange="toggleColumn('tabelaHistorico', this)"> Assunto</label>
+                            <label><input type="checkbox" checked data-column="12" onchange="toggleColumn('tabelaHistorico', this)"> Interessados</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="containerTabela" class="table-responsive">
+                <table id="tabelaHistorico">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable('tabelaHistorico', 0)">Processado</th>
+                            <th><input type="checkbox" id="selectAllTabela" onclick="toggleSelectAllTabela(this)"></th>
+                            <th>Ações</th>
+                            <th onclick="sortTable('tabelaHistorico', 3)">Assessor Resp.</th>
+                            <th onclick="sortTable('tabelaHistorico', 4)">Recebimento</th>
+                            <th onclick="sortTable('tabelaHistorico', 5)">Envio</th>
+                            <th onclick="sortTable('tabelaHistorico', 6)">Prazo Limite</th>
+                            <th onclick="sortTable('tabelaHistorico', 7)">Status</th>
+                            <th onclick="sortTable('tabelaHistorico', 8)">Procedência</th>
+                            <th onclick="sortTable('tabelaHistorico', 9)">Destino (Original)</th>
+                            <th onclick="sortTable('tabelaHistorico', 10)">Processo SEI</th>
+                            <th onclick="sortTable('tabelaHistorico', 11)">Assunto</th>
+                            <th onclick="sortTable('tabelaHistorico', 12)">Interessados</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="13" style="text-align: center; color: #7f8c8d; font-style: italic;">Carregue o relatório histórico acima para iniciar as consultas.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="containerCards" class="fichas-grid" style="display: none;">
+                <div style="grid-column: span 2; text-align: center; color: #7f8c8d; font-style: italic; padding: 20px;">Nenhum registro carregado.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ABA 3: CONTROLE DE PRAZOS & CAIXA SEI -->
+    <div id="tab-prazos" class="tab-content">
+        <div class="card">
+            <div class="table-controls-top">
+                <h3 style="margin:0;">⏱️ Painel Completo de Caixa SEI e Prazos</h3>
+                <div class="column-toggle-dropdown">
+                    <button class="btn btn-sm btn-nominal" onclick="toggleDropdown('dropdownPrazos')">Mostrar/Ocultar Colunas</button>
+                    <div id="dropdownPrazos" class="dropdown-content">
+                        <label><input type="checkbox" checked data-column="0" onchange="toggleColumn('tabelaPrazosCaixa', this)"> Processado</label>
+                        <label><input type="checkbox" checked data-column="1" onchange="toggleColumn('tabelaPrazosCaixa', this)"> Processo SEI</label>
+                        <label><input type="checkbox" checked data-column="2" onchange="toggleColumn('tabelaPrazosCaixa', this)"> Interessados</label>
+                        <label><input type="checkbox" checked data-column="3" onchange="toggleColumn('tabelaPrazosCaixa', this)"> Assessor Resp.</label>
+                        <label><input type="checkbox" checked data-column="4" onchange="toggleColumn('tabelaPrazosCaixa', this)"> Data Recebimento</label>
+                        <label><input type="checkbox" checked data-column="5" onchange="toggleColumn('tabelaPrazosCaixa', this)"> Data Envio</label>
+                        <label><input type="checkbox" checked data-column="6" onchange="toggleColumn('tabelaPrazosCaixa', this)"> Prazo Limite</label>
+                        <label><input type="checkbox" checked data-column="7" onchange="toggleColumn('tabelaPrazosCaixa', this)"> Tempo em Caixa SEI</label>
+                        <label><input type="checkbox" checked data-column="8" onchange="toggleColumn('tabelaPrazosCaixa', this)"> Situação do Prazo</label>
+                    </div>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table id="tabelaPrazosCaixa">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable('tabelaPrazosCaixa', 0)">Processado</th>
+                            <th onclick="sortTable('tabelaPrazosCaixa', 1)">Processo SEI</th>
+                            <th onclick="sortTable('tabelaPrazosCaixa', 2)">Interessados</th>
+                            <th onclick="sortTable('tabelaPrazosCaixa', 3)">Assessor Resp.</th>
+                            <th onclick="sortTable('tabelaPrazosCaixa', 4)">Data Recebimento</th>
+                            <th onclick="sortTable('tabelaPrazosCaixa', 5)">Data Envio</th>
+                            <th onclick="sortTable('tabelaPrazosCaixa', 6)">Prazo Limite</th>
+                            <th onclick="sortTable('tabelaPrazosCaixa', 7)">Tempo em Caixa SEI</th>
+                            <th onclick="sortTable('tabelaPrazosCaixa', 8)">Situação do Prazo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="9" style="text-align: center; color: #7f8c8d; font-style: italic;">Carregue o relatório histórico na aba de Consulta para gerar este painel.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ABA 4: PRODUÇÃO E COMPARATIVO POR SERVIDOR -->
+    <div id="tab-producao" class="tab-content">
+        <div class="card">
+            <h3>📈 Produção, Temas e Carga Estimada por Servidor</h3>
+            <p class="production-note">O painel considera como serviço feito os registros com <strong>data de envio preenchida</strong> ou com status consolidado <strong>CONCLUÍDO</strong>. A carga horária é uma estimativa gerencial baseada na tabela configurável abaixo; ela não substitui o apontamento real de horas.</p>
+            <div class="form-grid">
+                <div>
+                    <label style="font-size: 12px; font-weight: bold;">Data inicial:</label>
+                    <input type="date" id="producaoDataInicial" onchange="renderPainelProducaoServidor()">
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: bold;">Data final:</label>
+                    <input type="date" id="producaoDataFinal" onchange="renderPainelProducaoServidor()">
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: bold;">Servidor:</label>
+                    <select id="producaoAssessor" onchange="renderPainelProducaoServidor()">
+                        <option value="">-- Todos os servidores --</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: bold;">Data de referência:</label>
+                    <select id="producaoDataReferencia" onchange="renderPainelProducaoServidor()">
+                        <option value="prazo">Data limite</option>
+                        <option value="envio">Data de envio</option>
+                        <option value="recebimento">Data de recebimento</option>
+                    </select>
+                </div>
+            </div>
+            <div class="action-bar" style="margin-top: 12px;">
+                <button class="btn btn-sm btn-nominal" onclick="definirPeriodoProducao('mes')">Mês atual</button>
+                <button class="btn btn-sm btn-nominal" onclick="definirPeriodoProducao('todos')">Todo o histórico</button>
+                <button class="btn btn-sm btn-clear" onclick="limparFiltrosProducao()">Limpar filtros</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>⚙️ Tabela de Carga Horária por Tipo</h3>
+            <p class="production-note">A hora-base é aplicada a cada processo. A reincidência é a quantidade adicional do mesmo tipo/tema para o mesmo servidor no período. O fator de reincidência acrescenta um percentual da hora-base para cada ocorrência adicional.</p>
+            <div class="production-config">
+                <label>Fator de reincidência (%):<input type="number" id="fatorReincidencia" min="0" max="100" step="1" value="20" onchange="salvarConfigCargaProducao()"></label>
+                <label>Múltiplos setores (horas):<input type="number" id="horaMultiplo" min="0" step="0.25" value="2.5" onchange="salvarConfigCargaProducao()"></label>
+                <label>Folha de pagamento (horas):<input type="number" id="horaFolha" min="0" step="0.25" value="1.5" onchange="salvarConfigCargaProducao()"></label>
+                <label>Controle de frequência (horas):<input type="number" id="horaFrequencia" min="0" step="0.25" value="1.25" onchange="salvarConfigCargaProducao()"></label>
+                <label>Direitos e benefícios (horas):<input type="number" id="horaBeneficios" min="0" step="0.25" value="2" onchange="salvarConfigCargaProducao()"></label>
+                <label>Apoio técnico (horas):<input type="number" id="horaApoio" min="0" step="0.25" value="1.5" onchange="salvarConfigCargaProducao()"></label>
+                <label>Planejamento e desenvolvimento (horas):<input type="number" id="horaPlanejamento" min="0" step="0.25" value="2" onchange="salvarConfigCargaProducao()"></label>
+                <label>Outras gerências GEDEP (horas):<input type="number" id="horaOutras" min="0" step="0.25" value="1.5" onchange="salvarConfigCargaProducao()"></label>
+                <label>Presidência/Gabinete/Casa Civil (horas):<input type="number" id="horaPresidencia" min="0" step="0.25" value="2.5" onchange="salvarConfigCargaProducao()"></label>
+                <label>Órgãos externos (horas):<input type="number" id="horaExternos" min="0" step="0.25" value="2" onchange="salvarConfigCargaProducao()"></label>
+                <label>Outros/interno (horas):<input type="number" id="horaOutros" min="0" step="0.25" value="1" onchange="salvarConfigCargaProducao()"></label>
+            </div>
+            <div class="action-bar" style="margin-top: 12px;">
+                <button class="btn btn-sm btn-excel" onclick="renderPainelProducaoServidor()">↻ Recalcular painel</button>
+            </div>
+        </div>
+
+        <div class="card" style="border-top: 4px solid #d18a27; background: linear-gradient(135deg, #fffdf7 0%, #f8fafc 100%);">
+            <h3 style="margin:0;">⚖️ Gestão de Capacidade, Carga e Risco</h3>
+            <p class="production-note" style="margin-bottom:14px;">Compare a carga estimada com a capacidade de referência e identifique servidores com maior risco de atraso. A sugestão de distribuição é indicativa e deve ser validada pela chefia.</p>
+            <div class="form-grid"><div><label style="font-size:12px;font-weight:bold;">Capacidade semanal de referência (horas):</label><input type="number" id="capacidadeSemanalServidor" min="1" step="1" value="40" onchange="renderPainelGerencialCarga()"></div><div><label style="font-size:12px;font-weight:bold;">Carga considerada:</label><select id="cargaGerencialEscopo" onchange="renderPainelGerencialCarga()"><option value="todos">Processos no período</option><option value="pendentes">Somente pendentes</option><option value="feitos">Somente serviços feitos</option></select></div></div>
+            <div id="painelGerencialCarga" style="margin-top:16px;"></div>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card andamento"><span class="metric-title">Servidores com produção</span><span class="metric-value" id="kpiProdServidores">0</span></div>
+            <div class="metric-card concluidos"><span class="metric-title">Serviços feitos</span><span class="metric-value" id="kpiProdServicos">0</span></div>
+            <div class="metric-card urgentes"><span class="metric-title">Horas estimadas</span><span class="metric-value" id="kpiProdHoras">0h</span></div>
+            <div class="metric-card vencidos"><span class="metric-title">Reincidências</span><span class="metric-value" id="kpiProdReincidencias">0</span></div>
+        </div>
+
+        <div class="card">
+            <h3>📊 Comparativo entre Servidores</h3>
+            <div class="table-responsive">
+                <table id="tabelaComparativoProducao">
+                    <thead><tr><th>Servidor</th><th>Serviços feitos</th><th>Horas estimadas</th><th>Horas por serviço</th><th>Reincidências</th><th>Temas principais</th></tr></thead>
+                    <tbody><tr><td colspan="6" style="text-align:center;color:#7f8c8d;font-style:italic;">Carregue o relatório histórico para gerar o comparativo.</td></tr></tbody>
+                </table>
+            </div>
+            <div id="graficoComparativoProducao" class="bar-chart"></div>
+        </div>
+
+        <div class="card">
+            <h3>🧭 Resumo de Temas e Tipos de Trabalho</h3>
+            <div class="table-responsive">
+                <table id="tabelaTemasProducao">
+                    <thead><tr><th>Servidor</th><th>Tema/Tipo</th><th>Serviços</th><th>Horas estimadas</th><th>Reincidências</th><th>Assuntos exemplificativos</th></tr></thead>
+                    <tbody><tr><td colspan="6" style="text-align:center;color:#7f8c8d;font-style:italic;">Nenhum dado calculado.</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>📅 Demanda de Processos por Período</h3>
+            <p class="production-note">Use esta visão para localizar semanas ou meses de maior movimento. A demanda é agrupada prioritariamente pela Data Limite; quando ela não estiver preenchida, o sistema utiliza a data de envio ou recebimento como fallback.</p>
+            <div class="form-grid">
+                <div>
+                    <label style="font-size: 12px; font-weight: bold;">Agrupar por:</label>
+                    <select id="demandaAgrupamento" onchange="renderPainelDemandaTemporal()">
+                        <option value="semana">Semana</option>
+                        <option value="mes">Mês</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: bold;">Considerar:</label>
+                    <select id="demandaEscopo" onchange="renderPainelDemandaTemporal()">
+                        <option value="todos">Todos os processos</option>
+                        <option value="feitos">Somente serviços feitos</option>
+                    </select>
+                </div>
+            </div>
+            <div class="metrics-grid" style="margin-top: 15px;">
+                <div class="metric-card andamento"><span class="metric-title">Processos no período</span><span class="metric-value" id="kpiDemandaTotal">0</span></div>
+                <div class="metric-card urgentes"><span class="metric-title">Período de maior demanda</span><span class="metric-value" id="kpiPeriodoPico" style="font-size: 16px;">—</span></div>
+                <div class="metric-card concluidos"><span class="metric-title">Volume médio por período</span><span class="metric-value" id="kpiPeriodoMedia">0,0</span></div>
+            </div>
+            <div class="table-responsive">
+                <table id="tabelaDemandaPeriodo">
+                    <thead><tr><th>Período</th><th>Processos</th><th>Serviços feitos</th><th>Horas estimadas</th><th>Reincidências</th><th>Temas predominantes</th></tr></thead>
+                    <tbody><tr><td colspan="6" style="text-align:center;color:#7f8c8d;font-style:italic;">Carregue o relatório histórico para analisar a demanda.</td></tr></tbody>
+                </table>
+            </div>
+            <div id="graficoDemandaPeriodo" class="bar-chart"></div>
+        </div>
+    </div>
+
+    <!-- ABA 5: DESENHO DE FLUXO -->
+    <div id="tab-fluxo" class="tab-content">
+        <div class="card">
+            <h3>🔀 Desenho de Fluxo de Processos</h3>
+            <p class="production-note">Visualize a origem e o destino dos processos em torno de um elemento central. As linhas são dimensionadas pela métrica escolhida e os registros são filtrados prioritariamente pela Data Limite.</p>
+            <div class="flow-toolbar">
+                <label>Modo de análise<select id="fluxoModo" onchange="atualizarOpcoesFluxo(); renderDesenhoFluxo();"><option value="tema">Tipo/Tema no centro</option><option value="unidade">Unidade administrativa no centro</option></select></label>
+                <label>Elemento central<select id="fluxoCentro" onchange="renderDesenhoFluxo()"><option value="">Todos / resumo geral</option></select></label>
+                <label>Métrica das linhas<select id="fluxoMetrica" onchange="renderDesenhoFluxo()"><option value="quantidade">Quantidade de processos</option><option value="horas">Horas estimadas</option><option value="risco">Processos em risco</option></select></label>
+                <label>Data inicial<input type="date" id="fluxoDataInicial" onchange="renderDesenhoFluxo()"></label>
+                <label>Data final<input type="date" id="fluxoDataFinal" onchange="renderDesenhoFluxo()"></label>
+                <label>Status<select id="fluxoStatus" onchange="renderDesenhoFluxo()"><option value="">Todos os status</option><option value="CONCLUÍDO">CONCLUÍDO</option><option value="EM ANDAMENTO">EM ANDAMENTO</option><option value="AGENDADO / EVENTO">AGENDADO / EVENTO</option><option value="PARA INICIAR">PARA INICIAR</option></select></label>
+            </div>
+            <div class="action-bar"><button class="btn btn-sm btn-nominal" onclick="definirPeriodoFluxo('mes')">Mês atual</button><button class="btn btn-sm btn-nominal" onclick="definirPeriodoFluxo('todos')">Todo o histórico</button><button class="btn btn-sm btn-clear" onclick="limparFiltrosFluxo()">Limpar filtros</button></div>
+        </div>
+        <div class="flow-summary" id="fluxoResumo"></div>
+        <div class="card"><div id="desenhoFluxoProcessos" class="flow-canvas"><div class="flow-empty">Carregue um histórico para desenhar o fluxo.</div></div></div>
+    </div>
+
+    <!-- ABA 6: RELATÓRIOS PARA PRESTAÇÃO DE CONTAS -->
+    <div id="tab-relatorios" class="tab-content">
+        <div class="card">
+            <h3>🧾 Relatórios para Prestação de Contas</h3>
+            <p class="production-note">Gere visões consolidadas e auditáveis a partir do histórico carregado. Os relatórios respeitam os filtros selecionados e podem ser exportados para Excel ou impressos pelo navegador.</p>
+            <div class="report-toolbar">
+                <label>Relatório<select id="relatorioTipo" onchange="renderRelatorioPrestacaoContas()"><option value="geral">Resumo geral do período</option><option value="servidores">Produção e carga por servidor</option><option value="prazos">Prazos, riscos e pendências</option><option value="temas">Distribuição por temas</option></select></label>
+                <label>Data inicial<input type="date" id="relatorioDataInicial" onchange="renderRelatorioPrestacaoContas()"></label>
+                <label>Data final<input type="date" id="relatorioDataFinal" onchange="renderRelatorioPrestacaoContas()"></label>
+                <label>Data de referência<select id="relatorioDataReferencia" onchange="renderRelatorioPrestacaoContas()"><option value="envio">Data de envio</option><option value="recebimento">Data de recebimento</option></select></label>
+                <label>Servidor<select id="relatorioAssessor" onchange="renderRelatorioPrestacaoContas()"><option value="">-- Todos os servidores --</option></select></label>
+                <label>Status<select id="relatorioStatus" onchange="renderRelatorioPrestacaoContas()"><option value="">-- Todos os status --</option><option value="CONCLUÍDO">CONCLUÍDO</option><option value="EM ANDAMENTO">EM ANDAMENTO</option><option value="AGENDADO / EVENTO">AGENDADO / EVENTO</option><option value="PARA INICIAR">PARA INICIAR</option></select></label>
+            </div>
+            <div class="action-bar" style="margin-bottom: 0;">
+                <button class="btn btn-sm btn-nominal" onclick="definirPeriodoRelatorio('mes')">Mês atual</button>
+                <button class="btn btn-sm btn-nominal" onclick="definirPeriodoRelatorio('todos')">Todo o histórico</button>
+                <button class="btn btn-sm btn-excel" onclick="exportarRelatorioPrestacaoContasExcel()">📥 Exportar relatório Excel</button>
+                <button class="btn btn-sm btn-edit" onclick="exportarTodosRelatoriosGerenciaisExcel()">📚 Exportar todos os gerenciais</button>
+                <button class="btn btn-sm btn-pdf" onclick="imprimirRelatorioPrestacaoContas()">🖨️ Imprimir / salvar PDF</button>
+            </div>
+        </div>
+            <div class="card report-output">
+            <div id="relatorioPrestacaoContas"></div>
+        </div>
+        <div class="card">
+            <h3>🗃️ Histórico de Exportações e Backup</h3>
+            <p class="production-note">Registra as exportações gerenciais realizadas, os filtros utilizados e o nome do arquivo gerado. O backup JSON preserva os dados locais. Para transportar o sistema completo, mantenha <strong>GEDEP_Exportar_Pasta_ZIP.bat</strong> junto do HTML e execute-o para criar um ZIP com toda a pasta e seus caminhos relativos.</p>
+            <div class="action-bar">
+                <button class="btn btn-sm btn-edit" onclick="exportarBackupDadosGEDEP()">💾 Baixar backup dos dados</button>
+                <button class="btn btn-sm btn-view" onclick="document.getElementById('arquivoBackupGEDEP').click()">♻️ Restaurar dados JSON</button>
+                <input id="arquivoBackupGEDEP" type="file" accept=".json,application/json" style="display:none" onchange="restaurarBackupDadosGEDEP(event)">
+                <button class="btn btn-sm btn-nominal" onclick="mostrarInstrucoesPacoteZIP()">📦 Como criar ZIP completo</button>
+                <button class="btn btn-sm btn-nominal" onclick="renderHistoricoExportacoes()">🔄 Atualizar histórico</button>
+            </div>
+            <div id="historicoExportacoes" class="table-responsive"><p class="production-note" style="padding:12px;">Nenhuma exportação registrada nesta instalação.</p></div>
+        </div>
+    </div>
+
+    <!-- ABA 6: HISTÓRICO INDIVIDUAL POR SEI -->
+    <div id="tab-historico-sei" class="tab-content">
+        <div class="card">
+            <h3>🗂️ Histórico Individual do Processo</h3>
+            <p class="production-note">Consulte um processo pelo número SEI e reúna em uma única linha do tempo os eventos, alterações, responsáveis, prazos, pendências e providências registradas.</p>
+            <div class="sei-search-bar">
+                <label>Processo SEI<select id="historicoSeiProcesso" onchange="renderHistoricoIndividualSEI()"><option value="">-- Carregue um histórico --</option></select></label>
+                <label>Busca rápida<input type="text" id="historicoSeiBusca" placeholder="Digite parte do número SEI" oninput="filtrarSeletorHistoricoSEI()"></label>
+                <button class="btn btn-sm btn-nominal" onclick="renderHistoricoIndividualSEI()">🔍 Consultar</button>
+            </div>
+            <div id="historicoSeiResumo"></div>
+        </div>
+        <div class="card">
+            <h3>➕ Registrar evento do processo</h3>
+            <div class="sei-event-form">
+                <label>Data<input type="date" id="eventoSeiData"></label>
+                <label>Tipo de evento<select id="eventoSeiTipo"><option>Recebimento</option><option>Distribuição</option><option>Análise</option><option>Solicitação de informação</option><option>Despacho</option><option>Encaminhamento</option><option>Conclusão</option><option>Alteração cadastral</option><option>Outro</option></select></label>
+                <label>Responsável<input type="text" id="eventoSeiResponsavel" placeholder="Servidor ou setor"></label>
+                <label>Status após o evento<input type="text" id="eventoSeiStatus" placeholder="Ex.: em andamento"></label>
+                <label class="full">Descrição do evento<textarea id="eventoSeiDescricao" placeholder="Descreva o que ocorreu, a providência ou a pendência identificada..." style="height: 90px;"></textarea></label>
+            </div>
+            <div class="action-bar" style="justify-content: flex-end; margin-bottom: 0;">
+                <button class="btn btn-sm btn-excel" onclick="adicionarEventoHistoricoSEI()">Salvar evento</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ABA 7: EXTRAÇÃO E SEGMENTAÇÃO -->
+    <div id="tab-extracao" class="tab-content">
+        <div class="card">
+            <h3>📊 Extrator e Transformador de Blocos Textuais em Planilha</h3>
+            <p style="color: #64748b; font-size: 13px;">Cole abaixo blocos de texto bruto copiados de publicações para segmentação automática e exportação em Excel.</p>
+            <textarea id="inputTextoBruto" placeholder="Cole o texto bruto aqui..." style="height: 150px;"></textarea>
+            <div class="action-bar" style="margin-top: 10px;">
+                <button class="btn btn-sm btn-nominal" onclick="processarTextoBruto()">⚡ Processar e Segmentar Texto</button>
+                <button class="btn btn-sm btn-excel" onclick="exportarTextoSegmentadoExcel()">📊 Baixar Planilha Segmentada</button>
+            </div>
+            <div id="containerSegmentado" class="table-responsive" style="margin-top: 15px;">
+                <table id="tabelaSegmentada">
+                    <thead><tr><th>#</th><th>Conteúdo Extraído</th></tr></thead>
+                    <tbody><tr><td colspan="2" style="text-align: center; color: #7f8c8d;">Nenhum texto processado ainda.</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ABA 5: LOGS -->
+    <div id="tab-logs" class="tab-content">
+        <div class="card">
+            <h3>📋 Console de Logs e Monitoramento (v59.2)</h3>
+            <div id="logConsole" class="log-container">=== Monitoramento Iniciado (Versão 59.0) ===</div>
+        </div>
+    </div>
+
+    <!-- MODAL DE EDIÇÃO COMPLEMENTAR -->
+    <div id="editorProcessoModal" class="modal">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
+                <h4 style="margin: 0; color: var(--primary);">✏️ Complemento do Processo</h4>
+                <button class="btn btn-sm btn-clear" onclick="fecharEditorRegistro()">Fechar ✕</button>
+            </div>
+            <p class="editor-help">Os campos importados podem ser corrigidos diretamente aqui. O arquivo original não é alterado: as correções ficam salvas localmente nesta aplicação e passam a alimentar os painéis e a exportação estruturada.</p>
+            <input type="hidden" id="editorRegistroIdx">
+            <div class="editor-grid">
+                <label>Assessor responsável<input type="text" id="editorAssessor"></label>
+                <label>Nº do processo SEI<input type="text" id="editorProcesso"></label>
+                <label>Data de recebimento<input type="date" id="editorRecebimento"></label>
+                <label>Data de envio<input type="date" id="editorEnvio"></label>
+                <label>Prazo limite<input type="date" id="editorPrazo"></label>
+                <label>Status<select id="editorStatus"><option value="">Sem informação</option><option value="CONCLUÍDO">CONCLUÍDO</option><option value="EM ANDAMENTO">EM ANDAMENTO</option><option value="AGENDADO / EVENTO">AGENDADO / EVENTO</option><option value="PARA INICIAR">PARA INICIAR</option></select></label>
+                <label>Procedência<input type="text" id="editorProcedencia"></label>
+                <label>Destino<input type="text" id="editorDestino"></label>
+                <label class="full">Assunto<input type="text" id="editorAssunto"></label>
+                <label class="full">Interessados<input type="text" id="editorInteressados"></label>
+                <label>Linha de referência<input type="text" id="editorLinhaRef"></label>
+                <label>Recorrência<input type="text" id="editorRecorrencia"></label>
+                <label>Tipo/Tema do processo<input type="text" id="editorTipoTema" placeholder="Ex.: aposentadoria, frequência, folha"></label>
+                <label>Prioridade<select id="editorPrioridade"><option value="normal">Normal</option><option value="alta">Alta</option><option value="urgente">Urgente</option></select></label>
+                <label>Atividade realizada<input type="text" id="editorAtividade" placeholder="Ex.: análise documental e conferência"></label>
+                <label>Modelo de documento<select id="editorModeloDocumento"><option value="nenhum">Nenhum definido</option><option value="despacho">Despacho</option><option value="encaminhamento">Encaminhamento</option><option value="informacao">Informação</option><option value="oficio">Ofício</option></select></label>
+                <label class="full">Providência necessária<input type="text" id="editorProvidencia" placeholder="Descreva a próxima providência objetiva"></label>
+                <label class="full">Observação técnica<textarea id="editorObservacao" placeholder="Registre informações úteis para o acompanhamento ou documento futuro..." style="height: 100px;"></textarea></label>
+            </div>
+            <div class="action-bar" style="justify-content: flex-end; margin-bottom: 0;">
+                <button class="btn btn-sm btn-clear" onclick="fecharEditorRegistro()">Cancelar</button>
+                <button class="btn btn-sm btn-excel" onclick="salvarEditorRegistro()">Salvar complemento</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE DETALHES -->
+    <div id="detalhesModal" class="modal">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
+                <h4 style="margin: 0; color: var(--primary);">🔍 Ficha Completa do Processo</h4>
+                <button class="btn btn-sm btn-clear" onclick="closeDetalhesModal()">Fechar ✕</button>
+            </div>
+            <div id="detalhesModalBody" style="overflow-y: auto; max-height: 65vh; font-size: 13px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;"></div>
+        </div>
+    </div>
+
+    <script>
+        const APP_VERSION = "v59.2";
+        const SENHA_MODULO_GERENCIAL = 'GEDEP-ADM';
+        let cliquesGerenciais = 0; let ultimoCliqueGerencial = 0;
+        function registrarCliqueGerencial() { const agora = Date.now(); if (agora - ultimoCliqueGerencial > 1800) cliquesGerenciais = 0; ultimoCliqueGerencial = agora; cliquesGerenciais++; if (cliquesGerenciais >= 5) { cliquesGerenciais = 0; alternarModuloGerencial(); } }
+        function alternarModuloGerencial() { if (document.body.classList.contains('gerencial-desbloqueado')) { document.body.classList.remove('gerencial-desbloqueado'); switchTab('tab-rotina'); writeLog('Módulo gerencial ocultado.', 'normal'); return; } const senha = prompt('Acesso ao módulo gerencial. Digite a senha:'); if (senha === SENHA_MODULO_GERENCIAL) { document.body.classList.add('gerencial-desbloqueado'); writeLog('Módulo gerencial desbloqueado.', 'success'); } else if (senha !== null) { alert('Senha incorreta.'); writeLog('Tentativa de acesso gerencial recusada.', 'error'); } }
+        let historicoData = []; 
+        let modoExibicaoAtual = 'tabela';
+        let ultimoRelatorioPrestacao = { titulo: '', cabecalho: [], linhas: [] };
+        const CHAVE_COMPLEMENTOS_PROCESSOS = 'complementosProcessosGEDEP';
+        const CHAVE_EDICOES_HISTORICO = 'edicoesHistoricoGEDEP';
+        const CHAVE_EVENTOS_SEI = 'eventosSeiGEDEP';
+        const CHAVE_HISTORICO_EXPORTACOES = 'historicoExportacoesGEDEP';
+        const CHAVE_REGISTROS_OPERACIONAIS = 'registrosOperacionaisGEDEP';
+        const CHAVE_ALTERACOES_HISTORICO = 'alteracoesHistoricoGEDEP';
+        const CONFIG_CARGA_PADRAO = {
+            fatorReincidencia: 20,
+            horas: {
+                'MÚLTIPLOS SETORES (GEDEP)': 2.5,
+                'FOLHA DE PAGAMENTO (FOP)': 1.5,
+                'CONTROLE DE FREQUÊNCIA (CFF)': 1.25,
+                'DIREITOS E BENEFÍCIOS (DEB)': 2,
+                'APOIO TÉCNICO (ATD)': 1.5,
+                'PLANEJAMENTO E DESENV. (PDP)': 2,
+                'OUTRAS GERÊNCIAS GEDEP': 1.5,
+                'PRESIDÊNCIA / GABINETE / CASA CIVIL': 2.5,
+                'ÓRGÃOS EXTERNOS': 2,
+                'OUTROS / INTERNO': 1
+            }
+        }; 
+
+
+        function writeLog(msg, type = 'normal') {
+            const consoleDiv = document.getElementById('logConsole'); 
+            if (!consoleDiv) return;
+            const now = new Date();
+            const timeStr = `${now.toLocaleTimeString()}`;
+            const entry = document.createElement('div'); 
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${timeStr}] [${type.toUpperCase()}] ${msg}`;
+            consoleDiv.appendChild(entry); consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            const tabs = ['tab-rotina', 'tab-consulta', 'tab-prazos', 'tab-producao', 'tab-fluxo', 'tab-relatorios', 'tab-historico-sei', 'tab-extracao', 'tab-logs'];
+            const index = tabs.indexOf(tabId);
+            if(index >= 0) {
+                document.querySelectorAll('.tab-btn')[index].classList.add('active');
+                document.getElementById(tabId).classList.add('active');
+                if(tabId === 'tab-rotina') atualizarDashboardRotina();
+                if(tabId === 'tab-prazos') renderPainelPrazosCaixa();
+                if(tabId === 'tab-producao') { renderPainelProducaoServidor(); renderPainelDemandaTemporal(); renderPainelGerencialCarga(); }
+                if(tabId === 'tab-fluxo') { atualizarOpcoesFluxo(); renderDesenhoFluxo(); }
+                if(tabId === 'tab-relatorios') { atualizarFiltrosAssessoresRelatorio(); renderRelatorioPrestacaoContas(); renderHistoricoExportacoes(); }
+                if(tabId === 'tab-historico-sei') { atualizarSeletorHistoricoSEI(); renderHistoricoIndividualSEI(); }
+            }
+        }
+
+        function chaveComplementoRegistro(item, idx) { return String(item?.processo || `linha-${idx}`).trim() || `linha-${idx}`; }
+
+        function obterComplementosSalvos() { try { return JSON.parse(localStorage.getItem(CHAVE_COMPLEMENTOS_PROCESSOS) || '{}'); } catch (e) { return {}; } }
+
+        function obterComplementoRegistro(item, idx) { const dados = obterComplementosSalvos()[chaveComplementoRegistro(item, idx)] || {}; return { tipoTema: '', prioridade: 'normal', atividade: '', providencia: '', modeloDocumento: 'nenhum', observacao: '', ...dados }; }
+
+        function obterEdicoesHistoricoSalvas() { try { return JSON.parse(localStorage.getItem(CHAVE_EDICOES_HISTORICO) || '{}'); } catch (e) { return {}; } }
+        function obterEventosSEI() { try { return JSON.parse(localStorage.getItem(CHAVE_EVENTOS_SEI) || '{}'); } catch (e) { return {}; } }
+        function obterAlteracoesHistorico() { try { return JSON.parse(localStorage.getItem(CHAVE_ALTERACOES_HISTORICO) || '[]'); } catch (e) { return []; } }
+        function salvarAlteracoesHistorico(registros) { localStorage.setItem(CHAVE_ALTERACOES_HISTORICO, JSON.stringify(registros.slice(0, 2000))); }
+        function registrarAlteracoesHistorico(antes, depois, idx, observacao) { const campos = { assessor:'Assessor responsável', processo:'Processo SEI', recebimento:'Data de recebimento', envio:'Data de envio', prazo:'Data Limite', status:'Status', procedencia:'Procedência', destino:'Destino', assunto:'Assunto', linhaRef:'Linha de referência', interessados:'Interessados', recorrencia:'Recorrência' }; const alteracoes = obterAlteracoesHistorico(); const agora = new Date().toISOString(); Object.entries(campos).forEach(([campo, rotulo]) => { const valorAntes = String(antes?.[campo] ?? ''); const valorDepois = String(depois?.[campo] ?? ''); if (valorAntes !== valorDepois) alteracoes.unshift({ id:`alt-${Date.now()}-${campo}`, data:agora, processo:String(depois?.processo || antes?.processo || ''), campo:rotulo, antes:valorAntes, depois:valorDepois, observacao:observacao || 'Alteração realizada na ficha do processo.', responsavel:'', destino:'Tabelas oficiais' }); }); if (observacao && !Object.keys(campos).some(c => String(antes?.[c] ?? '') !== String(depois?.[c] ?? ''))) alteracoes.unshift({ id:`alt-${Date.now()}-obs`, data:agora, processo:String(depois?.processo || antes?.processo || ''), campo:'Observação técnica', antes:'', depois:'', observacao, responsavel:'', destino:'Tabelas oficiais' }); salvarAlteracoesHistorico(alteracoes); renderAlteracoesHistorico(); }
+        function renderAlteracoesHistorico() { const tbody = document.querySelector('#tabelaAlteracoesHistorico tbody'); if (!tbody) return; const esc = value => escapeHtml(String(value ?? '')); const registros = obterAlteracoesHistorico(); if (!registros.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Nenhuma alteração registrada.</td></tr>'; return; } const porProcesso = {}; registros.forEach(r => { const chave = r.processo || 'SEM-SEI'; if (!porProcesso[chave]) porProcesso[chave] = []; porProcesso[chave].push(r); }); const html = []; Object.entries(porProcesso).forEach(([processo, itens]) => { itens.forEach((r, indice) => { const textoProcesso = processo === 'SEM-SEI' ? 'Sem número SEI' : processo; html.push(`<tr class="change-row" data-processo-vinculo="${esc(processo)}"><td class="change-link-cell">↳ ${indice === 0 ? 'espelho' : 'continuação'}</td><td>${esc(new Date(r.data).toLocaleString('pt-BR'))}</td><td><button class="copy-btn change-process-link" onclick="abrirHistoricoOperacional('${esc(processo).replace(/'/g, '&#39;')}')">${esc(textoProcesso)}</button></td><td><strong>${esc(r.campo)}</strong></td><td class="change-before">${esc(r.antes || '—')}</td><td class="change-after">${esc(r.depois || '—')}</td><td>${esc(r.observacao)}</td><td>${esc([r.responsavel, r.destino].filter(Boolean).join(' · ') || 'Tabelas oficiais')}</td></tr>`); }); }); tbody.innerHTML = html.join(''); }
+        function exportarAlteracoesHistoricoExcel() { const registros = obterAlteracoesHistorico(); if (!registros.length) { alert('Nenhuma alteração registrada para exportar.'); return; } const linhas = registros.map(r => [new Date(r.data).toLocaleString('pt-BR'), r.processo, r.campo, r.antes, r.depois, r.observacao, r.responsavel, r.destino]); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Data','Processo SEI','Campo alterado','Valor anterior','Novo valor','Observações','Responsável','Destino / tabela oficial'], ...linhas]), 'Alterações do Histórico'); const arquivo = `GEDEP_Alteracoes_Historico_${new Date().toISOString().slice(0,10)}.xlsx`; XLSX.writeFile(wb, arquivo); registrarExportacaoGEDEP('Alterações do histórico', arquivo, registros.length, 'Espelho de mudanças para lançamento oficial'); }
+        function exportarAlteracoesHistoricoCSV() { const registros = obterAlteracoesHistorico(); if (!registros.length) { alert('Nenhuma alteração registrada para exportar.'); return; } const quote = v => `"${String(v ?? '').replace(/"/g, '""')}"`; const linhas = [['Data','Processo SEI','Campo alterado','Valor anterior','Novo valor','Observações','Responsável','Destino / tabela oficial'], ...registros.map(r => [new Date(r.data).toLocaleString('pt-BR'), r.processo, r.campo, r.antes, r.depois, r.observacao, r.responsavel, r.destino])].map(l => l.map(quote).join(';')).join('\r\n'); const blob = new Blob(['\uFEFF'+linhas], {type:'text/csv;charset=utf-8'}); const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`GEDEP_Alteracoes_Historico_${new Date().toISOString().slice(0,10)}.csv`; a.click(); registrarExportacaoGEDEP('Alterações do histórico CSV', a.download, registros.length, 'Espelho de mudanças para lançamento oficial'); }
+        function obterRegistrosOperacionais() { try { return JSON.parse(localStorage.getItem(CHAVE_REGISTROS_OPERACIONAIS) || '[]'); } catch (e) { return []; } }
+        function salvarRegistrosOperacionais(registros) { localStorage.setItem(CHAVE_REGISTROS_OPERACIONAIS, JSON.stringify(registros)); }
+        function limparFormularioOperacional() { ['registroOperacionalProcesso','registroOperacionalCampo','registroOperacionalResponsavel','registroOperacionalDestino','registroOperacionalPrazo','registroOperacionalDescricao'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); ['registroOperacionalStatus','registroOperacionalTipo'].forEach(id => { const el = document.getElementById(id); if (el) el.selectedIndex = 0; }); }
+        function adicionarRegistroOperacional() { const get = id => String(document.getElementById(id)?.value || '').trim(); const registro = { id: `op-${Date.now()}`, dataRegistro: new Date().toISOString(), processo: get('registroOperacionalProcesso'), tipo: get('registroOperacionalTipo') || 'Alteração de dado', campo: get('registroOperacionalCampo'), responsavel: get('registroOperacionalResponsavel'), destino: get('registroOperacionalDestino'), prazo: get('registroOperacionalPrazo'), status: get('registroOperacionalStatus') || 'Pendente', descricao: get('registroOperacionalDescricao') }; if (!registro.processo && !registro.descricao) { alert('Informe pelo menos o processo SEI ou a descrição da alteração.'); return; } const registros = obterRegistrosOperacionais(); registros.unshift(registro); salvarRegistrosOperacionais(registros.slice(0, 1000)); renderRegistrosOperacionais(); limparFormularioOperacional(); writeLog('Registro operacional criado.', 'success'); }
+        function alterarStatusRegistroOperacional(id, status) { const registros = obterRegistrosOperacionais(); const registro = registros.find(x => x.id === id); if (!registro) return; registro.status = status; registro.atualizadoEm = new Date().toISOString(); salvarRegistrosOperacionais(registros); renderRegistrosOperacionais(); }
+        function excluirRegistroOperacional(id) { if (!confirm('Excluir este registro operacional?')) return; salvarRegistrosOperacionais(obterRegistrosOperacionais().filter(x => x.id !== id)); renderRegistrosOperacionais(); writeLog('Registro operacional excluído.', 'normal'); }
+        function abrirHistoricoOperacional(processo) { if (!processo) return; const select = document.getElementById('historicoSeiProcesso'); if (select) { switchTab('tab-historico-sei'); atualizarSeletorHistoricoSEI(); select.value = processo; renderHistoricoIndividualSEI(); } }
+        function renderRegistrosOperacionais() { const tbody = document.querySelector('#tabelaRegistrosOperacionais tbody'); if (!tbody) return; const esc = value => escapeHtml(String(value ?? '')); const registros = obterRegistrosOperacionais(); if (!registros.length) { tbody.innerHTML = '<tr><td colspan="9" class="empty-state">Nenhum registro operacional criado.</td></tr>'; return; } tbody.innerHTML = registros.map(r => `<tr><td>${esc(new Date(r.dataRegistro).toLocaleString('pt-BR'))}</td><td>${r.processo ? `<button class="copy-btn" onclick="abrirHistoricoOperacional('${esc(r.processo).replace(/'/g, '&#39;')}')">${esc(r.processo)}</button>` : '-'}</td><td>${esc(r.tipo)}</td><td>${esc(r.campo)}</td><td>${esc(r.responsavel)}</td><td>${esc(r.destino)}</td><td>${esc(r.prazo ? formatDate(r.prazo) : '-')}</td><td><select onchange="alterarStatusRegistroOperacional('${esc(r.id)}', this.value)"><option ${r.status === 'Pendente' ? 'selected' : ''}>Pendente</option><option ${r.status === 'Em andamento' ? 'selected' : ''}>Em andamento</option><option ${r.status === 'Concluído' ? 'selected' : ''}>Concluído</option><option ${r.status === 'Cancelado' ? 'selected' : ''}>Cancelado</option></select><div class="production-note">${esc(r.descricao)}</div></td><td><button class="btn btn-sm btn-nominal" onclick="excluirRegistroOperacional('${esc(r.id)}')">Excluir</button></td></tr>`).join(''); }
+        function exportarRegistrosOperacionaisExcel() { const registros = obterRegistrosOperacionais(); if (!registros.length) { alert('Nenhum registro operacional para exportar.'); return; } const linhas = registros.map(r => [new Date(r.dataRegistro).toLocaleString('pt-BR'), r.processo, r.tipo, r.campo, r.responsavel, r.destino, r.prazo, r.status, r.descricao]); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Data do registro','Processo SEI','Tipo de saída','Campo / ligação','Responsável','Destino / tabela oficial','Prazo','Status','Descrição'], ...linhas]), 'Alterações e Encaminhamentos'); const arquivo = `GEDEP_Alteracoes_Encaminhamentos_${new Date().toISOString().slice(0,10)}.xlsx`; XLSX.writeFile(wb, arquivo); registrarExportacaoGEDEP('Alterações e encaminhamentos', arquivo, registros.length, 'Tabela operacional da aba Rotina'); writeLog('Registros operacionais exportados.', 'success'); }
+        function exportarRegistrosOperacionaisCSV() { const registros = obterRegistrosOperacionais(); if (!registros.length) { alert('Nenhum registro operacional para exportar.'); return; } const quote = value => `"${String(value ?? '').replace(/"/g, '""')}"`; const cab = ['Data do registro','Processo SEI','Tipo de saída','Campo / ligação','Responsável','Destino / tabela oficial','Prazo','Status','Descrição']; const linhas = [cab, ...registros.map(r => [new Date(r.dataRegistro).toLocaleString('pt-BR'), r.processo, r.tipo, r.campo, r.responsavel, r.destino, r.prazo, r.status, r.descricao])].map(l => l.map(quote).join(';')).join('\r\n'); const blob = new Blob(['\uFEFF' + linhas], {type:'text/csv;charset=utf-8'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `GEDEP_Alteracoes_Encaminhamentos_${new Date().toISOString().slice(0,10)}.csv`; a.click(); registrarExportacaoGEDEP('Alterações e encaminhamentos CSV', a.download, registros.length, 'Tabela operacional da aba Rotina'); writeLog('Registros operacionais exportados para CSV.', 'success'); }
+        function obterHistoricoExportacoes() { try { return JSON.parse(localStorage.getItem(CHAVE_HISTORICO_EXPORTACOES) || '[]'); } catch (e) { return []; } }
+        function registrarExportacaoGEDEP(tipo, arquivo, quantidade, filtros) { const historico = obterHistoricoExportacoes(); historico.unshift({ data: new Date().toISOString(), tipo, arquivo, quantidade, filtros: filtros || 'Filtros atuais da área gerencial' }); localStorage.setItem(CHAVE_HISTORICO_EXPORTACOES, JSON.stringify(historico.slice(0, 100))); renderHistoricoExportacoes(); }
+        function renderHistoricoExportacoes() { const container = document.getElementById('historicoExportacoes'); if (!container) return; const historico = obterHistoricoExportacoes(); if (!historico.length) { container.innerHTML = '<p class="production-note" style="padding:12px;">Nenhuma exportação registrada nesta instalação.</p>'; return; } const esc = value => escapeHtml(String(value ?? '')); container.innerHTML = `<table><thead><tr><th>Data</th><th>Tipo</th><th>Registros agregados</th><th>Filtros</th><th>Arquivo</th></tr></thead><tbody>${historico.map(x => { const arquivo = String(x.arquivo || ''); return `<tr><td>${esc(new Date(x.data).toLocaleString('pt-BR'))}</td><td>${esc(x.tipo)}</td><td>${esc(x.quantidade)}</td><td>${esc(x.filtros)}</td><td>${arquivo ? `<a href="${encodeURI(arquivo)}" target="_blank" rel="noopener">${esc(arquivo)}</a>` : 'Não informado'}</td></tr>`; }).join('')}</tbody></table>`; }
+        function mostrarInstrucoesPacoteZIP() { alert('Para criar o pacote: mantenha GEDEP_Exportar_Pasta_ZIP.bat junto do HTML e execute-o com duplo clique. Para restaurar fisicamente: mantenha GEDEP_Restaurar_Pacote_ZIP.bat na pasta, informe o caminho do ZIP e ele extrairá tudo para uma nova pasta sem sobrescrever a atual. Para recuperar os dados internos do navegador, use Restaurar dados JSON e selecione GEDEP_Backup_Dados_*.json.'); }
+        function restaurarBackupDadosGEDEP(event) { const arquivo = event?.target?.files?.[0]; if (!arquivo) return; const leitor = new FileReader(); leitor.onload = () => { try { const backup = JSON.parse(String(leitor.result || '')); if (backup?.aplicacao !== 'GEDEP' || !backup?.dados) throw new Error('Arquivo incompatível'); if (!confirm(`Restaurar o backup gerado em ${backup.geradoEm ? new Date(backup.geradoEm).toLocaleString('pt-BR') : 'data não informada'}? Os dados locais atuais serão substituídos.`)) return; const dados = backup.dados; if (Array.isArray(dados.historicoImportado)) historicoData = dados.historicoImportado; if (dados.complementos && typeof dados.complementos === 'object') localStorage.setItem(CHAVE_COMPLEMENTOS_PROCESSOS, JSON.stringify(dados.complementos)); if (dados.edicoesHistorico && typeof dados.edicoesHistorico === 'object') localStorage.setItem(CHAVE_EDICOES_HISTORICO, JSON.stringify(dados.edicoesHistorico)); if (dados.eventosSEI && typeof dados.eventosSEI === 'object') localStorage.setItem(CHAVE_EVENTOS_SEI, JSON.stringify(dados.eventosSEI)); if (Array.isArray(dados.historicoExportacoes)) localStorage.setItem(CHAVE_HISTORICO_EXPORTACOES, JSON.stringify(dados.historicoExportacoes)); if (Array.isArray(dados.alteracoesHistorico)) localStorage.setItem(CHAVE_ALTERACOES_HISTORICO, JSON.stringify(dados.alteracoesHistorico)); if (dados.configuracaoCarga && typeof dados.configuracaoCarga === 'object') localStorage.setItem('configCargaProducao', JSON.stringify(dados.configuracaoCarga)); atualizarDashboardRotina(); renderTabelaHistorico(); renderCardsHistorico(); renderPainelPrazosCaixa(); atualizarFiltrosAssessoresProducao(); atualizarFiltrosAssessoresRelatorio(); atualizarSeletorHistoricoSEI(); renderPainelProducaoServidor(); renderPainelDemandaTemporal(); renderPainelGerencialCarga(); atualizarOpcoesFluxo(); renderDesenhoFluxo(); renderRelatorioPrestacaoContas(); renderHistoricoExportacoes(); renderAlteracoesHistorico(); writeLog('Backup de dados restaurado com sucesso.', 'success'); alert('Backup restaurado. O histórico importado e os dados locais foram recuperados.'); } catch (erro) { alert('Não foi possível restaurar o backup: ' + erro.message); writeLog('Falha na restauração do backup.', 'error'); } finally { event.target.value = ''; } }; leitor.readAsText(arquivo, 'UTF-8'); }
+        function exportarBackupDadosGEDEP() { const backup = { aplicacao: 'GEDEP', versao: APP_VERSION, geradoEm: new Date().toISOString(), dados: { historicoImportado: historicoData, complementos: obterComplementosSalvos(), edicoesHistorico: obterEdicoesHistoricoSalvas(), eventosSEI: obterEventosSEI(), historicoExportacoes: obterHistoricoExportacoes(), alteracoesHistorico: obterAlteracoesHistorico(), configuracaoCarga: obterConfigCargaProducao() } }; const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `GEDEP_Backup_Dados_${new Date().toISOString().slice(0,10)}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); registrarExportacaoGEDEP('Backup dos dados locais', a.download, Object.keys(backup.dados).length, 'Dados locais: complementos, edições, eventos, exportações e configuração'); writeLog('Backup dos dados locais gerado com sucesso.', 'success'); }
+        function obterProcessoSEISelecionado() { return document.getElementById('historicoSeiProcesso')?.value || ''; }
+        function atualizarSeletorHistoricoSEI() { const select = document.getElementById('historicoSeiProcesso'); if (!select) return; const atual = select.value; const processos = [...new Set(historicoData.map(i => String(i.processo || '').trim()).filter(Boolean))].sort((a,b) => a.localeCompare(b, 'pt-BR')); select.innerHTML = processos.length ? '<option value="">-- Selecione um processo --</option>' + processos.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('') : '<option value="">-- Carregue um histórico --</option>'; if (processos.includes(atual)) select.value = atual; }
+        function filtrarSeletorHistoricoSEI() { const select = document.getElementById('historicoSeiProcesso'); const busca = String(document.getElementById('historicoSeiBusca')?.value || '').toLowerCase(); if (!select) return; [...select.options].forEach(option => { option.hidden = !!busca && option.value && !option.value.toLowerCase().includes(busca); }); }
+
+        function valorParaDataInput(valor) { const data = normalizarDataProducao(valor); return data ? `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}-${String(data.getDate()).padStart(2, '0')}` : ''; }
+
+        function valorDataInputParaSistema(valor) { if (!valor) return ''; const [ano, mes, dia] = valor.split('-'); return `${dia}/${mes}/${ano}`; }
+
+        function aplicarEdicaoHistorico(item, idx) { const edicao = obterEdicoesHistoricoSalvas()[chaveComplementoRegistro(item, idx)]; return edicao ? { ...item, ...edicao, statusCategoria: categorizarStatus(edicao.status), destinoCategoria: categorizarDestino(edicao.destino) } : item; }
+
+        function abrirEditorRegistro(idx) {
+            const item = historicoData[idx]; if (!item) return;
+            const extra = obterComplementoRegistro(item, idx);
+            document.getElementById('editorRegistroIdx').value = idx;
+            document.getElementById('editorAssessor').value = item.assessor || '';
+            document.getElementById('editorProcesso').value = item.processo || '';
+            document.getElementById('editorRecebimento').value = valorParaDataInput(item.recebimento);
+            document.getElementById('editorEnvio').value = valorParaDataInput(item.envio);
+            document.getElementById('editorPrazo').value = valorParaDataInput(item.prazo);
+            const statusSelect = document.getElementById('editorStatus');
+            if (item.status && !Array.from(statusSelect.options).some(option => option.value === String(item.status))) { const option = document.createElement('option'); option.value = String(item.status); option.textContent = String(item.status); statusSelect.appendChild(option); }
+            statusSelect.value = item.status || '';
+            document.getElementById('editorProcedencia').value = item.procedencia || '';
+            document.getElementById('editorDestino').value = item.destino || '';
+            document.getElementById('editorAssunto').value = item.assunto || '';
+            document.getElementById('editorInteressados').value = item.interessados || '';
+            document.getElementById('editorLinhaRef').value = item.linhaRef || '';
+            document.getElementById('editorRecorrencia').value = item.recorrencia || '';
+            document.getElementById('editorTipoTema').value = extra.tipoTema;
+            document.getElementById('editorPrioridade').value = extra.prioridade;
+            document.getElementById('editorAtividade').value = extra.atividade;
+            document.getElementById('editorModeloDocumento').value = extra.modeloDocumento;
+            document.getElementById('editorProvidencia').value = extra.providencia;
+            document.getElementById('editorObservacao').value = extra.observacao;
+            document.getElementById('editorProcessoModal').style.display = 'flex';
+        }
+
+        function fecharEditorRegistro() { document.getElementById('editorProcessoModal').style.display = 'none'; }
+
+        function salvarEditorRegistro() {
+            const idx = Number(document.getElementById('editorRegistroIdx').value); const item = historicoData[idx]; if (!item) return;
+            const chaveAntiga = chaveComplementoRegistro(item, idx);
+            const dadosHistorico = obterEdicoesHistoricoSalvas();
+            const dadosEditados = { assessor: document.getElementById('editorAssessor').value.trim(), processo: document.getElementById('editorProcesso').value.trim(), recebimento: valorDataInputParaSistema(document.getElementById('editorRecebimento').value), envio: valorDataInputParaSistema(document.getElementById('editorEnvio').value), prazo: valorDataInputParaSistema(document.getElementById('editorPrazo').value), status: document.getElementById('editorStatus').value.trim(), procedencia: document.getElementById('editorProcedencia').value.trim(), destino: document.getElementById('editorDestino').value.trim(), assunto: document.getElementById('editorAssunto').value.trim(), interessados: document.getElementById('editorInteressados').value.trim(), linhaRef: document.getElementById('editorLinhaRef').value.trim(), recorrencia: document.getElementById('editorRecorrencia').value.trim(), atualizadoEm: new Date().toISOString() };
+            const novoItem = { ...item, ...dadosEditados, statusCategoria: categorizarStatus(dadosEditados.status), destinoCategoria: categorizarDestino(dadosEditados.destino) };
+            const chaveNova = chaveComplementoRegistro(novoItem, idx);
+            dadosHistorico[chaveNova] = dadosEditados; if (chaveNova !== chaveAntiga) delete dadosHistorico[chaveAntiga];
+            localStorage.setItem(CHAVE_EDICOES_HISTORICO, JSON.stringify(dadosHistorico));
+            const complementos = obterComplementosSalvos(); complementos[chaveNova] = { ...obterComplementoRegistro(item, idx), tipoTema: document.getElementById('editorTipoTema').value.trim(), prioridade: document.getElementById('editorPrioridade').value, atividade: document.getElementById('editorAtividade').value.trim(), providencia: document.getElementById('editorProvidencia').value.trim(), modeloDocumento: document.getElementById('editorModeloDocumento').value, observacao: document.getElementById('editorObservacao').value.trim(), atualizadoEm: new Date().toISOString() }; if (chaveNova !== chaveAntiga) delete complementos[chaveAntiga]; localStorage.setItem(CHAVE_COMPLEMENTOS_PROCESSOS, JSON.stringify(complementos));
+            registrarAlteracoesHistorico(item, novoItem, idx, document.getElementById('editorObservacao')?.value.trim() || '');
+            historicoData[idx] = novoItem;
+            fecharEditorRegistro(); aplicarFiltrosColuna(); atualizarDashboardRotina(); renderPainelPrazosCaixa(); renderPainelProducaoServidor(); renderPainelDemandaTemporal(); writeLog(`Dados do processo ${novoItem.processo || 'sem número'} atualizados.`, 'success');
+        }
+
+        function exportarProcessosEstruturadosExcel() {
+            if (!historicoData.length) { alert('Carregue um relatório histórico antes de exportar.'); return; }
+            const linhas = historicoData.map((item, idx) => { const extra = obterComplementoRegistro(item, idx); return [item.assessor || '', formatDate(item.recebimento), formatDate(item.envio), item.processo || '', item.interessados || '', item.assunto || '', item.destino || '', item.statusCategoria || '', extra.tipoTema, extra.prioridade, extra.atividade, extra.providencia, extra.modeloDocumento, extra.observacao]; });
+            const ws = XLSX.utils.aoa_to_sheet([['Assessor','Recebimento','Envio','Processo SEI','Interessados','Assunto','Destino','Status','Tipo/Tema','Prioridade','Atividade Realizada','Providência Necessária','Modelo de Documento','Observação Técnica'], ...linhas]);
+            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Dados Estruturados'); XLSX.writeFile(wb, 'GEDEP_Dados_Estruturados.xlsx'); writeLog('Dados estruturados exportados para Excel.', 'success');
+        }
+
+        // --- FUNCIONALIDADES: Copiar SEI, Checkbox Salvar, Ordenação e Dropdown de Colunas ---
+        function copySei(button) {
+            const textToCopy = button.getAttribute("data-sei");
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                button.innerText = "Copiado!";
+                button.classList.add("copied");
+                setTimeout(() => {
+                    button.innerText = "Copiar SEI";
+                    button.classList.remove("copied");
+                }, 1500);
+            });
+        }
+
+        function updateRowStatus(checkbox) {
+            const row = checkbox.closest("tr");
+            const id = row.getAttribute("data-id");
+            if (!id) return;
+            let savedState = JSON.parse(localStorage.getItem("processedRowsHubV55") || "{}");
+            
+            if (checkbox.checked) {
+                row.classList.add("processed");
+                savedState[id] = true;
+            } else {
+                row.classList.remove("processed");
+                delete savedState[id];
+            }
+            localStorage.setItem("processedRowsHubV55", JSON.stringify(savedState));
+        }
+
+        function applyStoredCheckboxes() {
+            const savedState = JSON.parse(localStorage.getItem("processedRowsHubV55") || "{}");
+            document.querySelectorAll("tbody tr").forEach(row => {
+                const id = row.getAttribute("data-id");
+                if (id && savedState[id]) {
+                    const checkbox = row.querySelector(".process-check");
+                    if (checkbox) {
+                        checkbox.checked = true;
+                        row.classList.add("processed");
+                    }
+                }
+            });
+        }
+
+        function toggleDropdown(dropdownId) {
+            const dropdown = document.getElementById(dropdownId);
+            document.querySelectorAll(".dropdown-content").forEach(d => {
+                if (d.id !== dropdownId) d.classList.remove("show");
+            });
+            dropdown.classList.toggle("show");
+        }
+
+        window.onclick = function(event) {
+            if (!event.target.matches('.btn')) {
+                document.querySelectorAll(".dropdown-content").forEach(d => {
+                    d.classList.remove("show");
+                });
+            }
+        }
+
+        function toggleColumn(tableId, checkbox) {
+            const colIndex = parseInt(checkbox.getAttribute("data-column"));
+            const table = document.getElementById(tableId);
+            if (!table) return;
+            const rows = table.rows;
+
+            for (let i = 0; i < rows.length; i++) {
+                const cell = rows[i].cells[colIndex];
+                if (cell) {
+                    cell.style.display = checkbox.checked ? "" : "none";
+                }
+            }
+        }
+
+        // Função sortTable corrigida para evitar erros de escopo de bloco
+        function sortTable(tableId, n) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+            let switching = true, dir = "asc", switchcount = 0;
+            
+            while (switching) {
+                switching = false;
+                const rows = table.rows;
+                
+                for (let i = 1; i < (rows.length - 1); i++) {
+                    const x = rows[i].getElementsByTagName("TD")[n];
+                    const y = rows[i + 1].getElementsByTagName("TD")[n];
+                    
+                    if (!x || !y) continue;
+                    let xVal = x.innerText.toLowerCase();
+                    let yVal = y.innerText.toLowerCase();
+
+                    let conditionMet = false;
+                    if (dir === "asc") {
+                        if (xVal > yVal) conditionMet = true;
+                    } else if (dir === "desc") {
+                        if (xVal < yVal) conditionMet = true;
+                    }
+
+                    if (conditionMet) {
+                        rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                        switching = true;
+                        switchcount++;
+                        break;
+                    }
+                }
+                
+                if (switchcount === 0 && dir === "asc") {
+                    dir = "desc";
+                    switching = true;
+                }
+            }
+        }
+
+        function obterConfigCargaProducao() {
+            const config = JSON.parse(localStorage.getItem('configCargaProducao') || 'null');
+            return config && config.horas ? config : CONFIG_CARGA_PADRAO;
+        }
+
+        function salvarConfigCargaProducao() {
+            const ids = ['fatorReincidencia','horaMultiplo','horaFolha','horaFrequencia','horaBeneficios','horaApoio','horaPlanejamento','horaOutras','horaPresidencia','horaExternos','horaOutros'];
+            const vals = ids.map(id => Math.max(0, Number(document.getElementById(id)?.value || 0)));
+            const config = { fatorReincidencia: vals[0], horas: {
+                'MÚLTIPLOS SETORES (GEDEP)': vals[1], 'FOLHA DE PAGAMENTO (FOP)': vals[2], 'CONTROLE DE FREQUÊNCIA (CFF)': vals[3], 'DIREITOS E BENEFÍCIOS (DEB)': vals[4], 'APOIO TÉCNICO (ATD)': vals[5], 'PLANEJAMENTO E DESENV. (PDP)': vals[6], 'OUTRAS GERÊNCIAS GEDEP': vals[7], 'PRESIDÊNCIA / GABINETE / CASA CIVIL': vals[8], 'ÓRGÃOS EXTERNOS': vals[9], 'OUTROS / INTERNO': vals[10]
+            }};
+            localStorage.setItem('configCargaProducao', JSON.stringify(config));
+        }
+
+        function carregarConfigCargaProducao() {
+            const config = obterConfigCargaProducao();
+            const mapaIds = { fatorReincidencia: 'fatorReincidencia', 'MÚLTIPLOS SETORES (GEDEP)': 'horaMultiplo', 'FOLHA DE PAGAMENTO (FOP)': 'horaFolha', 'CONTROLE DE FREQUÊNCIA (CFF)': 'horaFrequencia', 'DIREITOS E BENEFÍCIOS (DEB)': 'horaBeneficios', 'APOIO TÉCNICO (ATD)': 'horaApoio', 'PLANEJAMENTO E DESENV. (PDP)': 'horaPlanejamento', 'OUTRAS GERÊNCIAS GEDEP': 'horaOutras', 'PRESIDÊNCIA / GABINETE / CASA CIVIL': 'horaPresidencia', 'ÓRGÃOS EXTERNOS': 'horaExternos', 'OUTROS / INTERNO': 'horaOutros' };
+            document.getElementById(mapaIds.fatorReincidencia).value = config.fatorReincidencia;
+            Object.entries(config.horas).forEach(([tema, horas]) => { if (document.getElementById(mapaIds[tema])) document.getElementById(mapaIds[tema]).value = horas; });
+        }
+
+        function normalizarDataProducao(valor) {
+            if (!valor) return null;
+            if (valor instanceof Date) return isNaN(valor) ? null : valor;
+            if (typeof valor === 'number') return parseDate(valor);
+            const s = String(valor).trim();
+            if (/^\d{4}-\d{2}-\d{2}/.test(s)) { const d = new Date(`${s.substring(0, 10)}T00:00:00`); return isNaN(d) ? null : d; }
+            if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return parseDate(s);
+            const d = new Date(s); return isNaN(d) ? null : d;
+        }
+
+        function formatarHorasProducao(horas) { return `${Number(horas || 0).toFixed(1).replace('.', ',')}h`; }
+
+        function classificarTemaProducao(item) { return item.destinoCategoria || categorizarDestino(item.destino) || 'OUTROS / INTERNO'; }
+
+        function obterRegistrosProducao() {
+            const inicioVal = document.getElementById('producaoDataInicial')?.value;
+            const fimVal = document.getElementById('producaoDataFinal')?.value;
+            const assessorFiltro = document.getElementById('producaoAssessor')?.value || '';
+            const campoData = document.getElementById('producaoDataReferencia')?.value || 'prazo';
+            const inicio = inicioVal ? new Date(`${inicioVal}T00:00:00`) : null;
+            const fim = fimVal ? new Date(`${fimVal}T23:59:59`) : null;
+            return historicoData.filter(item => {
+                const feito = !!item.envio || item.statusCategoria === 'CONCLUÍDO';
+                if (!feito || (assessorFiltro && String(item.assessor || '') !== assessorFiltro)) return false;
+                const data = obterDataReferenciaAnalise(item, campoData);
+                if (!data || (inicio && data < inicio) || (fim && data > fim)) return false;
+                return true;
+            });
+        }
+
+        function atualizarFiltrosAssessoresProducao() {
+            const select = document.getElementById('producaoAssessor'); if (!select) return;
+            const atual = select.value;
+            const nomes = [...new Set(historicoData.map(i => String(i.assessor || '').trim()).filter(Boolean))].sort((a,b) => a.localeCompare(b, 'pt-BR'));
+            select.innerHTML = '<option value="">-- Todos os servidores --</option>' + nomes.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+            if (nomes.includes(atual)) select.value = atual;
+        }
+
+        function obterDataReferenciaAnalise(item, campoData = 'prazo') { const ordem = campoData === 'prazo' ? ['prazo','envio','recebimento'] : campoData === 'recebimento' ? ['recebimento','prazo','envio'] : ['envio','prazo','recebimento']; for (const campo of ordem) { const data = normalizarDataProducao(item?.[campo]); if (data) return data; } return null; }
+
+        function obterDataRegistroProducao(item) { const campoData = document.getElementById('producaoDataReferencia')?.value || 'prazo'; return obterDataReferenciaAnalise(item, campoData); }
+
+        function inicioSemanaProducao(data) {
+            const d = new Date(data.getFullYear(), data.getMonth(), data.getDate());
+            const dia = d.getDay();
+            const distanciaSegunda = dia === 0 ? 6 : dia - 1;
+            d.setDate(d.getDate() - distanciaSegunda);
+            return d;
+        }
+
+        function chavePeriodoProducao(data, agrupamento) {
+            if (agrupamento === 'mes') return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
+            const segunda = inicioSemanaProducao(data);
+            return `${segunda.getFullYear()}-${String(segunda.getMonth() + 1).padStart(2, '0')}-${String(segunda.getDate()).padStart(2, '0')}`;
+        }
+
+        function rotuloPeriodoProducao(chave, agrupamento) {
+            if (agrupamento === 'mes') { const [ano, mes] = chave.split('-'); return `${mes}/${ano}`; }
+            const inicio = normalizarDataProducao(chave);
+            const fim = new Date(inicio); fim.setDate(fim.getDate() + 6);
+            return `${formatDate(inicio)} a ${formatDate(fim)}`;
+        }
+
+        function renderPainelDemandaTemporal() {
+            const tabela = document.getElementById('tabelaDemandaPeriodo');
+            if (!tabela) return;
+            const agrupamento = document.getElementById('demandaAgrupamento')?.value || 'semana';
+            const escopo = document.getElementById('demandaEscopo')?.value || 'todos';
+            const inicioVal = document.getElementById('producaoDataInicial')?.value;
+            const fimVal = document.getElementById('producaoDataFinal')?.value;
+            const inicioFiltro = inicioVal ? new Date(`${inicioVal}T00:00:00`) : null;
+            const fimFiltro = fimVal ? new Date(`${fimVal}T23:59:59`) : null;
+            const config = obterConfigCargaProducao();
+            const registros = historicoData.filter(item => {
+                if (escopo === 'feitos' && !(item.envio || item.statusCategoria === 'CONCLUÍDO')) return false;
+                const data = obterDataRegistroProducao(item);
+                return data && (!inicioFiltro || data >= inicioFiltro) && (!fimFiltro || data <= fimFiltro);
+            });
+            const gruposBase = {};
+            registros.forEach(item => {
+                const data = obterDataRegistroProducao(item);
+                const periodo = chavePeriodoProducao(data, agrupamento);
+                const servidor = String(item.assessor || 'Não informado').trim() || 'Não informado';
+                const tema = classificarTemaProducao(item);
+                const chave = `${periodo}|||${servidor}|||${tema}`;
+                if (!gruposBase[chave]) gruposBase[chave] = { periodo, servidor, tema, qtd: 0, feitos: 0, assuntos: [] };
+                gruposBase[chave].qtd++;
+                if (item.envio || item.statusCategoria === 'CONCLUÍDO') gruposBase[chave].feitos++;
+                if (item.assunto && !gruposBase[chave].assuntos.includes(String(item.assunto))) gruposBase[chave].assuntos.push(String(item.assunto));
+            });
+            const grupos = {};
+            Object.values(gruposBase).forEach(g => {
+                if (!grupos[g.periodo]) grupos[g.periodo] = { periodo: g.periodo, qtd: 0, feitos: 0, horas: 0, reincidencias: 0, temas: {} };
+                const base = Number(config.horas[g.tema] ?? 1);
+                const ocorrenciasAnteriores = Object.values(gruposBase).filter(x => x.periodo === g.periodo && x.servidor === g.servidor && x.tema === g.tema).reduce((sum, x) => sum + x.qtd, 0) - g.qtd;
+                const reincidencias = Math.max(0, g.qtd - 1);
+                const horas = g.qtd * base + reincidencias * base * Number(config.fatorReincidencia || 0) / 100;
+                grupos[g.periodo].qtd += g.qtd; grupos[g.periodo].feitos += g.feitos; grupos[g.periodo].horas += horas; grupos[g.periodo].reincidencias += reincidencias;
+                grupos[g.periodo].temas[g.tema] = (grupos[g.periodo].temas[g.tema] || 0) + g.qtd;
+            });
+            const lista = Object.values(grupos).sort((a,b) => a.periodo.localeCompare(b.periodo));
+            const pico = lista.reduce((maior, atual) => !maior || atual.qtd > maior.qtd ? atual : maior, null);
+            document.getElementById('kpiDemandaTotal').innerText = registros.length;
+            document.getElementById('kpiPeriodoPico').innerText = pico ? `${rotuloPeriodoProducao(pico.periodo, agrupamento)} (${pico.qtd})` : '—';
+            document.getElementById('kpiPeriodoMedia').innerText = lista.length ? (registros.length / lista.length).toFixed(1).replace('.', ',') : '0,0';
+            document.querySelector('#tabelaDemandaPeriodo tbody').innerHTML = lista.length ? lista.map(g => { const temas = Object.entries(g.temas).sort((a,b) => b[1] - a[1]).slice(0, 3).map(([tema,qtd]) => `${tema} (${qtd})`).join('; '); return `<tr><td><strong>${escapeHtml(rotuloPeriodoProducao(g.periodo, agrupamento))}</strong></td><td>${g.qtd}</td><td>${g.feitos}</td><td>${formatarHorasProducao(g.horas)}</td><td>${g.reincidencias}</td><td>${escapeHtml(temas)}</td></tr>`; }).join('') : '<tr><td colspan="6" style="text-align:center;color:#7f8c8d;font-style:italic;">Nenhuma demanda encontrada com os filtros atuais.</td></tr>';
+            const maxQtd = Math.max(...lista.map(g => g.qtd), 0);
+            document.getElementById('graficoDemandaPeriodo').innerHTML = lista.map(g => `<div class="bar-row"><strong>${escapeHtml(rotuloPeriodoProducao(g.periodo, agrupamento))}</strong><div class="bar-track"><div class="bar-fill" style="width:${maxQtd ? (g.qtd / maxQtd * 100).toFixed(1) : 0}%"></div></div><span>${g.qtd} processos</span></div>`).join('') || '<p class="production-note">O gráfico aparecerá após o carregamento de um histórico.</p>';
+        }
+
+        function definirPeriodoProducao(tipo) {
+            if (tipo === 'todos') { document.getElementById('producaoDataInicial').value = ''; document.getElementById('producaoDataFinal').value = ''; }
+            else { const hoje = new Date(); document.getElementById('producaoDataInicial').value = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}-01`; document.getElementById('producaoDataFinal').value = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}-${String(hoje.getDate()).padStart(2,'0')}`; }
+            renderPainelProducaoServidor();
+        }
+
+        function limparFiltrosProducao() { document.getElementById('producaoDataInicial').value = ''; document.getElementById('producaoDataFinal').value = ''; document.getElementById('producaoAssessor').value = ''; renderPainelProducaoServidor(); renderPainelDemandaTemporal(); }
+
+        function renderPainelProducaoServidor() {
+            if (!document.getElementById('tabelaComparativoProducao')) return;
+            atualizarFiltrosAssessoresProducao();
+            const config = obterConfigCargaProducao();
+            const registros = obterRegistrosProducao();
+            const grupos = {};
+            registros.forEach(item => {
+                const servidor = String(item.assessor || 'Não informado').trim() || 'Não informado';
+                const tema = classificarTemaProducao(item);
+                const chave = `${servidor}|||${tema}`;
+                if (!grupos[chave]) grupos[chave] = { servidor, tema, qtd: 0, assuntos: [], reincidencias: 0 };
+                grupos[chave].qtd++;
+                if (item.assunto && !grupos[chave].assuntos.includes(String(item.assunto))) grupos[chave].assuntos.push(String(item.assunto));
+            });
+            Object.values(grupos).forEach(g => { g.reincidencias = Math.max(0, g.qtd - 1); g.horas = g.qtd * Number(config.horas[g.tema] ?? 1) + g.reincidencias * Number(config.horas[g.tema] ?? 1) * Number(config.fatorReincidencia || 0) / 100; });
+            const servidores = {};
+            Object.values(grupos).forEach(g => { if (!servidores[g.servidor]) servidores[g.servidor] = { servidor: g.servidor, qtd: 0, horas: 0, reincidencias: 0, temas: [] }; servidores[g.servidor].qtd += g.qtd; servidores[g.servidor].horas += g.horas; servidores[g.servidor].reincidencias += g.reincidencias; servidores[g.servidor].temas.push(`${g.tema} (${g.qtd})`); });
+            const listaServidores = Object.values(servidores).sort((a,b) => b.horas - a.horas);
+            document.getElementById('kpiProdServidores').innerText = listaServidores.length;
+            document.getElementById('kpiProdServicos').innerText = registros.length;
+            document.getElementById('kpiProdHoras').innerText = formatarHorasProducao(listaServidores.reduce((s, x) => s + x.horas, 0));
+            document.getElementById('kpiProdReincidencias').innerText = Object.values(grupos).reduce((s, x) => s + x.reincidencias, 0);
+            document.querySelector('#tabelaComparativoProducao tbody').innerHTML = listaServidores.length ? listaServidores.map(s => `<tr><td><strong>${escapeHtml(s.servidor)}</strong></td><td>${s.qtd}</td><td>${formatarHorasProducao(s.horas)}</td><td>${formatarHorasProducao(s.horas / s.qtd)}</td><td>${s.reincidencias}</td><td>${escapeHtml(s.temas.join('; '))}</td></tr>`).join('') : '<tr><td colspan="6" style="text-align:center;color:#7f8c8d;font-style:italic;">Nenhum serviço encontrado com os filtros atuais.</td></tr>';
+            const maxHoras = Math.max(...listaServidores.map(s => s.horas), 0);
+            document.getElementById('graficoComparativoProducao').innerHTML = listaServidores.map(s => `<div class="bar-row"><strong>${escapeHtml(s.servidor)}</strong><div class="bar-track"><div class="bar-fill" style="width:${maxHoras ? (s.horas / maxHoras * 100).toFixed(1) : 0}%"></div></div><span>${formatarHorasProducao(s.horas)}</span></div>`).join('') || '<p class="production-note">O gráfico aparecerá após o carregamento de um histórico.</p>';
+            renderPainelGerencialCarga();
+            const temas = Object.values(grupos).sort((a,b) => b.horas - a.horas);
+            document.querySelector('#tabelaTemasProducao tbody').innerHTML = temas.length ? temas.map(g => `<tr><td>${escapeHtml(g.servidor)}</td><td>${escapeHtml(g.tema)}</td><td>${g.qtd}</td><td>${formatarHorasProducao(g.horas)}</td><td>${g.reincidencias}</td><td>${escapeHtml(g.assuntos.slice(0, 3).join(' | ') || 'Sem assunto informado')}</td></tr>`).join('') : '<tr><td colspan="6" style="text-align:center;color:#7f8c8d;font-style:italic;">Nenhum tema encontrado com os filtros atuais.</td></tr>';
+        }
+
+        function atualizarFiltrosAssessoresRelatorio() { const select = document.getElementById('relatorioAssessor'); if (!select) return; const atual = select.value; const nomes = [...new Set(historicoData.map(i => String(i.assessor || '').trim()).filter(Boolean))].sort((a,b) => a.localeCompare(b, 'pt-BR')); select.innerHTML = '<option value="">-- Todos os servidores --</option>' + nomes.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join(''); if (nomes.includes(atual)) select.value = atual; }
+
+        function definirPeriodoRelatorio(tipo) { const ini = document.getElementById('relatorioDataInicial'); const fim = document.getElementById('relatorioDataFinal'); if (tipo === 'todos') { ini.value = ''; fim.value = ''; } else { const hoje = new Date(); ini.value = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}-01`; fim.value = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}-${String(hoje.getDate()).padStart(2,'0')}`; } renderRelatorioPrestacaoContas(); }
+
+        function obterRegistrosRelatorio() { const iniVal = document.getElementById('relatorioDataInicial')?.value; const fimVal = document.getElementById('relatorioDataFinal')?.value; const ref = document.getElementById('relatorioDataReferencia')?.value || 'prazo'; const assessor = document.getElementById('relatorioAssessor')?.value || ''; const status = document.getElementById('relatorioStatus')?.value || ''; const ini = iniVal ? new Date(`${iniVal}T00:00:00`) : null; const fim = fimVal ? new Date(`${fimVal}T23:59:59`) : null; return historicoData.filter(item => { const data = obterDataReferenciaAnalise(item, ref); return (!assessor || String(item.assessor || '') === assessor) && (!status || item.statusCategoria === status) && data && (!ini || data >= ini) && (!fim || data <= fim); }); }
+
+        function riscoPrazoRelatorio(item) { if (item.statusCategoria === 'CONCLUÍDO') return { label: 'Concluído', classe: 'success' }; const prazo = parseDate(item.prazo); if (!prazo) return { label: 'Sem prazo', classe: 'warning' }; const dias = Math.ceil((prazo - new Date()) / 86400000); if (dias < 0) return { label: `Vencido há ${Math.abs(dias)}d`, classe: 'error' }; if (dias <= 3) return { label: `Vence em ${dias}d`, classe: 'loading' }; return { label: `Em dia (${dias}d)`, classe: 'success' }; }
+
+        function renderRelatorioPrestacaoContas() { const container = document.getElementById('relatorioPrestacaoContas'); if (!container) return; atualizarFiltrosAssessoresRelatorio(); const tipo = document.getElementById('relatorioTipo')?.value || 'geral'; const registros = obterRegistrosRelatorio(); const agora = new Date(); const vencidos = registros.filter(i => riscoPrazoRelatorio(i).label.startsWith('Vencido')).length; const concluidos = registros.filter(i => i.statusCategoria === 'CONCLUÍDO').length; const config = obterConfigCargaProducao(); const horas = registros.reduce((s,i) => s + Number(config.horas[classificarTemaProducao(i)] ?? 1), 0); let titulo = 'Resumo geral do período', cabecalho = [], linhas = [];
+            if (tipo === 'servidores') { const mapa = {}; registros.forEach(i => { const nome = String(i.assessor || 'Não informado').trim() || 'Não informado'; if (!mapa[nome]) mapa[nome] = { nome, total: 0, concluidos: 0, horas: 0, vencidos: 0 }; mapa[nome].total++; mapa[nome].concluidos += i.statusCategoria === 'CONCLUÍDO' ? 1 : 0; mapa[nome].horas += Number(config.horas[classificarTemaProducao(i)] ?? 1); mapa[nome].vencidos += riscoPrazoRelatorio(i).label.startsWith('Vencido') ? 1 : 0; }); titulo = 'Produção, carga e risco por servidor'; cabecalho = ['Servidor','Processos','Concluídos','Horas estimadas','Vencidos','Taxa de conclusão']; linhas = Object.values(mapa).sort((a,b) => b.horas - a.horas).map(x => [x.nome,x.total,x.concluidos,formatarHorasProducao(x.horas),x.vencidos,`${x.total ? (x.concluidos/x.total*100).toFixed(1).replace('.',',') : '0,0'}%`]); }
+            else if (tipo === 'prazos') { const mapa = {}; registros.forEach(i => { const risco = riscoPrazoRelatorio(i); const chave = risco.label.startsWith('Vencido') ? 'Vencidos' : risco.label.startsWith('Vence em') ? 'Vencem em até 3 dias' : risco.label === 'Sem prazo' ? 'Sem Data Limite' : 'Dentro do prazo'; if (!mapa[chave]) mapa[chave] = { situacao: chave, total: 0, pendentes: 0, horas: 0 }; mapa[chave].total++; mapa[chave].pendentes += i.statusCategoria === 'CONCLUÍDO' ? 0 : 1; mapa[chave].horas += Number(config.horas[classificarTemaProducao(i)] ?? 1); }); titulo = 'Prazos, riscos e pendências por situação'; cabecalho = ['Situação do prazo','Processos','Pendentes','Horas estimadas','Participação']; linhas = Object.values(mapa).sort((a,b) => b.total - a.total).map(x => [x.situacao,x.total,x.pendentes,formatarHorasProducao(x.horas),`${registros.length ? (x.total/registros.length*100).toFixed(1).replace('.',',') : '0,0'}%`]); }
+            else if (tipo === 'temas') { const mapa = {}; registros.forEach(i => { const tema = classificarTemaProducao(i); if (!mapa[tema]) mapa[tema] = { tema, total: 0, concluidos: 0, horas: 0 }; mapa[tema].total++; mapa[tema].concluidos += i.statusCategoria === 'CONCLUÍDO' ? 1 : 0; mapa[tema].horas += Number(config.horas[tema] ?? 1); }); titulo = 'Distribuição de processos por tema'; cabecalho = ['Tema','Processos','Concluídos','Horas estimadas','Participação']; linhas = Object.values(mapa).sort((a,b) => b.total - a.total).map(x => [x.tema,x.total,x.concluidos,formatarHorasProducao(x.horas),`${registros.length ? (x.total/registros.length*100).toFixed(1).replace('.',',') : '0,0'}%`]); }
+            else { cabecalho = ['Status','Processos','Participação','Horas estimadas']; const mapa = {}; registros.forEach(i => { const st = i.statusCategoria || 'OUTROS'; if (!mapa[st]) mapa[st] = { st, total: 0, horas: 0 }; mapa[st].total++; mapa[st].horas += Number(config.horas[classificarTemaProducao(i)] ?? 1); }); linhas = Object.values(mapa).sort((a,b) => b.total - a.total).map(x => [x.st,x.total,`${registros.length ? (x.total/registros.length*100).toFixed(1).replace('.',',') : '0,0'}%`,formatarHorasProducao(x.horas)]); }
+            ultimoRelatorioPrestacao = { titulo, cabecalho, linhas }; const inicio = document.getElementById('relatorioDataInicial')?.value || 'início'; const fim = document.getElementById('relatorioDataFinal')?.value || 'hoje'; const esc = value => escapeHtml(String(value ?? '')); container.innerHTML = `<div class="report-header"><h3 class="report-title">${esc(titulo)}</h3><p class="report-meta">Período: ${esc(inicio)} a ${esc(fim)} · Gerado em ${agora.toLocaleString('pt-BR')}</p></div><div class="report-summary"><div class="metric-card andamento"><span class="metric-title">Processos analisados</span><span class="metric-value">${registros.length}</span></div><div class="metric-card concluidos"><span class="metric-title">Concluídos</span><span class="metric-value">${concluidos}</span></div><div class="metric-card urgentes"><span class="metric-title">Horas estimadas</span><span class="metric-value">${formatarHorasProducao(horas)}</span></div><div class="metric-card vencidos"><span class="metric-title">Vencidos</span><span class="metric-value">${vencidos}</span></div></div><div class="table-responsive"><table><thead><tr>${cabecalho.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${linhas.length ? linhas.map(l => `<tr>${l.map(v => `<td>${esc(v)}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${cabecalho.length}" style="text-align:center;color:#7f8c8d;font-style:italic;">Nenhum registro encontrado com os filtros atuais.</td></tr>`}</tbody></table></div>`; }
+
+        function exportarRelatorioPrestacaoContasExcel() { if (!ultimoRelatorioPrestacao.linhas.length) { renderRelatorioPrestacaoContas(); } if (!ultimoRelatorioPrestacao.cabecalho.length) { alert('Não há dados para exportar com os filtros atuais.'); return; } const ws = XLSX.utils.aoa_to_sheet([ultimoRelatorioPrestacao.cabecalho, ...ultimoRelatorioPrestacao.linhas]); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Prestação de Contas'); const arquivo = `GEDEP_${ultimoRelatorioPrestacao.titulo.replace(/[^a-zA-Z0-9]+/g,'_')}.xlsx`; XLSX.writeFile(wb, arquivo); registrarExportacaoGEDEP(ultimoRelatorioPrestacao.titulo, arquivo, ultimoRelatorioPrestacao.linhas.length, `Tipo de relatório: ${document.getElementById('relatorioTipo')?.value || 'geral'}; Data Limite no consolidado`); writeLog(`Relatório exportado: ${ultimoRelatorioPrestacao.titulo}.`, 'success'); }
+
+        function obterRegistrosGerenciaisConsolidados() { const iniVal = document.getElementById('relatorioDataInicial')?.value; const fimVal = document.getElementById('relatorioDataFinal')?.value; const ini = iniVal ? new Date(`${iniVal}T00:00:00`) : null; const fim = fimVal ? new Date(`${fimVal}T23:59:59`) : null; const assessor = document.getElementById('relatorioAssessor')?.value || ''; const status = document.getElementById('relatorioStatus')?.value || ''; return historicoData.filter(item => { const data = obterDataReferenciaAnalise(item, 'prazo'); return (!assessor || String(item.assessor || '') === assessor) && (!status || item.statusCategoria === status) && data && (!ini || data >= ini) && (!fim || data <= fim); }); }
+        function exportarTodosRelatoriosGerenciaisExcel() { const registros = obterRegistrosGerenciaisConsolidados(); if (!registros.length) { alert('Não há dados gerenciais para exportar com os filtros atuais.'); return; } const config = obterConfigCargaProducao(); const wb = XLSX.utils.book_new(); const adicionar = (nome, cabecalho, linhas) => XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([cabecalho, ...linhas]), nome.slice(0,31)); const horasDe = i => Number(config.horas[classificarTemaProducao(i)] ?? 1); const feitos = i => !!i.envio || i.statusCategoria === 'CONCLUÍDO'; const risco = i => riscoPrazoRelatorio(i); const totalHoras = registros.reduce((s,i) => s + horasDe(i), 0); const concluidos = registros.filter(feitos).length; const vencidos = registros.filter(i => risco(i).label.startsWith('Vencido')).length; const urgentes = registros.filter(i => risco(i).label.startsWith('Vence em')).length;
+            adicionar('Resumo Geral', ['Indicador','Valor'], [['Processos analisados', registros.length],['Serviços feitos', concluidos],['Pendentes', registros.length - concluidos],['Horas estimadas', formatarHorasProducao(totalHoras)],['Vencidos', vencidos],['Vencem em até 3 dias', urgentes],['Servidores envolvidos', new Set(registros.map(i => String(i.assessor || 'Não informado'))).size],['Data de referência','Data Limite']]);
+            const servidores = {}; registros.forEach(i => { const n = String(i.assessor || 'Não informado').trim() || 'Não informado'; if (!servidores[n]) servidores[n] = { n, total: 0, feitos: 0, horas: 0, vencidos: 0 }; servidores[n].total++; servidores[n].feitos += feitos(i) ? 1 : 0; servidores[n].horas += horasDe(i); servidores[n].vencidos += risco(i).label.startsWith('Vencido') ? 1 : 0; }); adicionar('Por Servidor', ['Servidor','Processos','Serviços feitos','Pendentes','Horas estimadas','Vencidos','Taxa conclusão'], Object.values(servidores).sort((a,b) => b.horas-a.horas).map(x => [x.n,x.total,x.feitos,x.total-x.feitos,formatarHorasProducao(x.horas),x.vencidos,`${(x.feitos/x.total*100).toFixed(1).replace('.',',')}%`]));
+            const situacoes = {}; registros.forEach(i => { const r = risco(i); const s = r.label.startsWith('Vencido') ? 'Vencidos' : r.label.startsWith('Vence em') ? 'Vencem em até 3 dias' : r.label === 'Sem prazo' ? 'Sem Data Limite' : 'Dentro do prazo'; if (!situacoes[s]) situacoes[s] = { s, total: 0, pendentes: 0, horas: 0 }; situacoes[s].total++; situacoes[s].pendentes += feitos(i) ? 0 : 1; situacoes[s].horas += horasDe(i); }); adicionar('Prazos e Riscos', ['Situação','Processos','Pendentes','Horas estimadas','Participação'], Object.values(situacoes).sort((a,b) => b.total-a.total).map(x => [x.s,x.total,x.pendentes,formatarHorasProducao(x.horas),`${(x.total/registros.length*100).toFixed(1).replace('.',',')}%`]));
+            const capacidadeSemanal = Math.max(1, Number(document.getElementById('capacidadeSemanalServidor')?.value || 40)); adicionar('Capacidade', ['Servidor','Processos','Horas estimadas','Capacidade semanal ref.','Utilização estimada','Recomendação'], Object.values(servidores).sort((a,b) => b.horas-a.horas).map(x => { const utilizacao = x.horas / capacidadeSemanal * 100; const recomendacao = utilizacao > 100 ? 'Evitar novas atribuições' : utilizacao < 60 ? 'Prioridade para receber' : 'Distribuição equilibrada'; return [x.n,x.total,formatarHorasProducao(x.horas),formatarHorasProducao(capacidadeSemanal),`${utilizacao.toFixed(1).replace('.',',')}%`,recomendacao]; }));
+            const temas = {}; registros.forEach(i => { const t = classificarTemaProducao(i); if (!temas[t]) temas[t] = { t, total: 0, feitos: 0, horas: 0 }; temas[t].total++; temas[t].feitos += feitos(i) ? 1 : 0; temas[t].horas += horasDe(i); }); adicionar('Por Temas', ['Tema','Processos','Serviços feitos','Horas estimadas','Participação'], Object.values(temas).sort((a,b) => b.total-a.total).map(x => [x.t,x.total,x.feitos,formatarHorasProducao(x.horas),`${(x.total/registros.length*100).toFixed(1).replace('.',',')}%`]));
+            const periodos = {}; registros.forEach(i => { const data = obterDataReferenciaAnalise(i, 'prazo'); if (!data) return; const chave = chavePeriodoProducao(data, 'semana'); if (!periodos[chave]) periodos[chave] = { p: chave, total: 0, feitos: 0, horas: 0, riscos: 0 }; periodos[chave].total++; periodos[chave].feitos += feitos(i) ? 1 : 0; periodos[chave].horas += horasDe(i); periodos[chave].riscos += risco(i).label.startsWith('Vencido') || risco(i).label.startsWith('Vence em') ? 1 : 0; }); adicionar('Demanda Semanal', ['Semana pela Data Limite','Processos','Serviços feitos','Horas estimadas','Riscos'], Object.values(periodos).sort((a,b) => a.p.localeCompare(b.p)).map(x => [rotuloPeriodoProducao(x.p, 'semana'),x.total,x.feitos,formatarHorasProducao(x.horas),x.riscos]));
+            const entradas = {}, saidas = {}; registros.forEach(i => { const e = String(i.procedencia || 'Não informado').trim() || 'Não informado'; const s = String(i.destino || 'Não informado').trim() || 'Não informado'; if (!entradas[e]) entradas[e] = { n: e, total: 0, horas: 0 }; if (!saidas[s]) saidas[s] = { n: s, total: 0, horas: 0 }; entradas[e].total++; entradas[e].horas += horasDe(i); saidas[s].total++; saidas[s].horas += horasDe(i); }); adicionar('Fluxo Entradas', ['Procedência','Processos','Horas estimadas','Participação'], Object.values(entradas).sort((a,b) => b.total-a.total).map(x => [x.n,x.total,formatarHorasProducao(x.horas),`${(x.total/registros.length*100).toFixed(1).replace('.',',')}%`])); adicionar('Fluxo Saídas', ['Destino','Processos','Horas estimadas','Participação'], Object.values(saidas).sort((a,b) => b.total-a.total).map(x => [x.n,x.total,formatarHorasProducao(x.horas),`${(x.total/registros.length*100).toFixed(1).replace('.',',')}%`]));
+            const eventos = obterEventosSEI ? obterEventosSEI() : {}; const eventosPorTipo = {}; Object.values(eventos).flat().forEach(ev => { const tipo = String(ev.tipo || 'Outro'); if (!eventosPorTipo[tipo]) eventosPorTipo[tipo] = { tipo, total: 0, responsaveis: new Set() }; eventosPorTipo[tipo].total++; if (ev.responsavel) eventosPorTipo[tipo].responsaveis.add(String(ev.responsavel)); }); adicionar('Eventos SEI', ['Tipo de evento','Quantidade','Responsáveis envolvidos'], Object.values(eventosPorTipo).sort((a,b) => b.total-a.total).map(x => [x.tipo,x.total,[...x.responsaveis].join('; ') || 'Não informado']));
+            const arquivo = `GEDEP_Relatorios_Gerenciais_${new Date().toISOString().slice(0,10)}.xlsx`; XLSX.writeFile(wb, arquivo); registrarExportacaoGEDEP('Todos os relatórios gerenciais agregados', arquivo, registros.length, `Data Limite; servidor: ${document.getElementById('relatorioAssessor')?.value || 'todos'}; status: ${document.getElementById('relatorioStatus')?.value || 'todos'}`); writeLog('Exportação consolidada de relatórios gerenciais concluída sem linhas individuais de processos.', 'success'); }
+
+        function imprimirRelatorioPrestacaoContas() { renderRelatorioPrestacaoContas(); const conteudo = document.getElementById('relatorioPrestacaoContas')?.innerHTML || ''; const janela = window.open('', '_blank'); if (!janela) { alert('O navegador bloqueou a janela de impressão. Autorize pop-ups para este arquivo.'); return; } janela.document.write(`<html lang="pt-BR"><head><title>${escapeHtml(ultimoRelatorioPrestacao.titulo)}</title><style>body{font-family:Arial,sans-serif;padding:25px;color:#1f2937}h3{color:#173f6b}.report-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}.metric-card{border:1px solid #d9e2ec;padding:12px;border-radius:8px}.metric-title{display:block;font-size:11px;color:#64748b;text-transform:uppercase}.metric-value{display:block;font-size:22px;font-weight:bold;margin-top:5px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #cbd5e1;padding:7px;text-align:left}th{background:#173f6b;color:white}</style></head><body>${conteudo}</body></html>`); janela.document.close(); janela.focus(); janela.print(); }
+
+        function adicionarEventoHistoricoSEI() { const processo = obterProcessoSEISelecionado(); if (!processo) { alert('Selecione um processo SEI antes de registrar um evento.'); return; } const descricao = document.getElementById('eventoSeiDescricao')?.value.trim(); if (!descricao) { alert('Descreva o evento antes de salvar.'); return; } const eventos = obterEventosSEI(); if (!eventos[processo]) eventos[processo] = []; eventos[processo].push({ data: document.getElementById('eventoSeiData')?.value || new Date().toISOString().slice(0,10), tipo: document.getElementById('eventoSeiTipo')?.value || 'Outro', responsavel: document.getElementById('eventoSeiResponsavel')?.value.trim() || 'Não informado', status: document.getElementById('eventoSeiStatus')?.value.trim() || '', descricao, criadoEm: new Date().toISOString() }); eventos[processo].sort((a,b) => String(b.data).localeCompare(String(a.data))); localStorage.setItem(CHAVE_EVENTOS_SEI, JSON.stringify(eventos)); document.getElementById('eventoSeiDescricao').value = ''; document.getElementById('eventoSeiResponsavel').value = ''; document.getElementById('eventoSeiStatus').value = ''; renderHistoricoIndividualSEI(); writeLog(`Evento registrado no processo ${processo}.`, 'success'); }
+
+        function renderHistoricoIndividualSEI() { const container = document.getElementById('historicoSeiResumo'); if (!container) return; const processo = obterProcessoSEISelecionado(); if (!processo) { container.innerHTML = '<p class="production-note" style="margin-top:18px;">Selecione um processo para visualizar sua linha do tempo.</p>'; return; } const item = historicoData.find(i => String(i.processo || '').trim() === processo); const eventos = obterEventosSEI()[processo] || []; if (!item) { container.innerHTML = '<p class="production-note">Processo não localizado no histórico carregado.</p>'; return; } const risco = typeof riscoPrazoRelatorio === 'function' ? riscoPrazoRelatorio(item) : { label: item.statusCategoria || 'Sem classificação' }; const alteracoes = obterEdicoesHistoricoSalvas()[processo]; const linhaBase = [{ data: item.recebimento, tipo: 'Recebimento no histórico', responsavel: item.assessor || 'Não informado', status: item.statusCategoria || '', descricao: `Processo importado com assunto: ${item.assunto || 'Sem assunto informado'}.` }, ...(item.envio ? [{ data: item.envio, tipo: 'Envio/conclusão registrada', responsavel: item.assessor || 'Não informado', status: item.statusCategoria || '', descricao: 'Registro de envio localizado no relatório histórico.' }] : []), ...eventos]; const esc = value => escapeHtml(String(value ?? '')); container.innerHTML = `<div class="sei-summary"><div class="metric-card andamento"><span class="metric-title">Processo SEI</span><span class="metric-value" style="font-size:17px;">${esc(processo)}</span></div><div class="metric-card concluidos"><span class="metric-title">Responsável</span><span class="metric-value" style="font-size:17px;">${esc(item.assessor || 'Não informado')}</span></div><div class="metric-card urgentes"><span class="metric-title">Situação do prazo</span><span class="metric-value" style="font-size:17px;">${esc(risco.label)}</span></div><div class="metric-card vencidos"><span class="metric-title">Eventos registrados</span><span class="metric-value">${linhaBase.length}</span></div></div><p class="report-meta"><strong>Assunto:</strong> ${esc(item.assunto || 'Não informado')} · <strong>Destino:</strong> ${esc(item.destino || 'Não informado')}${alteracoes ? ' · Dados corrigidos localmente' : ''}</p><div style="margin-top:16px;">${linhaBase.length ? linhaBase.sort((a,b) => String(b.data || '').localeCompare(String(a.data || ''))).map(ev => `<div class="sei-event"><div class="sei-event-date">${esc(ev.data || 'Sem data')}</div><div class="sei-event-body"><strong>${esc(ev.tipo || 'Evento')}</strong>${ev.responsavel ? ` · ${esc(ev.responsavel)}` : ''}${ev.status ? ` · ${esc(ev.status)}` : ''}<div>${esc(ev.descricao || '')}</div></div></div>`).join('') : '<p class="production-note">Nenhum evento registrado.</p>'}</div>`; }
+
+        function renderPainelGerencialCarga() { const container = document.getElementById('painelGerencialCarga'); if (!container) return; const capacidade = Math.max(1, Number(document.getElementById('capacidadeSemanalServidor')?.value || 40)); const escopo = document.getElementById('cargaGerencialEscopo')?.value || 'todos'; const iniVal = document.getElementById('producaoDataInicial')?.value; const fimVal = document.getElementById('producaoDataFinal')?.value; const campoData = document.getElementById('producaoDataReferencia')?.value || 'prazo'; const ini = iniVal ? new Date(`${iniVal}T00:00:00`) : null; const fim = fimVal ? new Date(`${fimVal}T23:59:59`) : null; const config = obterConfigCargaProducao(); const registros = historicoData.filter(item => { const feito = !!item.envio || item.statusCategoria === 'CONCLUÍDO'; if (escopo === 'feitos' && !feito) return false; if (escopo === 'pendentes' && feito) return false; const data = obterDataReferenciaAnalise(item, campoData); return data && (!ini || data >= ini) && (!fim || data <= fim); }); const semanas = ini && fim ? Math.max(1, Math.ceil((fim - ini) / 604800000)) : 1; const capacidadePeriodo = capacidade * semanas; const grupos = {}; registros.forEach(item => { const nome = String(item.assessor || 'Não informado').trim() || 'Não informado'; const tema = classificarTemaProducao(item); const horas = Number(config.horas[tema] ?? 1); if (!grupos[nome]) grupos[nome] = { nome, processos: 0, horas: 0, vencidos: 0, urgentes: 0, pendentes: 0 }; grupos[nome].processos++; grupos[nome].horas += horas; const feito = !!item.envio || item.statusCategoria === 'CONCLUÍDO'; if (!feito) { grupos[nome].pendentes++; const prazo = parseDate(item.prazo); if (prazo) { const dias = Math.ceil((prazo - new Date()) / 86400000); if (dias < 0) grupos[nome].vencidos++; else if (dias <= 3) grupos[nome].urgentes++; } } }); const lista = Object.values(grupos).sort((a,b) => b.horas - a.horas); const capacidadeTotal = capacidadePeriodo * Math.max(1, lista.length); const totalHoras = lista.reduce((s,x) => s + x.horas, 0); const riscoTotal = lista.reduce((s,x) => s + x.vencidos + x.urgentes, 0); const esc = value => escapeHtml(String(value ?? '')); const tabela = lista.length ? `<div class="table-responsive"><table><thead><tr><th>Servidor</th><th>Processos</th><th>Horas estimadas</th><th>Capacidade ref.</th><th>Utilização</th><th>Pendentes</th><th>Risco de prazo</th><th>Distribuição</th></tr></thead><tbody>${lista.map(x => { const utilizacao = x.horas / capacidadePeriodo * 100; const risco = x.vencidos ? `<span style="color:var(--danger);font-weight:bold;">${x.vencidos} vencido(s)</span>` : x.urgentes ? `<span style="color:var(--warning);font-weight:bold;">${x.urgentes} urgente(s)</span>` : '<span style="color:var(--success);font-weight:bold;">Sem alerta</span>'; const dist = utilizacao > 100 ? 'Evitar novas atribuições' : utilizacao < 60 ? 'Prioridade para receber' : 'Distribuição equilibrada'; return `<tr><td><strong>${esc(x.nome)}</strong></td><td>${x.processos}</td><td>${formatarHorasProducao(x.horas)}</td><td>${formatarHorasProducao(capacidadePeriodo)}</td><td>${utilizacao.toFixed(1).replace('.',',')}%</td><td>${x.pendentes}</td><td>${risco}</td><td>${esc(dist)}</td></tr>`; }).join('')}</tbody></table></div>` : '<p class="production-note">Carregue um histórico ou ajuste os filtros para visualizar a capacidade da equipe.</p>'; container.innerHTML = `<div class="report-summary"><div class="metric-card andamento"><span class="metric-title">Carga total</span><span class="metric-value">${formatarHorasProducao(totalHoras)}</span></div><div class="metric-card urgentes"><span class="metric-title">Capacidade da equipe</span><span class="metric-value">${formatarHorasProducao(capacidadeTotal)}</span></div><div class="metric-card vencidos"><span class="metric-title">Riscos de prazo</span><span class="metric-value">${riscoTotal}</span></div><div class="metric-card concluidos"><span class="metric-title">Servidores comparados</span><span class="metric-value">${lista.length}</span></div></div>${tabela}`; }
+
+        function obterValorFluxo(item, metrica) { const config = obterConfigCargaProducao(); const horas = Number(config.horas[classificarTemaProducao(item)] ?? 1); if (metrica === 'horas') return horas; if (metrica === 'risco') { const feito = !!item.envio || item.statusCategoria === 'CONCLUÍDO'; const prazo = parseDate(item.prazo); if (!feito && prazo) { const dias = Math.ceil((prazo - new Date()) / 86400000); return dias <= 3 ? 1 : 0; } return 0; } return 1; }
+
+        function atualizarOpcoesFluxo() { const select = document.getElementById('fluxoCentro'); const modo = document.getElementById('fluxoModo')?.value || 'tema'; if (!select) return; const atual = select.value; const valores = [...new Set(historicoData.map(item => modo === 'tema' ? classificarTemaProducao(item) : String(item.destino || 'Não informado').trim() || 'Não informado'))].filter(Boolean).sort((a,b) => a.localeCompare(b, 'pt-BR')); select.innerHTML = '<option value="">Todos / resumo geral</option>' + valores.map(valor => `<option value="${escapeHtml(valor)}">${escapeHtml(valor)}</option>`).join(''); if (valores.includes(atual)) select.value = atual; }
+
+        function renderDesenhoFluxo() { const canvas = document.getElementById('desenhoFluxoProcessos'); const resumo = document.getElementById('fluxoResumo'); if (!canvas || !resumo) return; const modo = document.getElementById('fluxoModo')?.value || 'tema'; const centroSelecionado = document.getElementById('fluxoCentro')?.value || ''; const metrica = document.getElementById('fluxoMetrica')?.value || 'quantidade'; const inicioVal = document.getElementById('fluxoDataInicial')?.value; const fimVal = document.getElementById('fluxoDataFinal')?.value; const status = document.getElementById('fluxoStatus')?.value || ''; const inicio = inicioVal ? new Date(`${inicioVal}T00:00:00`) : null; const fim = fimVal ? new Date(`${fimVal}T23:59:59`) : null; const registros = historicoData.filter(item => { const data = obterDataReferenciaAnalise(item, 'prazo'); const centro = modo === 'tema' ? classificarTemaProducao(item) : String(item.destino || 'Não informado').trim() || 'Não informado'; return (!centroSelecionado || centro === centroSelecionado) && (!status || item.statusCategoria === status) && data && (!inicio || data >= inicio) && (!fim || data <= fim); }); const centroLabel = centroSelecionado || (modo === 'tema' ? 'Todos os tipos/temas' : 'Todas as unidades'); const entradas = {}, saidas = {}; registros.forEach(item => { const entrada = String(item.procedencia || 'Não informado').trim() || 'Não informado'; const saida = modo === 'tema' ? String(item.destino || 'Não informado').trim() || 'Não informado' : String(item.assessor || 'Não informado').trim() || 'Não informado'; const valor = obterValorFluxo(item, metrica); if (!entradas[entrada]) entradas[entrada] = { valor: 0, qtd: 0 }; if (!saidas[saida]) saidas[saida] = { valor: 0, qtd: 0 }; entradas[entrada].valor += valor; entradas[entrada].qtd++; saidas[saida].valor += valor; saidas[saida].qtd++; }); const ordenar = grupo => Object.entries(grupo).sort((a,b) => b[1].valor - a[1].valor).slice(0, 10); const entradasLista = ordenar(entradas); const saidasLista = ordenar(saidas); const totalValor = registros.reduce((s,item) => s + obterValorFluxo(item, metrica), 0); const totalHoras = registros.reduce((s,item) => s + obterValorFluxo(item, 'horas'), 0); const riscos = registros.reduce((s,item) => s + obterValorFluxo(item, 'risco'), 0); const rotuloMetrica = metrica === 'horas' ? 'horas estimadas' : metrica === 'risco' ? 'processos em risco' : 'processos'; const formatarValorFluxo = valor => metrica === 'horas' ? formatarHorasProducao(valor) : String(valor); const esc = valor => escapeHtml(String(valor ?? '')); const coluna = (lista, classe) => { const max = Math.max(...lista.map(([,x]) => x.valor), 0); return lista.length ? `<div class="flow-column"><h4>${classe === 'out' ? 'Saídas' : 'Entradas'}</h4>${lista.map(([nome,dado]) => `<div class="flow-row"><div><div class="flow-row-label" title="${esc(nome)}">${esc(nome)}</div><div class="flow-track"><div class="flow-bar ${classe}" style="width:${max ? Math.max(3, dado.valor / max * 100).toFixed(1) : 0}%"></div></div></div><div class="flow-value">${formatarValorFluxo(dado.valor)}<small style="display:block;color:#64748b;font-weight:500;">${dado.qtd} proc.</small></div></div>`).join('')}</div>` : `<div class="flow-column"><h4>${classe === 'out' ? 'Saídas' : 'Entradas'}</h4><div class="flow-empty" style="padding:12px 0;">Nenhum registro</div></div>`; }; resumo.innerHTML = `<div class="metric-card andamento"><span class="metric-title">Processos analisados</span><span class="metric-value">${registros.length}</span></div><div class="metric-card concluidos"><span class="metric-title">Carga estimada</span><span class="metric-value">${formatarHorasProducao(totalHoras)}</span></div><div class="metric-card urgentes"><span class="metric-title">Métrica exibida</span><span class="metric-value" style="font-size:16px;">${esc(formatarValorFluxo(totalValor))}</span></div><div class="metric-card vencidos"><span class="metric-title">Riscos de prazo</span><span class="metric-value">${riscos}</span></div>`; canvas.innerHTML = registros.length ? `${coluna(entradasLista, '')}<div class="flow-center"><span class="flow-center-label">${modo === 'tema' ? 'Tipo / tema central' : 'Unidade central'}</span><strong>${esc(centroLabel)}</strong><span>${registros.length} ${registros.length === 1 ? 'processo analisado' : 'processos analisados'}</span><span style="margin-top:6px;opacity:.78;">${esc(rotuloMetrica)}</span></div>${coluna(saidasLista, 'out')}` : '<div class="flow-empty">Nenhum processo encontrado com os filtros atuais. Carregue um histórico ou ajuste o período, status e elemento central.</div>'; }
+
+        function definirPeriodoFluxo(tipo) { const ini = document.getElementById('fluxoDataInicial'); const fim = document.getElementById('fluxoDataFinal'); if (!ini || !fim) return; if (tipo === 'todos') { ini.value = ''; fim.value = ''; } else { const hoje = new Date(); ini.value = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}-01`; fim.value = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}-${String(hoje.getDate()).padStart(2,'0')}`; } renderDesenhoFluxo(); }
+        function limparFiltrosFluxo() { ['fluxoDataInicial','fluxoDataFinal'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); ['fluxoCentro','fluxoStatus'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); const modo = document.getElementById('fluxoModo'); if (modo) modo.value = 'tema'; const metrica = document.getElementById('fluxoMetrica'); if (metrica) metrica.value = 'quantidade'; atualizarOpcoesFluxo(); renderDesenhoFluxo(); }
+
+        document.addEventListener('DOMContentLoaded', () => { renderRegistrosOperacionais(); renderAlteracoesHistorico(); carregarConfigCargaProducao(); atualizarFiltrosAssessoresRelatorio(); renderRelatorioPrestacaoContas(); atualizarSeletorHistoricoSEI(); renderPainelGerencialCarga(); atualizarOpcoesFluxo(); renderDesenhoFluxo(); const campoDataEvento = document.getElementById('eventoSeiData'); if (campoDataEvento) campoDataEvento.value = new Date().toISOString().slice(0,10); });
+
+        // --- EXTRATOR DE TEXTO (TXT / EXCEL) ---
+        let dadosSegmentados = [];
+        function processarTextoBruto() {
+            const texto = document.getElementById('inputTextoBruto').value;
+            if(!texto.trim()) { alert("Insira algum texto bruto."); return; }
+            const linhas = texto.split(/\r?\n/).filter(l => l.trim().length > 0);
+            dadosSegmentados = linhas;
+            const tbody = document.querySelector('#tabelaSegmentada tbody');
+            let html = '';
+            linhas.forEach((l, i) => {
+                html += `<tr><td>${i+1}</td><td>${escapeHtml(l)}</td></tr>`;
+            });
+            tbody.innerHTML = html;
+            writeLog(`Texto segmentado com sucesso: ${linhas.length} linhas geradas.`, 'success');
+        }
+
+        function exportarTextoSegmentadoExcel() {
+            if(dadosSegmentados.length === 0) { alert("Nenhum dado segmentado."); return; }
+            const wsData = [["#", "Conteúdo Extraído"]];
+            dadosSegmentados.forEach((l, i) => wsData.push([i+1, l]));
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Segmentado");
+            XLSX.writeFile(wb, "Texto_Segmentado.xlsx");
+            writeLog("Texto segmentado exportado para Excel com sucesso.", "success");
+        }
+
+        function formatDate(val) {
+            if (!val) return '-';
+            if (typeof val === 'number') {
+                const utc_days = Math.floor(val - 25569);
+                const utc_value = utc_days * 86400;
+                const dateInfo = new Date(utc_value * 1000);
+                return `${String(dateInfo.getUTCDate()).padStart(2, '0')}/${String(dateInfo.getUTCMonth() + 1).padStart(2, '0')}/${dateInfo.getUTCFullYear()}`;
+            }
+            let s = String(val).trim();
+            if (s.includes('T') && s.includes('Z')) {
+                const d = new Date(s);
+                if (!isNaN(d)) return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+            }
+            return s;
+        }
+
+        function parseDate(dateStr) {
+            if (!dateStr) return null;
+            if (typeof dateStr === 'number') {
+                const utc_days = Math.floor(dateStr - 25569);
+                return new Date((utc_days * 86400) * 1000);
+            }
+            const parts = String(dateStr).split('/');
+            if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]);
+            return null;
+        }
+
+        function categorizarStatus(statusRaw) {
+            if (!statusRaw) return "OUTROS";
+            const s = String(statusRaw).toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            if (s.includes("CONCLU") || s.includes("OK") || s.includes("CONFERIDO") || s.includes("ARQUIV") || s.includes("ENVIADO") || s.includes("FALTOU ASS")) return "CONCLUÍDO";
+            if (s.includes("ANDAMENTO") || s.includes("ACOMPANH") || s.includes("AGUARDANDO")  || s.includes("ENVIAR") || s.includes("LIBERADA")) return "EM ANDAMENTO";
+            if (s.includes("AGEND") || s.includes("SERA") || s.includes("REALIZADA") || s.includes("PERIODO") || s.includes("2026") || s.includes("MAIO") || s.includes("JUNHO") || s.includes("AGOSTO")) return "AGENDADO / EVENTO";
+            if (s.includes("PARA INICIAR") || s.includes("ORIENTADO") || s === "A") return "PARA INICIAR";
+            return "OUTROS";
+        }
+
+        function categorizarDestino(destRaw) {
+            if (!destRaw) return "OUTROS / INTERNO";
+            const d = String(destRaw).toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            const hasFop = d.includes("FOP") || d.includes("FOLHA") || d.includes("FPAG");
+            const hasCff = d.includes("CFF");
+            const hasDeb = d.includes("DEB");
+            const hasAtd = d.includes("ATD");
+            const hasPdp = d.includes("PDP");
+            const countInternos = (hasFop ? 1 : 0) + (hasCff ? 1 : 0) + (hasDeb ? 1 : 0) + (hasAtd ? 1 : 0) + (hasPdp ? 1 : 0);
+            
+            if (countInternos > 1 || d.includes("/") || d.includes(";") || d.includes(",")) {
+                if (d.includes("SEAD") || d.includes("GOIASPREV") || d.includes("GOINFRA") || d.includes("DETRAN") || d.includes("CASA CIVIL")) return "ÓRGÃOS EXTERNOS";
+                return "MÚLTIPLOS SETORES (GEDEP)";
+            }
+            if (hasFop) return "FOLHA DE PAGAMENTO (FOP)";
+            if (hasCff) return "CONTROLE DE FREQUÊNCIA (CFF)";
+            if (hasDeb) return "DIREITOS E BENEFÍCIOS (DEB)";
+            if (hasAtd) return "APOIO TÉCNICO (ATD)";
+            if (hasPdp) return "PLANEJAMENTO E DESENV. (PDP)";
+            if (d.includes("GETIN") || d.includes("GEPATRI") || d.includes("GEADM") || d.includes("ST") || d.includes("SEG") || d.includes("GETRA") || d.includes("GEFIN")) return "OUTRAS GERÊNCIAS GEDEP";
+            if (d.includes("PR") || d.includes("GAB") || d.includes("PRESIDENCIA") || d.includes("CASA CIVIL")) return "PRESIDÊNCIA / GABINETE / CASA CIVIL";
+            if (d.includes("SEAD") || d.includes("GOIASPREV") || d.includes("GOINFRA") || d.includes("DETRAN") || d.includes("CODEGO") || d.includes("TCE") || d.includes("UEG")) return "ÓRGÃOS EXTERNOS";
+            return "OUTROS / INTERNO";
+        }
+
+        function normalizarCabecalhoCSV(valor) { return String(valor ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
+        function analisarLinhaCSV(linha, separador = ';') { const campos = []; let atual = ''; let aspas = false; for (let i = 0; i < linha.length; i++) { const caractere = linha[i]; if (caractere === '"') { if (aspas && linha[i + 1] === '"') { atual += '"'; i++; } else { aspas = !aspas; } } else if (caractere === separador && !aspas) { campos.push(atual.trim()); atual = ''; } else { atual += caractere; } } campos.push(atual.trim()); return campos; }
+        function separarCSV(texto) { return String(texto || '').replace(/^\uFEFF/, '').replace(/\r/g, '').split('\n').filter(linha => linha.trim() !== '').map(linha => analisarLinhaCSV(linha, ';')); }
+        function localizarCabecalhoHistorico(linhas) { const obrigatorios = ['atribuicao', 'data recebimento', 'data envio', 'prazo limite para envio', 'status', 'procedencia', 'destino', 'processo sei']; const indice = linhas.findIndex(linha => { const cabecalhos = linha.map(normalizarCabecalhoCSV); return obrigatorios.slice(0, 4).every(nome => cabecalhos.includes(nome)) || (cabecalhos.includes('processo sei') && cabecalhos.includes('data recebimento')); }); return indice >= 0 ? indice : 0; }
+        function mapearLinhaHistorico(linha, cabecalhos, indiceLinha) { const posicoes = {}; cabecalhos.forEach((nome, indice) => { const chave = normalizarCabecalhoCSV(nome); if (chave && posicoes[chave] === undefined) posicoes[chave] = indice; }); const obter = (...nomes) => { for (const nome of nomes) { const indice = posicoes[normalizarCabecalhoCSV(nome)]; if (indice !== undefined) return linha[indice] ?? ''; } return ''; }; const statusOriginal = obter('status'); const destinoOriginal = obter('destino'); return aplicarEdicaoHistorico({ assessor: obter('atribuicao', 'assessor', 'assessor responsavel'), recebimento: obter('data recebimento', 'recebimento'), envio: obter('data de envio', 'data envio', 'envio'), prazo: obter('prazo limite para envio', 'prazo limite', 'data limite'), status: statusOriginal, statusCategoria: categorizarStatus(statusOriginal), procedencia: obter('procedencia', 'procedência'), destino: destinoOriginal, destinoCategoria: categorizarDestino(destinoOriginal), processo: obter('processo sei', 'numero sei', 'processo'), assunto: obter('assunto', 'tema'), linhaRef: obter('linha de referencia', 'linha referencia'), interessados: obter('interessados', 'interessado'), recorrencia: obter('recorrencia', 'recorrência') }, indiceLinha); }
+
+        async function handleHistoricoExcelUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            try {
+                let json;
+                if (String(file.name).toLowerCase().endsWith('.csv') || file.type.includes('csv')) {
+                    const buffer = await file.arrayBuffer();
+                    let texto = new TextDecoder('utf-8').decode(buffer);
+                    if (texto.includes('�')) texto = new TextDecoder('windows-1252').decode(buffer);
+                    json = separarCSV(texto);
+                } else {
+                    const data = await file.arrayBuffer();
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    json = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+                }
+                const linhaCabecalho = localizarCabecalhoHistorico(json);
+                const cabecalhos = json[linhaCabecalho] || [];
+                historicoData = [];
+                for (let i = linhaCabecalho + 1; i < json.length; i++) {
+                    const row = json[i];
+                    if (row && row.some(valor => String(valor ?? '').trim() !== '') && String(row.join('')).trim() !== '') {
+                        historicoData.push(mapearLinhaHistorico(row, cabecalhos, i));
+                    }
+                }
+                
+                document.getElementById('historicoBadge').innerText = `${historicoData.length} registros históricos carregados`;
+                popularFiltroAssessores();
+                atualizarFiltrosAssessoresProducao();
+                renderPainelProducaoServidor();
+                renderPainelDemandaTemporal();
+                aplicarFiltrosColuna();
+                atualizarFiltrosAssessoresRelatorio();
+                atualizarSeletorHistoricoSEI();
+                renderRelatorioPrestacaoContas();
+                atualizarDashboardRotina();
+                renderPainelPrazosCaixa();
+                writeLog(`Relatório histórico importado com sucesso! Total: ${historicoData.length} linhas. Cabeçalho identificado na linha ${linhaCabecalho + 1}.`, 'success');
+            } catch(e) {
+                writeLog(`Erro ao carregar histórico: ${e.message}`, 'error');
+                alert(`Erro ao carregar relatório XLSX/CSV: ${e.message}`);
+            }
+        }
+
+        function atualizarDashboardRotina() {
+            if (!historicoData || historicoData.length === 0) return;
+            let qtdVencidos = 0, qtdUrgentes = 0, qtdAndamento = 0, qtdConcluidos = 0;
+            const hoje = new Date();
+            let prioritariosHtml = '';
+
+            historicoData.forEach((item, idx) => {
+                const dtPrz = parseDate(item.prazo);
+                const isConcluido = item.statusCategoria === 'CONCLUÍDO';
+                if (isConcluido) {
+                    qtdConcluidos++;
+                } else {
+                    qtdAndamento++;
+                    if (dtPrz) {
+                        const diffDias = Math.ceil((dtPrz - hoje) / (1000 * 60 * 60 * 24));
+                        if (hoje > dtPrz) {
+                            qtdVencidos++;
+                            prioritariosHtml += gerarLinhaPrioritaria(item, idx, '⚠️ Vencido', 'color: var(--danger); font-weight: bold;');
+                        } else if (diffDias <= 3) {
+                            qtdUrgentes++;
+                            prioritariosHtml += gerarLinhaPrioritaria(item, idx, `⏰ Vence em ${diffDias}d`, 'color: var(--warning); font-weight: bold;');
+                        }
+                    }
+                }
+            });
+
+            document.getElementById('kpiVencidos').innerText = qtdVencidos;
+            document.getElementById('kpiUrgentes').innerText = qtdUrgentes;
+            document.getElementById('kpiAndamento').innerText = qtdAndamento;
+            document.getElementById('kpiConcluidos').innerText = qtdConcluidos;
+
+            const tbody = document.querySelector('#tabelaPrioritarios tbody');
+            tbody.innerHTML = prioritariosHtml || `<tr><td colspan="8" style="text-align: center; color: var(--success); font-weight: bold;">Nenhum processo vencido ou com urgência crítica no momento!</td></tr>`;
+            applyStoredCheckboxes();
+        }
+
+        function gerarLinhaPrioritaria(item, idx, situacaoStr, situacaoStyle) {
+            const seiNum = String(item.processo || 'N/D');
+            return `<tr data-id="prio-${idx}">
+                <td><input type="checkbox" class="process-check" onchange="updateRowStatus(this)"></td>
+                <td>
+                    
+                                            <button class="btn btn-sm btn-edit" onclick="abrirEditorRegistro(${idx})">✏️ Editar</button>
+                        <button class="btn btn-sm btn-log" onclick="abrirDetalhesRegistro(${idx})">🔍 Ver</button>
+
+                </td>
+                <td>
+                    ${escapeHtml(seiNum)}
+                    <button class="copy-btn" data-sei="${escapeHtml(seiNum)}" onclick="copySei(this)">Copiar SEI</button>
+                </td>
+                <td>${escapeHtml(String(item.interessados || 'N/D'))}</td>
+                <td>${escapeHtml(String(item.assessor || '-'))}</td>
+                <td>${escapeHtml(formatDate(item.recebimento))}</td>
+                <td>${escapeHtml(formatDate(item.prazo))}</td>
+                <td><span style="${situacaoStyle}">${situacaoStr}</span></td>
+            </tr>`;
+        }
+
+        function popularFiltroAssessores() {
+            const assessoresSet = new Set();
+            historicoData.forEach(item => { if (item.assessor) assessoresSet.add(item.assessor); });
+            const select = document.getElementById('filtroAssessor');
+            let html = `<option value="">-- Todos --</option>`;
+            Array.from(assessoresSet).sort().forEach(val => {
+                html += `<option value="${escapeHtml(val)}">${escapeHtml(val)}</option>`;
+            });
+            select.innerHTML = html;
+        }
+
+        function alternarModoExibicao(modo) {
+            modoExibicaoAtual = modo;
+            document.getElementById('containerTabela').style.display = (modo === 'tabela') ? 'block' : 'none';
+            document.getElementById('containerCards').style.display = (modo === 'cards') ? 'grid' : 'none';
+            aplicarFiltrosColuna();
+        }
+
+        function toggleSelectAllTabela(master) {
+            const checkboxes = document.querySelectorAll('.tabela-checkbox');
+            checkboxes.forEach(cb => cb.checked = master.checked);
+        }
+
+        function aplicarFiltrosColuna() {
+            const queryGeral = normalizeText(document.getElementById('filtroGeral').value);
+            const filtroAssessor = document.getElementById('filtroAssessor').value;
+            const filtroStatus = document.getElementById('filtroStatus').value;
+            const filtroDestino = document.getElementById('filtroDestino').value;
+
+            const filtrados = historicoData.filter(item => {
+                if (filtroAssessor && item.assessor !== filtroAssessor) return false;
+                if (filtroStatus && item.statusCategoria !== filtroStatus) return false;
+                if (filtroDestino && item.destinoCategoria !== filtroDestino) return false;
+                if (queryGeral) {
+                    const combined = normalizeText(`${item.assessor} ${item.processo} ${item.assunto} ${item.interessados} ${item.status} ${item.destino}`);
+                    if (!combined.includes(queryGeral)) return false;
+                }
+                return true;
+            });
+
+            document.getElementById('contadorRegistros').innerText = `${filtrados.length} registros exibidos`;
+            if (modoExibicaoAtual === 'tabela') renderTabelaHistorico(filtrados);
+            else renderCardsHistorico(filtrados);
+        }
+
+        function getClassStatus(cat) {
+            if (cat === 'CONCLUÍDO') return { card: 'status-concluido', badge: 'status-badge-concluido' };
+            if (cat === 'EM ANDAMENTO') return { card: 'status-andamento', badge: 'status-badge-andamento' };
+            if (cat === 'AGENDADO / EVENTO') return { card: 'status-pendente', badge: 'status-badge-pendente' };
+            return { card: 'status-atrasado', badge: 'status-badge-atrasado' };
+        }
+
+        function renderTabelaHistorico(data) {
+            const tbody = document.querySelector('#tabelaHistorico tbody');
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="13" style="text-align: center; color: #7f8c8d; font-style: italic;">Nenhum registro encontrado.</td></tr>`;
+                return;
+            }
+            let html = '';
+            data.forEach((item) => {
+                const originalIdx = historicoData.indexOf(item);
+                const seiNum = String(item.processo || 'N/D');
+                html += `<tr data-id="hist-${originalIdx}">
+                    <td><input type="checkbox" class="process-check" onchange="updateRowStatus(this)"></td>
+                    <td><input type="checkbox" class="tabela-checkbox" value="${originalIdx}"></td>
+                    <td>
+                        <button class="btn btn-sm btn-edit" onclick="abrirEditorRegistro(${originalIdx})">✏️ Editar</button>
+                        <button class="btn btn-sm btn-log" onclick="abrirDetalhesRegistro(${originalIdx})">🔍 Ver</button>
+                    </td>
+                    <td>${escapeHtml(String(item.assessor))}</td>
+                    <td>${escapeHtml(formatDate(item.recebimento))}</td>
+                    <td>${escapeHtml(formatDate(item.envio))}</td>
+                    <td>${escapeHtml(formatDate(item.prazo))}</td>
+                    <td><b>[${escapeHtml(String(item.statusCategoria))}]</b></td>
+                    <td>${escapeHtml(String(item.procedencia))}</td>
+                    <td><b>[${escapeHtml(String(item.destinoCategoria))}]</b> - ${escapeHtml(String(item.destino))}</td>
+                    <td>
+                        ${escapeHtml(seiNum)}
+                        <button class="copy-btn" data-sei="${escapeHtml(seiNum)}" onclick="copySei(this)">Copiar SEI</button>
+                    </td>
+                    <td>${escapeHtml(String(item.assunto))}</td>
+                    <td>${escapeHtml(String(item.interessados))}</td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+            applyStoredCheckboxes();
+        }
+
+        function renderCardsHistorico(data) {
+            const container = document.getElementById('containerCards');
+            if (!data || data.length === 0) {
+                container.innerHTML = `<div style="grid-column: span 2; text-align: center; color: #7f8c8d; font-style: italic; padding: 20px;">Nenhum registro encontrado.</div>`;
+                return;
+            }
+            let html = '';
+            data.forEach((item) => {
+                const originalIdx = historicoData.indexOf(item);
+                const stClass = getClassStatus(item.statusCategoria);
+                const seiNum = String(item.processo || 'N/D');
+                html += `
+                <div class="ficha-card ${stClass.card}">
+                    <div>
+                        <div class="ficha-header">
+                            <span class="ficha-processo">
+                                <input type="checkbox" class="ficha-checkbox" value="${originalIdx}">
+                                Proc: ${escapeHtml(seiNum)}
+                                <button class="copy-btn" data-sei="${escapeHtml(seiNum)}" onclick="copySei(this)">Copiar SEI</button>
+                            </span>
+                            <span class="ficha-status ${stClass.badge}">${escapeHtml(String(item.statusCategoria))}</span>
+                        </div>
+                        <div class="ficha-body">
+                            <div class="ficha-full"><span>Interessado(a):</span> ${escapeHtml(String(item.interessados || 'Não informado'))}</div>
+                            <div class="ficha-full"><span>Assunto:</span> ${escapeHtml(String(item.assunto || 'Sem assunto'))}</div>
+                            <div><span>Destino (Cat.):</span> <b>${escapeHtml(String(item.destinoCategoria))}</b></div>
+                            <div><span>Assessor Resp.:</span> ${escapeHtml(String(item.assessor || '-'))}</div>
+                            <div><span>Recebimento:</span> ${escapeHtml(formatDate(item.recebimento))}</div>
+                            <div><span>Prazo Limite:</span> ${escapeHtml(formatDate(item.prazo))}</div>
+                        </div>
+                    </div>
+                    <div class="ficha-footer">
+                        <button class="btn btn-sm btn-edit" onclick="abrirEditorRegistro(${originalIdx})">✏️ Editar</button>
+                        <button class="btn btn-sm btn-log" onclick="abrirDetalhesRegistro(${originalIdx})">🔍 Ver Tudo</button>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function copiarSelecionadosGeral() {
+            let indices = [];
+            if (modoExibicaoAtual === 'tabela') {
+                const checks = document.querySelectorAll('.tabela-checkbox:checked');
+                checks.forEach(c => indices.push(parseInt(c.value)));
+            } else {
+                const checks = document.querySelectorAll('.ficha-checkbox:checked');
+                checks.forEach(c => indices.push(parseInt(c.value)));
+            }
+            if (indices.length === 0) { alert("Selecione ao menos um registro para copiar."); return; }
+            let textoCopia = "========================================\n   RELATÓRIO DE PROCESSOS - GEDEP\n========================================\n\n";
+            indices.forEach((idx, i) => {
+                const item = historicoData[idx];
+                if (item) {
+                    textoCopia += `[${i + 1}] PROCESSO SEI: ${item.processo || 'N/D'}\n`;
+                    textoCopia += `• Interessado(a): ${item.interessados || 'N/D'}\n`;
+                    textoCopia += `• Assunto: ${item.assunto || 'N/D'}\n`;
+                    textoCopia += `• Status: ${item.statusCategoria} (${item.status})\n`;
+                    textoCopia += `• Assessor: ${item.assessor || 'N/D'}\n`;
+                    textoCopia += `• Recebimento: ${formatDate(item.recebimento)} | Prazo: ${formatDate(item.prazo)}\n`;
+                    textoCopia += `----------------------------------------\n\n`;
+                }
+            });
+            navigator.clipboard.writeText(textoCopia).then(() => alert(`Conteúdo de ${indices.length} registro(s) copiado!`));
+        }
+
+        function abrirDetalhesRegistro(idx) {
+            const item = historicoData[idx];
+            if (!item) return;
+            const modal = document.getElementById('detalhesModal');
+            const body = document.getElementById('detalhesModalBody');
+            body.innerHTML = `
+                <div style="grid-column: span 2; background: #eef2f7; padding: 10px; border-radius: 6px; font-weight: bold; color: #1e3a8a;">
+                    Processo SEI: ${escapeHtml(String(item.processo || 'N/D'))}
+                </div>
+                <div><span>Assessor Responsável:</span> ${escapeHtml(String(item.assessor || '-'))}</div>
+                <div><span>Status Consolidado:</span> <b>${escapeHtml(String(item.statusCategoria || '-'))}</b></div>
+                <div style="grid-column: span 2;"><span>Status Original na Planilha:</span> ${escapeHtml(String(item.status || '-'))}</div>
+                <div><span>Destino Consolidado:</span> <b>${escapeHtml(String(item.destinoCategoria || '-'))}</b></div>
+                <div style="grid-column: span 2;"><span>Destino Original na Planilha:</span> ${escapeHtml(String(item.destino || '-'))}</div>
+                <div><span>Data de Recebimento:</span> ${escapeHtml(formatDate(item.recebimento))}</div>
+                <div><span>Data de Envio:</span> ${escapeHtml(formatDate(item.envio))}</div>
+                <div><span>Prazo Limite para Envio:</span> ${escapeHtml(formatDate(item.prazo))}</div>
+                <div><span>Procedência:</span> ${escapeHtml(String(item.procedencia || '-'))}</div>
+                <div><span>Linha de Referência:</span> ${escapeHtml(String(item.linhaRef || '-'))}</div>
+                <div><span>Recorrência:</span> ${escapeHtml(String(item.recorrencia || '-'))}</div>
+                <div style="grid-column: span 2; background: #f8fafc; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    <span style="font-weight: bold; display: block; margin-bottom: 4px; color: var(--primary);">Interessados:</span>
+                    ${escapeHtml(String(item.interessados || '-'))}
+                </div>
+                <div style="grid-column: span 2; background: #f8fafc; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    <span style="font-weight: bold; display: block; margin-bottom: 4px; color: var(--primary);">Assunto:</span>
+                    ${escapeHtml(String(item.assunto || '-'))}
+                </div>
+            `;
+            modal.style.display = 'flex';
+        }
+
+        function closeDetalhesModal() { document.getElementById('detalhesModal').style.display = 'none'; }
+
+        function renderPainelPrazosCaixa() {
+            const tbody = document.querySelector('#tabelaPrazosCaixa tbody');
+            if (!historicoData || historicoData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #7f8c8d; font-style: italic;">Nenhum dado histórico carregado.</td></tr>`;
+                return;
+            }
+            let html = '';
+            const hoje = new Date();
+            historicoData.forEach((item, idx) => {
+                const dtRec = parseDate(item.recebimento);
+                const dtEnv = parseDate(item.envio);
+                const dtPrz = parseDate(item.prazo);
+                let tempoCaixaDias = "N/D";
+                if (dtRec) {
+                    const dataFim = dtEnv || hoje;
+                    tempoCaixaDias = `${Math.ceil(Math.abs(dataFim - dtRec) / (1000 * 60 * 60 * 24))} dias`;
+                }
+                let situacaoHtml = '<span style="color: #64748b;">Normal</span>';
+                if (dtPrz) {
+                    if (!dtEnv && hoje > dtPrz) {
+                        const diasAtraso = Math.ceil(Math.abs(hoje - dtPrz) / (1000 * 60 * 60 * 24));
+                        situacaoHtml = `<span style="color: var(--danger); font-weight: bold;">⚠️ Vencido há ${diasAtraso}d</span>`;
+                    } else if (!dtEnv && (dtPrz - hoje) / (1000 * 60 * 60 * 24) <= 3) {
+                        situacaoHtml = `<span style="color: var(--warning); font-weight: bold;">⏰ Vence em breve</span>`;
+                    } else {
+                        situacaoHtml = `<span style="color: var(--success); font-weight: bold;">✓ No Prazo</span>`;
+                    }
+                }
+                const seiNum = String(item.processo || 'N/D');
+                html += `<tr data-id="prazo-${idx}">
+                    <td><input type="checkbox" class="process-check" onchange="updateRowStatus(this)"></td>
+                    <td>
+                        ${escapeHtml(seiNum)}
+                        <button class="copy-btn" data-sei="${escapeHtml(seiNum)}" onclick="copySei(this)">Copiar SEI</button>
+                    </td>
+                    <td>${escapeHtml(String(item.interessados || 'N/D'))}</td>
+                    <td>${escapeHtml(String(item.assessor || 'N/D'))}</td>
+                    <td>${escapeHtml(formatDate(item.recebimento))}</td>
+                    <td>${escapeHtml(formatDate(item.envio))}</td>
+                    <td>${escapeHtml(formatDate(item.prazo))}</td>
+                    <td><b>${tempoCaixaDias}</b></td>
+                    <td>${situacaoHtml}</td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+            applyStoredCheckboxes();
+        }
+
+        function normalizeText(s) { return String(s == null ? '' : s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim(); }
+        function escapeHtml(text) { const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }; return String(text).replace(/[&<>"']/g, m => map[m]); }
+    </script>
+</body>
+</html>

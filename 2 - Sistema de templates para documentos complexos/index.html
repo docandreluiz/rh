@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:,">
+    <title>GEDEP Ferramentas</title>
+    <style>
+        :root {
+            --azul: #1b3a5c;
+            --azul-claro: #2c5f8a;
+            --verde: #1f7a45;
+            --verde-fundo: #e9f6ee;
+            --laranja: #b45309;
+            --laranja-fundo: #fdf3e3;
+            --vermelho: #b91c1c;
+            --vermelho-fundo: #fdecea;
+            --cinza: #f4f6f8;
+            --borda: #d5dbe2;
+            --texto: #232a33;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--cinza);
+            color: var(--texto);
+            line-height: 1.55;
+            font-size: 15px;
+        }
+
+        header {
+            background: var(--azul);
+            color: #fff;
+            padding: 18px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            font-size: 19px;
+            font-weight: 600;
+        }
+
+        .abas {
+            display: flex;
+            background: #fff;
+            border-bottom: 1px solid var(--borda);
+            padding: 0 16px;
+            gap: 8px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            flex-wrap: wrap;
+        }
+
+        .aba {
+            padding: 12px 20px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #5f6b77;
+            border-bottom: 3px solid transparent;
+            transition: all .2s;
+        }
+
+        .aba.ativa {
+            color: var(--azul);
+            border-bottom-color: var(--azul);
+            background: #fafcfd;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        section {
+            background: #fff;
+            border: 1px solid var(--borda);
+            border-radius: 8px;
+            margin-bottom: 14px;
+            padding: 16px 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        section h2 {
+            font-size: 15.5px;
+            color: var(--azul);
+            margin-bottom: 10px;
+            border-bottom: 2px solid var(--azul);
+            padding-bottom: 6px;
+        }
+
+        label {
+            display: block;
+            margin: 8px 0 3px;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #3c4652;
+        }
+
+        input[type=text],
+        input[type=date],
+        input[type=number],
+        select,
+        textarea {
+            width: 100%;
+            padding: 7px 9px;
+            border: 1px solid var(--borda);
+            border-radius: 5px;
+            font-size: 14px;
+            background: #fff;
+            font-family: inherit;
+        }
+
+        .linha-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 10px;
+        }
+
+        .linha-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 9px 18px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .2s;
+            text-align: center;
+        }
+
+        .btn-azul {
+            background: var(--azul);
+            color: #fff;
+        }
+
+        .btn-verde {
+            background: var(--verde);
+            color: #fff;
+        }
+
+        .btn-cinza {
+            background: #e5e9ee;
+            color: #333;
+        }
+
+        .btn-vermelho {
+            background: var(--vermelho-fundo);
+            color: var(--vermelho);
+            border: 1px solid var(--vermelho);
+        }
+
+        .botoes {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 6px 0 12px;
+        }
+
+        textarea.despacho {
+            font-family: "Courier New", monospace;
+            font-size: 13px;
+            min-height: 340px;
+            background: #fffefb;
+            border-color: #cfc2a8;
+            white-space: pre-wrap;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 9px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .b-ok {
+            background: var(--verde-fundo);
+            color: var(--verde);
+        }
+
+        .b-vencido {
+            background: var(--vermelho-fundo);
+            color: var(--vermelho);
+        }
+
+        .b-pendente {
+            background: var(--laranja-fundo);
+            color: var(--laranja);
+        }
+
+        .b-na {
+            background: var(--cinza);
+            color: #5f6b77;
+        }
+
+        table.checklist {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        table.checklist th {
+            background: var(--azul);
+            color: #fff;
+            text-align: left;
+            padding: 8px 10px;
+        }
+
+        table.checklist td {
+            padding: 9px 10px;
+            border-bottom: 1px solid var(--borda);
+            vertical-align: middle;
+        }
+
+        .card {
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid var(--borda);
+            font-size: 13.5px;
+            margin-bottom: 10px;
+        }
+
+        .card-lotacao {
+            background: var(--laranja-fundo);
+            border-left: 4px solid var(--laranja);
+        }
+
+        .card-cff {
+            background: #eaf1f9;
+            border-left: 4px solid var(--azul-claro);
+        }
+
+        .card-cas {
+            background: #f3eafc;
+            border-left: 4px solid #7c3aed;
+        }
+
+        .tabela-sei {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 13px;
+            color: #000;
+            text-align: center;
+        }
+
+        .tabela-sei th,
+        .tabela-sei td {
+            border: 1px solid #000;
+            padding: 8px;
+        }
+
+        .tabela-sei th {
+            background-color: #f2f2f2;
+        }
+
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 5px;
+            padding: 12px;
+            position: fixed;
+            z-index: 1000;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+        }
+
+        #toast.show {
+            visibility: visible;
+            animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        }
+
+        @keyframes fadein {
+            from {
+                bottom: 0;
+                opacity: 0;
+            }
+            to {
+                bottom: 30px;
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeout {
+            from {
+                bottom: 30px;
+                opacity: 1;
+            }
+            to {
+                bottom: 0;
+                opacity: 0;
+            }
+        }
+
+        .barra-seguranca {
+            background: #e8f0fe;
+            color: #1967d2;
+            padding: 10px 20px;
+            font-size: 13px;
+            border-bottom: 1px solid #d2e3fc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="toast">Copiado!</div>
+
+    <div class="barra-seguranca">
+        <span><strong>v9.2 Segurança Total:</strong> Esta versão não acessa o storage para evitar alertas do Chrome. Use os botões em cada aba.</span>
+        <div>
+            <button class="btn btn-azul" style="padding: 5px 12px; font-size: 12px;" onclick="global_copiarBackup()">Copiar Sessão (Texto)</button>
+        </div>
+    </div>
+
+    <header>
+        <h1>GEDEP Ferramentas</h1>
+        <div style="font-size:13px; opacity:0.8">Gerência de Gestão e Desenvolvimento de Pessoas</div>
+    </header>
+
+    <nav class="abas">
+        <div class="aba ativa" id="tab-exoneracao" onclick="mudarAba('exoneracao')">Exoneração / Rescisão</div>
+        <div class="aba" id="tab-checklist-pcd" onclick="mudarAba('checklist-pcd')">Checklist Redução CH PcD</div>
+        <div class="aba" id="tab-extrator" onclick="mudarAba('extrator')">Extrator SEI</div>
+        <div class="aba" id="tab-admin" onclick="mudarAba('admin')">Admin / Config</div>
+    </nav>
+
+    <main>
+        <input type="file" id="global-file-input" style="display:none" accept=".json" onchange="global_importarJSON(event)">
+
+        <!-- ABA EXONERAÇÃO -->
+        <div id="aba-exoneracao">
+            <section>
+                <div class="botoes">
+                    <button class="btn btn-verde" onclick="global_exportarJSON()">Exportar Dados (Salvar)</button>
+                    <button class="btn btn-azul" onclick="document.getElementById('global-file-input').click()">Importar Dados</button>
+                    <button class="btn btn-vermelho" onclick="location.reload()">Limpar Tudo</button>
+                </div>
+            </section>
+
+            <section>
+                <h2>1. Dados do Servidor</h2>
+                <div class="linha-grid">
+                    <div><label>Processo SEI nº</label><input type="text" id="ex-processo" oninput="formatarSEI(this)"></div>
+                    <div><label>Interessado(a)</label><input type="text" id="ex-nome"></div>
+                    <div><label>CPF</label><input type="text" id="ex-cpf" oninput="formatarCPF(this)"></div>
+                </div>
+                <div style="display:flex; gap:24px; margin-top:16px">
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:normal"><input type="radio" name="ex-genero" value="f" checked> Servidora</label>
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:normal"><input type="radio" name="ex-genero" value="m"> Servidor</label>
+                </div>
+                <div class="linha-grid" style="margin-top:16px">
+                    <div><label>Nascimento</label><input type="date" id="ex-nascimento"></div>
+                    <div><label>Cargo</label><input type="text" id="ex-cargo"></div>
+                    <div><label>Lotação</label><input type="text" id="ex-lotacao"></div>
+                </div>
+                <div style="display:flex; gap:24px; margin-top:16px; flex-wrap:wrap">
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:normal"><input type="radio" name="ex-vinculo" value="efetivo"> Efetivo</label>
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:normal"><input type="radio" name="ex-vinculo" value="comissionado" checked> Comissionado</label>
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:normal"><input type="radio" name="ex-vinculo" value="temporario"> Temporário</label>
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:normal"><input type="radio" name="ex-vinculo" value="empregado"> Empregado</label>
+                </div>
+            </section>
+
+            <section id="ex-bloco-whatsapp" style="display:none; border:2px solid var(--verde); background:var(--verde-fundo)">
+                <h2>Mensagem WhatsApp SESMT</h2>
+                <textarea id="ex-txt-whatsapp" style="min-height:100px; background:#fff" readonly></textarea>
+                <div class="botoes"><button class="btn btn-verde" onclick="copiarTexto('ex-txt-whatsapp')">Copiar Mensagem</button></div>
+            </section>
+
+            <section>
+                <h2>2. Modelos de Despacho</h2>
+                <div style="display:flex; gap:24px; flex-wrap:wrap">
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:normal"><input type="checkbox" id="ex-chk-oficio"> Ofício/Decreto</label>
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:normal"><input type="checkbox" id="ex-chk-pedido"> Pedido Exoneração</label>
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:normal"><input type="checkbox" id="ex-chk-substituicao" onchange="document.getElementById('ex-bloco-substituto').style.display=this.checked?'block':'none'"> Substituição</label>
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:normal"><input type="checkbox" id="ex-chk-rescisao"> Rescisão Empregado</label>
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:normal"><input type="checkbox" id="ex-chk-acessos"> Revogação Acessos</label>
+                </div>
+                <div id="ex-bloco-substituto" style="display:none; margin-top:20px; border-top:1px solid var(--borda); padding-top:20px">
+                    <label style="font-weight:bold">Substituto (Nomear)</label>
+                    <div class="linha-grid" style="margin-top: 8px">
+                        <input type="text" id="ex-sub-nome" placeholder="Nome do Substituto">
+                        <input type="text" id="ex-sub-cpf" placeholder="CPF do Substituto" oninput="formatarCPF(this)">
+                    </div>
+                </div>
+                <div class="linha-grid" style="margin-top:20px">
+                    <input type="text" id="ex-doc-num" placeholder="Nº do Despacho">
+                    <input type="text" id="ex-data-ato" placeholder="Data de Efeitos / Ato">
+                    <input type="text" id="ex-sei-ref" placeholder="SEI de Referência (Documento)">
+                </div>
+            </section>
+
+            <section>
+                <h2>3. Produção Final</h2>
+                <div class="linha-grid-2">
+                    <input type="text" id="ex-signatario" placeholder="Nome do Signatário">
+                    <input type="text" id="ex-cargo-sig" placeholder="Cargo do Signatário">
+                </div>
+                <div class="botoes" style="margin-top: 15px;">
+                    <button class="btn btn-azul" onclick="ex_gerarMinuta()">Gerar Minuta e Tabela</button>
+                </div>
+                <div id="ex-container-tabelas" style="margin:20px 0; overflow-x: auto;"></div>
+                <textarea class="despacho" id="ex-txt-minuta" readonly placeholder="A minuta aparecerá aqui após clicar em Gerar."></textarea>
+                <div class="botoes">
+                    <button class="btn btn-azul" onclick="copiarTexto('ex-txt-minuta')">Copiar Texto</button>
+                    <button class="btn btn-verde" id="ex-btn-copiar-tabela" style="display:none" onclick="copiarTabela('ex-container-tabelas')">Copiar Tabela Formatada</button>
+                </div>
+            </section>
+        </div>
+
+        <!-- ABA CHECKLIST PCD -->
+        <div id="aba-checklist-pcd" style="display:none">
+            <section>
+                <div class="botoes">
+                    <button class="btn btn-verde" onclick="global_exportarJSON()">Exportar Dados (Salvar)</button>
+                    <button class="btn btn-azul" onclick="document.getElementById('global-file-input').click()">Importar Dados</button>
+                    <button class="btn btn-vermelho" onclick="location.reload()">Limpar Tudo</button>
+                </div>
+            </section>
+
+            <section>
+                <h2>0. Extrator Automático do SEI</h2>
+                <textarea class="despacho" id="ck-txt-sei-bruto" style="min-height:120px" placeholder="Cole o conteúdo do processo SEI aqui..."></textarea>
+                <div class="botoes"><button class="btn btn-azul" onclick="ck_extrairSei()">Extrair e Preencher</button></div>
+            </section>
+
+            <section>
+                <h2>1. Dados do Processo</h2>
+                <div class="linha-grid">
+                    <div><label>Processo SEI nº</label><input type="text" id="ck-d-processo"></div>
+                    <div><label>Nome do(a) servidor(a)</label><input type="text" id="ck-d-nome"></div>
+                    <div><label>CPF</label><input type="text" id="ck-d-cpf" oninput="formatarCPF(this)"></div>
+                </div>
+                <div class="linha-grid" style="margin-top:16px">
+                    <div><label>Forma de tratamento</label><select id="ck-d-genero"><option value="f">Servidora</option><option value="m">Servidor</option></select></div>
+                    <div><label>Cargo</label><input type="text" id="ck-d-cargo"></div>
+                    <div><label>Unidade de lotação</label><input type="text" id="ck-d-unidade"></div>
+                </div>
+                <div class="linha-grid" style="margin-top:16px">
+                    <div><label>Enquadramento</label><select id="ck-d-enquadramento" onchange="document.getElementById('ck-bloco-dependente').style.display=this.value==='familiar'?'block':'none'"><option value="proprio">O próprio servidor</option><option value="familiar">Familiar sob cuidados</option></select></div>
+                    <div><label>Data Protocolo</label><input type="date" id="ck-d-protocolo"></div>
+                    <div><label>Jornada Atual (h)</label><input type="number" id="ck-d-jornada"></div>
+                </div>
+                <div id="ck-bloco-dependente" style="display:none; margin-top:20px; border-top:1px solid var(--borda); padding-top:20px">
+                    <label style="font-weight:bold">Dados do Familiar</label>
+                    <div class="linha-grid" style="margin-top: 8px">
+                        <input type="text" id="ck-d-dep-nome" placeholder="Nome do Familiar">
+                        <input type="text" id="ck-d-dep-vinculo" placeholder="Vínculo">
+                        <input type="text" id="ck-d-dep-cpf" placeholder="CPF do Familiar" oninput="formatarCPF(this)">
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2>2. Checklist de Documentos (Art. 6º e 7º)</h2>
+                <table class="checklist" id="ck-tabela-art6">
+                    <thead>
+                        <tr>
+                            <th style="width:40%">Documento (Art. 6º)</th>
+                            <th style="width:15%">Situação</th>
+                            <th style="width:20%">Data Emissão</th>
+                            <th>Nº SEI</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ck-tbody-art6"></tbody>
+                </table>
+                <table class="checklist" id="ck-tabela-fluxo" style="margin-top:16px">
+                    <thead>
+                        <tr>
+                            <th style="width:40%">Providência (Art. 7º)</th>
+                            <th style="width:15%">Situação</th>
+                            <th>Nº SEI</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ck-tbody-fluxo"></tbody>
+                </table>
+            </section>
+
+            <section>
+                <h2>3. Produção e Resultado</h2>
+                <div class="botoes">
+                    <button class="btn btn-azul" onclick="ck_processarTudo()">Processar Checklist e Gerar Despacho</button>
+                </div>
+                <div id="ck-resultado" style="margin-top: 15px;"></div>
+            </section>
+
+            <section>
+                <h2>4. Minuta e Linha de Controle</h2>
+                <div class="linha-grid-2">
+                    <input type="text" id="ck-d-desp-novo" placeholder="Nº Despacho">
+                    <input type="text" id="ck-d-signatario" placeholder="Signatário">
+                    <input type="text" id="ck-d-cargo-sig" placeholder="Cargo" style="grid-column: span 2">
+                </div>
+                <textarea class="despacho" id="ck-txt-despacho" readonly style="margin-top:16px" placeholder="O despacho aparecerá aqui após clicar em Processar."></textarea>
+                <div class="botoes">
+                    <button class="btn btn-azul" onclick="copiarTexto('ck-txt-despacho')">Copiar Despacho</button>
+                </div>
+                <label style="margin-top:24px; font-weight:bold">Linha Excel</label>
+                <textarea class="despacho" id="ck-txt-controle" readonly style="min-height:80px; margin-top:8px"></textarea>
+                <div class="botoes"><button class="btn btn-verde" onclick="copiarTexto('ck-txt-controle')">Copiar Linha Excel</button></div>
+            </section>
+        </div>
+
+        <!-- ABA EXTRATOR TSV -->
+        <div id="aba-extrator" style="display:none">
+            <section>
+                <div class="botoes">
+                    <button class="btn btn-verde" onclick="global_exportarJSON()">Exportar Dados (Salvar)</button>
+                    <button class="btn btn-azul" onclick="document.getElementById('global-file-input').click()">Importar Dados</button>
+                    <button class="btn btn-vermelho" onclick="location.reload()">Limpar Tudo</button>
+                </div>
+            </section>
+
+            <section>
+                <h2>Extrator de Metadados SEI (Tabela TSV)</h2>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px">
+                    <div>
+                        <label>Responsável:</label>
+                        <select id="ext-responsavel">
+                            <option value="André">André</option>
+                            <option value="Thais">Thais</option>
+                            <option value="Kellen">Kellen</option>
+                            <option value="Michele">Michele</option>
+                             <option value="Bloco de assinatura">Bloco de assinatura</option>
+                              <option value="GEDEP">GEDEP</option>
+                               <option value="Não informado">Não informado</option>
+                        </select>
+                        <label style="margin-top:16px">Conteúdo SEI:</label>
+                        <textarea id="ext-input" style="height:300px" placeholder="Cole o SEI aqui (use separador === CONTEÚDO)..."></textarea>
+                        <div class="botoes">
+                            <button class="btn btn-azul" onclick="ext_processar()">Processar</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label>Tabela TSV (11 Colunas):</label>
+                        <textarea id="ext-output" readonly style="height:400px"></textarea>
+                        <div class="botoes"><button class="btn btn-verde" onclick="copiarTexto('ext-output')">Copiar Tabela</button></div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ABA ADMIN -->
+        <div id="aba-admin" style="display:none">
+            <section>
+                <div class="botoes">
+                    <button class="btn btn-verde" onclick="global_exportarJSON()">Exportar Dados (Salvar)</button>
+                    <button class="btn btn-azul" onclick="document.getElementById('global-file-input').click()">Importar Dados</button>
+                    <button class="btn btn-vermelho" onclick="location.reload()">Limpar Tudo</button>
+                </div>
+            </section>
+
+            <section>
+                <h2>Templates Customizados</h2>
+                <div class="linha-grid-2">
+                    <div><label>Ofício / Decreto</label><textarea id="tmpl-oficio" rows="4"></textarea></div>
+                    <div><label>Pedido Exoneração</label><textarea id="tmpl-pedido" rows="4"></textarea></div>
+                    <div><label>Substituição</label><textarea id="tmpl-substituicao" rows="4"></textarea></div>
+                    <div><label>Rescisão</label><textarea id="tmpl-rescisao" rows="4"></textarea></div>
+                    <div><label>Revogação Acessos</label><textarea id="tmpl-acessos" rows="4"></textarea></div>
+                    <div><label>WhatsApp SESMT</label><textarea id="tmpl-whatsapp" rows="4"></textarea></div>
+                </div>
+                <div class="botoes">
+                    <button class="btn btn-azul" onclick="salvarTmpl()">Salvar Templates na Sessão</button>
+                </div>
+            </section>
+            <section>
+                <h2>Restauração de Sessão (Backup Texto)</h2>
+                <p style="font-size: 13px; margin-bottom: 10px;">Cole o código do backup copiado anteriormente para restaurar todos os dados.</p>
+                <textarea id="txt-backup-manual" rows="6" placeholder="Cole o código do backup aqui..."></textarea>
+                <div class="botoes">
+                    <button class="btn btn-verde" onclick="importarManual()">Restaurar Dados</button>
+                </div>
+            </section>
+        </div>
+
+    </main>
+
+    <script>
+        // ============================================================
+        // CONFIGURAÇÕES E TEMPLATES
+        // ============================================================
+        const PADRAO_TMPL = {
+            oficio: "Trata-se do Decreto de {{DATA_ATO}}, por meio do qual o Chefe do Poder Executivo promove a exoneração de ocupantes de cargos em comissão no âmbito da Administração Estadual, incluindo {{TRATAMENTO}} {{NOME}}, CPF nº {{CPF}}, do cargo de {{CARGO}} (SEI nº {{SEI_REF}}).\nEncaminhem-se os autos aos setores de Controle de Frequência e Férias, Folha de Pagamento, Direitos e Benefícios e Apoio Técnico e Gerenciamento de Dados, para as ações pertinentes. Simultaneamente, encaminhem-se à área de Diária para verificar possíveis pendências.",
+            pedido: "Trata-se de requerimento de exoneração a pedido, com efeitos na data de {{DATA_ATO}}, formulado {{TRATAMENTO_PELO}} {{NOME}}, CPF nº {{CPF}}, do cargo de {{CARGO}}\u00a0 (SEI nº {{SEI_REF}}).\nReporta-se que, até o momento, não houve indicação de substituto para o referido cargo.\nEncaminhem-se os autos à Gerência da Secretaria-Geral, para encaminhamento de expediente da Titular desta Autarquia ao Diretor Executivo Estratégico da Governadoria para a expedição e publicação do ato.",
+            substituicao: "Trata-se de solicitação de adoção das providências necessárias para a exoneração e nomeação de servidores, conforme quadro abaixo:\n[TABELA]\nPor fim, informa-se a juntada aos autos da documentação do indicado, conforme expediente (SEI nº {{SEI_REF}}) para conhecimento, análise e providências pertinentes.",
+            rescisao: "Trata-se do pedido de rescisão contratual formulado pelo empregado público {{NOME}}, CPF nº {{CPF}}, no qual solicita desligamento do cargo de {{CARGO}}, a partir de {{DATA_ATO}} (SEI nº {{SEI_REF}}).\nConsiderando a necessidade de realização do exame médico demissional, encaminhem-se os autos à Gerência da Secretaria-Geral, para envio à Diretoria-Executiva de Saúde e Segurança do Servidor - DESSS, visando ao agendamento da perícia médica e à emissão do respectivo Atestado de Saúde Ocupacional - ASO Demissional.\nEncaminhem-se, simultaneamente, aos setores de Folha de Pagamento, de Apoio Técnico e Gerenciamento de Dados, de Controle de Frequência e Férias e de Direitos e Benefícios para providências e ao setor Diárias para informar eventuais pendências.",
+            acessos: "termo de revogação\nConforme regulamenta a Portaria nº 79/2026/GOINFRA (SEI nº 90066859), de 07 de maio de 2026, que dispõe sobre os procedimentos obrigatórios de revogação de acessos institucionais, internos e externos, incluindo o Sistema Eletrônico de Informações - SEI, no âmbito da Agência Goiana de Infraestrutura e Transportes - GOINFRA, em decorrência de desligamento, solicita-se o cancelamento de acessos nos sistemas corporativos, do seguinte interessado: {{NOME}}, CPF nº {{CPF}}, lotado(a) na {{LOTACAO}}. \nDiante disso, encaminhem-se os autos às gerências relacionadas abaixo, para as providências a seguir:\n- Gerência de Tecnologia: para cancelamento dos acessos aos sistemas internos da  GOINFRA; \n- Gerência de Apoio Administrativo e Logístico: para inativação do acesso às dependências da GOINFRA, via sistema de catracas. \n- Gerência de Patrimônio: para as devidas consultas e providências de repatriação do patrimônio que se encontra em poder do colaborador. \n- Unidade de lotação do Servidor: para solicitar exclusão do acesso ao SEI e outros sistemas.",
+            whatsapp: "Agendamento SESMT:\nNome: {{NOME}}\nCPF: {{CPF}}\nCargo: {{CARGO}}\nNasc: {{NASCIMENTO}}"
+        };
+
+        const CK_ITENS_ART6 = [
+            {id: 'i1', ref: 'art. 6º, I', desc: 'Requerimento formal', data: false, venc: false},
+            {id: 'i2', ref: 'art. 6º, II', desc: 'Docs pessoais (PcD)', data: false, venc: false, condi: 'familiar'},
+            {id: 'i3', ref: 'art. 6º, III', desc: 'Atestado Médico (90d)', data: true, venc: true},
+            {id: 'i4', ref: 'art. 6º, IV', desc: 'Exames Médicos (90d)', data: true, venc: true},
+            {id: 'i5', ref: 'art. 6º, V', desc: 'Relatórios Multidisc. (90d)', data: true, venc: true},
+            {id: 'i6', ref: 'art. 6º, VI', desc: 'Declaração outro benefício', condi: 'familiar'},
+            {id: 'i7', ref: 'art. 6º, VII', desc: 'Declaração vínculo cônjuge', condi: 'familiar'},
+            {id: 'i8', ref: 'art. 6º, VIII', desc: 'Declaração outro resp.', condi: 'familiar'},
+            {id: 'i9', ref: 'art. 6º, IX', desc: 'Declaração não acumulação'},
+            {id: 'i10', ref: 'art. 6º, § 1º', desc: 'Vínculo/Parentesco', condi: 'familiar'}
+        ];
+        const CK_ITENS_FLUXO = [
+            {id: 'f1', ref: 'art. 7º, I', desc: 'Histórico Carga Horária'},
+            {id: 'f2', ref: 'art. 4º, § 5º', desc: 'Relatório CAS'}
+        ];
+
+        let custom_tmpls = {...PADRAO_TMPL};
+
+        // ============================================================
+        // UTILITÁRIOS GLOBAIS E DE DATA
+        // ============================================================
+        function mudarAba(id) {
+            document.querySelectorAll('.aba').forEach(a => a.classList.remove('ativa'));
+            ['exoneracao', 'checklist-pcd', 'extrator', 'admin'].forEach(a => {
+                const el = document.getElementById('aba-' + a);
+                if (el) el.style.display = 'none';
+            });
+            document.getElementById('tab-' + id).classList.add('ativa');
+            document.getElementById('aba-' + id).style.display = 'block';
+        }
+
+        function formatarCPF(i) {
+            let v = i.value.replace(/\D/g, "").slice(0, 11);
+            if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+            else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, "$1.$2.$3");
+            else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, "$1.$2");
+            i.value = v;
+        }
+
+        function formatarSEI(i) {
+            i.value = i.value.replace(/\D/g, "").slice(0, 15);
+        }
+
+        function copiarTexto(id) {
+            const e = document.getElementById(id); 
+            e.select(); 
+            document.execCommand('copy'); 
+            showToast('Copiado!');
+        }
+
+        function copiarTabela(id) {
+            const r = document.createRange(); 
+            r.selectNode(document.getElementById(id)); 
+            window.getSelection().removeAllRanges(); 
+            window.getSelection().addRange(r); 
+            document.execCommand('copy'); 
+            window.getSelection().removeAllRanges(); 
+            showToast('Tabela copiada!');
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast'); 
+            t.textContent = msg; 
+            t.className = 'show'; 
+            setTimeout(() => t.className = '', 2500);
+        }
+
+        function getDataAtualFormatada() {
+            const hoje = new Date();
+            const dia = String(hoje.getDate()).padStart(2, '0');
+            const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+            const ano = hoje.getFullYear();
+            return `${dia}/${mes}/${ano}`;
+        }
+
+        function somarDiasData(dataStr, dias) {
+            const [dia, mes, ano] = dataStr.split('/').map(Number);
+            const data = new Date(ano, mes - 1, dia);
+            data.setDate(data.getDate() + dias);
+            const d = String(data.getDate()).padStart(2, '0');
+            const m = String(data.getMonth() + 1).padStart(2, '0');
+            const y = data.getFullYear();
+            return `${d}/${m}/${y}`;
+        }
+
+        // ============================================================
+        // DETECÇÃO DINÂMICA DA PROCEDÊNCIA/UNIDADE
+        // ============================================================
+        function extrairProcedencia(docTexto) {
+            const matchRotulo = docTexto.match(/(?:Procedência|Unidade|Órgão|Emitente):\s*([^\n]+)/i);
+            if (matchRotulo && matchRotulo[1]) {
+                return matchRotulo[1].trim();
+            }
+
+            const linhas = docTexto.split('\n');
+            let headerLines = [];
+            for (let linha of linhas) {
+                const l = linha.trim();
+                if (/^(Referência|Processo|Interessado|Assunto|Despacho|Ofício|Memorando)/i.test(l)) {
+                    break;
+                }
+                if (l) headerLines.push(l);
+            }
+
+            let unidadeEncontrada = '';
+            for (let l of headerLines) {
+                const upper = l.toUpperCase();
+                if (upper.includes('GERÊNCIA') || upper.includes('DIRETORIA') || 
+                    upper.includes('SUPERINTENDÊNCIA') || upper.includes('DEPARTAMENTO') || 
+                    upper.includes('COORDENADORIA') || upper.includes('SETOR') || 
+                    upper.includes('NÚCLEO') || upper.includes('GABINETE')) {
+                    unidadeEncontrada = l;
+                }
+            }
+
+            if (unidadeEncontrada) {
+                return unidadeEncontrada.trim();
+            }
+
+            return headerLines.length >= 3 ? headerLines[headerLines.length - 1] : '';
+        }
+
+        // ============================================================
+        // BACKUP E EXPORTAÇÃO
+        // ============================================================
+        function coletarDados() {
+            const data = {
+                ex: {},
+                ck: {dados: {}, art6: {}, fluxo: {}},
+                ext: {input: document.getElementById('ext-input').value, resp: document.getElementById('ext-responsavel').value},
+                tmpls: custom_tmpls
+            };
+            document.querySelectorAll('#aba-exoneracao input, #aba-exoneracao select').forEach(el => {
+                if (el.type === 'radio') {if (el.checked) data.ex[el.name] = el.value;}
+                else if (el.type === 'checkbox') {data.ex[el.id] = el.checked;}
+                else if (el.id) {data.ex[el.id] = el.value;}
+            });
+            document.querySelectorAll('#aba-checklist-pcd input, #aba-checklist-pcd select').forEach(el => {
+                if (el.id.startsWith('ck-d-')) data.ck.dados[el.id.replace('ck-d-', '')] = el.value;
+                if (el.dataset.grupo) {
+                    const g = el.dataset.grupo, id = el.dataset.id, c = el.dataset.campo;
+                    if (!data.ck[g][id]) data.ck[g][id] = {};
+                    data.ck[g][id][c] = el.value;
+                }
+            });
+            return data;
+        }
+
+        function global_exportarJSON() {
+            const data = coletarDados();
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], {type: "application/json"});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `Backup_GEDEP.json`;
+            a.click();
+            showToast('Backup gerado!');
+        }
+
+        function global_copiarBackup() {
+            const data = coletarDados();
+            const el = document.createElement('textarea');
+            el.value = JSON.stringify(data); document.body.appendChild(el); el.select();
+            document.execCommand('copy'); document.body.removeChild(el);
+            showToast('Backup da Sessão Copiado!');
+        }
+
+        function global_importarJSON(event) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    restaurarDados(data);
+                    showToast('Dados Restaurados!');
+                } catch (err) {alert('Erro ao importar JSON.');}
+            };
+            reader.readAsText(event.target.files[0]);
+        }
+
+        function importarManual() {
+            const t = document.getElementById('txt-backup-manual').value;
+            if (!t) return;
+            try {
+                restaurarDados(JSON.parse(t));
+                showToast('Dados Restaurados!');
+            } catch (e) {alert("Código de backup inválido.");}
+        }
+
+        function restaurarDados(data) {
+            if (data.ex) {
+                Object.keys(data.ex).forEach(k => {
+                    const el = document.getElementById(k);
+                    if (el) {
+                        if (el.type === 'checkbox') el.checked = data.ex[k];
+                        else el.value = data.ex[k];
+                    }
+                    const radios = document.querySelectorAll(`input[name="${k}"]`);
+                    radios.forEach(r => {if (r.value === data.ex[k]) r.checked = true;});
+                });
+                if (data.ex['ex-chk-substituicao']) document.getElementById('ex-bloco-substituto').style.display = 'block';
+            }
+            if (data.ck) {
+                Object.keys(data.ck.dados).forEach(k => {
+                    const el = document.getElementById('ck-d-' + k);
+                    if (el) el.value = data.ck.dados[k];
+                });
+                if (data.ck.dados['enquadramento'] === 'familiar') document.getElementById('ck-bloco-dependente').style.display = 'block';
+                ck_renderTabelas(data.ck);
+            }
+            if (data.ext) {
+                document.getElementById('ext-input').value = data.ext.input || '';
+                document.getElementById('ext-responsavel').value = data.ext.resp || '';
+            }
+            if (data.tmpls) {
+                custom_tmpls = data.tmpls;
+                Object.keys(custom_tmpls).forEach(k => {const el = document.getElementById('tmpl-' + k); if (el) el.value = custom_tmpls[k];});
+            }
+        }
+
+        // ============================================================
+        // LÓGICA EXONERAÇÃO
+        // ============================================================
+        function ex_gerarMinuta() {
+            const genEl = document.querySelector('input[name="ex-genero"]:checked');
+            const vinEl = document.querySelector('input[name="ex-vinculo"]:checked');
+            if (!genEl || !vinEl) {alert("Selecione gênero e vínculo."); return;}
+
+            const gen = genEl.value;
+            const vin = vinEl.value;
+            const t = gen === 'm' ? 'o servidor' : 'a servidora';
+            const tp = gen === 'm' ? 'pelo servidor' : 'pela servidora';
+
+            const d = {
+                nome: document.getElementById('ex-nome').value,
+                cpf: document.getElementById('ex-cpf').value,
+                processo: document.getElementById('ex-processo').value,
+                cargo: document.getElementById('ex-cargo').value,
+                lotacao: document.getElementById('ex-lotacao').value,
+                data_ato: document.getElementById('ex-data-ato').value,
+                sei_ref: document.getElementById('ex-sei-ref').value,
+                doc_num: document.getElementById('ex-doc-num').value,
+                sig: document.getElementById('ex-signatario').value,
+                sig_cargo: document.getElementById('ex-cargo-sig').value,
+                sub_nome: document.getElementById('ex-sub-nome').value,
+                sub_cpf: document.getElementById('ex-sub-cpf').value
+            };
+
+            document.getElementById('ex-bloco-whatsapp').style.display = (vin === 'temporario') ? 'block' : 'none';
+            if (vin === 'temporario') {
+                const nasc = document.getElementById('ex-nascimento').value;
+                document.getElementById('ex-txt-whatsapp').value = custom_tmpls.whatsapp
+                    .replace(/{{NOME}}/g, d.nome)
+                    .replace(/{{CPF}}/g, d.cpf)
+                    .replace(/{{CARGO}}/g, d.cargo)
+                    .replace(/{{NASCIMENTO}}/g, nasc ? new Date(nasc + 'T12:00:00').toLocaleDateString('pt-BR') : '__/__/____');
+            }
+
+            let m = `Referência: Processo ${d.processo || '...'}\nInteressado: ${d.nome}\nDESPACHO ${d.doc_num || '...'}/2026/GOINFRA/GI-GEDEP\n`;
+            const sub = (txt) => txt.replace(/{{NOME}}/g, d.nome).replace(/{{CPF}}/g, d.cpf).replace(/{{CARGO}}/g, d.cargo).replace(/{{DATA_ATO}}/g, d.data_ato).replace(/{{SEI_REF}}/g, d.sei_ref).replace(/{{TRATAMENTO}}/g, t).replace(/{{TRATAMENTO_PELO}}/g, tp).replace(/{{LOTACAO}}/g, d.lotacao);
+
+            const cont = document.getElementById('ex-container-tabelas');
+            cont.innerHTML = ''; document.getElementById('ex-btn-copiar-tabela').style.display = 'none';
+
+            if (document.getElementById('ex-chk-oficio').checked) m += sub(custom_tmpls.oficio) + "\n";
+            if (document.getElementById('ex-chk-pedido').checked) m += sub(custom_tmpls.pedido) + "\n";
+            if (document.getElementById('ex-chk-substituicao').checked) {
+                m += sub(custom_tmpls.substituicao).replace('[TABELA]', '(Ver tabela abaixo)') + "\n";
+                cont.innerHTML = `<table class="tabela-sei"><tr><th>EXONERAR</th><th>CPF</th><th>CARGO</th><th>NOMEAR</th><th>CPF</th></tr><tr><td>${d.nome}</td><td>${d.cpf}</td><td>${d.cargo}</td><td>${d.sub_nome}</td><td>${d.sub_cpf}</td></tr></table>`;
+                document.getElementById('ex-btn-copiar-tabela').style.display = 'inline-block';
+            }
+            if (document.getElementById('ex-chk-rescisao').checked) m += sub(custom_tmpls.rescisao) + "\n";
+            if (document.getElementById('ex-chk-acessos').checked) m += sub(custom_tmpls.acessos) + "\n";
+
+            m += `Goiânia, ${new Date().toLocaleDateString('pt-BR')}.\n${d.sig}\n${d.sig_cargo}`;
+            document.getElementById('ex-txt-minuta').value = m;
+        }
+
+        // ============================================================
+        // LÓGICA CHECKLIST PCD
+        // ============================================================
+        function ck_renderTabelas(backupData = null) {
+            const tb6 = document.getElementById('ck-tbody-art6'); tb6.innerHTML = '';
+            CK_ITENS_ART6.forEach(i => tb6.appendChild(ck_linhaTabela(i, 'art6', backupData)));
+            const tbF = document.getElementById('ck-tbody-fluxo'); tbF.innerHTML = '';
+            CK_ITENS_FLUXO.forEach(i => tbF.appendChild(ck_linhaTabela(i, 'fluxo', backupData)));
+        }
+
+        function ck_linhaTabela(item, grupo, backupData) {
+            const tr = document.createElement('tr');
+            const st = (backupData && backupData[grupo] && backupData[grupo][item.id]) ? backupData[grupo][item.id] : {situacao: 'nao', data: '', sei: ''};
+            tr.innerHTML = `<td><strong>${item.ref}</strong><br>${item.desc}</td>
+    <td><select data-grupo="${grupo}" data-id="${item.id}" data-campo="situacao"><option value="nao" ${st.situacao === 'nao' ? 'selected' : ''}>Falta</option><option value="sim" ${st.situacao === 'sim' ? 'selected' : ''}>Juntado</option><option value="na" ${st.situacao === 'na' ? 'selected' : ''}>N/A</option></select></td>
+    <td>${item.data ? `<input type="date" data-grupo="${grupo}" data-id="${item.id}" data-campo="data" value="${st.data}">` : '—'} <span class="badge-status" data-grupo="${grupo}" data-id="${item.id}"></span></td>
+    <td><input type="text" data-grupo="${grupo}" data-id="${item.id}" data-campo="sei" value="${st.sei}" placeholder="Nº SEI"></td>`;
+            tr.dataset.id = item.id; if (item.condi) tr.classList.add('linha-condicional');
+            return tr;
+        }
+
+        function ck_extrairSei() {
+            const textoPagina = document.getElementById('ck-txt-sei-bruto').value || document.body.innerText;
+            const processoMatch = textoPagina.match(/(\d{15})/);
+            const assuntoMatch = textoPagina.match(/Assunto:\s*(.*)/i);
+            const interessadoMatch = textoPagina.match(/Interessado\(a\):\s*(.*)/i);
+
+            if (processoMatch && document.getElementById('ck-d-processo')) {
+                document.getElementById('ck-d-processo').value = processoMatch[1];
+            }
+            if (assuntoMatch && document.getElementById('ck-d-cargo')) {
+                document.getElementById('ck-d-cargo').value = assuntoMatch[1].trim();
+            }
+            if (interessadoMatch && document.getElementById('ck-d-nome')) {
+                document.getElementById('ck-d-nome').value = interessadoMatch[1].trim();
+            }
+            showToast('Dados extraídos!');
+        }
+
+        function ck_processarTudo() {
+            const enq = document.getElementById('ck-d-enquadramento').value;
+            document.querySelectorAll('#aba-checklist-pcd .linha-condicional').forEach(tr => {
+                const item = CK_ITENS_ART6.find(i => i.id === tr.dataset.id);
+                tr.style.display = (enq === item.condi) ? 'table-row' : 'none';
+            });
+            const res = ck_analisar();
+            const div = document.getElementById('ck-resultado');
+            if (res.concluido) div.innerHTML = `<div class="card" style="background:var(--verde-fundo);border-color:var(--verde)"><strong>✓ Checklist Atendido</strong>Pronto para remessa ao DEESS.</div>`;
+            else {
+                const cards = [];
+                if (res.pend.lotacao.length) cards.push(`<div class="card card-lotacao"><strong>→ Unidade de Lotação</strong>Pendências: ${res.pend.lotacao.map(i => i.ref).join(', ')}</div>`);
+                if (res.pend.cff) cards.push(`<div class="card card-cff"><strong>→ CFF</strong>Histórico de Carga Horária (Art. 7º, I)</div>`);
+                if (res.pend.cas) cards.push(`<div class="card card-cas"><strong>→ CAS</strong>Relatório Art. 4º, § 5º</div>`);
+                div.innerHTML = `<h3>Pendências Encontradas:</h3><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px">${cards.join('')}</div>`;
+            }
+            ck_gerarDespacho(res);
+        }
+
+        function ck_analisar() {
+            const enq = document.getElementById('ck-d-enquadramento').value;
+            const protVal = document.getElementById('ck-d-protocolo').value;
+            const prot = protVal ? new Date(protVal + 'T12:00:00') : null;
+            const r = {pend: {lotacao: [], cff: false, cas: false}, concluido: true};
+
+            document.querySelectorAll('#ck-tbody-art6 tr').forEach(tr => {
+                const id = tr.dataset.id; const item = CK_ITENS_ART6.find(i => i.id === id);
+                if (item.condi && enq !== item.condi) return;
+                const st = tr.querySelector('select').value, dt = tr.querySelector('input[type=date]')?.value;
+                let vencido = false; if (item.venc && dt && prot && (prot - new Date(dt + 'T12:00:00')) / 864e5 > 90) vencido = true;
+                const b = tr.querySelector('.badge-status');
+                if (b) b.innerHTML = st === 'na' ? '<span class="badge b-na">N/A</span>' : (st === 'nao' ? '<span class="badge b-pendente">Falta</span>' : (vencido ? '<span class="badge b-vencido">Vencido</span>' : '<span class="badge b-ok">OK</span>'));
+                if (st === 'nao' || vencido) {r.concluido = false; r.pend.lotacao.push(item);}
+            });
+            document.querySelectorAll('#ck-tbody-fluxo tr').forEach(tr => {
+                const id = tr.dataset.id; const st = tr.querySelector('select').value;
+                if (st === 'nao') {r.concluido = false; if (id === 'f1') r.pend.cff = true; else r.pend.cas = true;}
+            });
+            return r;
+        }
+
+        function ck_gerarDespacho(res) {
+            const d = {
+                processo: document.getElementById('ck-d-processo').value,
+                nome: document.getElementById('ck-d-nome').value,
+                cpf: document.getElementById('ck-d-cpf').value,
+                gen: document.getElementById('ck-d-genero').value,
+                desp: document.getElementById('ck-d-desp-novo').value,
+                sig: document.getElementById('ck-d-signatario').value,
+                sig_c: document.getElementById('ck-d-cargo-sig').value,
+                enq: document.getElementById('ck-d-enquadramento').value
+            };
+            const sa = d.gen === 'm' ? 'pelo servidor' : 'pela servidora';
+            let ck = `CONFORMIDADE DOCUMENTAL (ART. 6º e 7º):\n`;
+            document.querySelectorAll('#ck-tbody-art6 tr').forEach(tr => {
+                const id = tr.dataset.id; const item = CK_ITENS_ART6.find(i => i.id === id);
+                if (item.condi && d.enq !== item.condi) return;
+                const st = tr.querySelector('select').value, sei = tr.querySelector('input[type=text]').value;
+                const status = st === 'sim' ? 'Juntado' : (st === 'nao' ? 'Pendente' : 'N/A');
+                ck += ` - ${item.ref}: ${status}${sei ? ' (SEI ' + sei + ')' : ''}\n`;
+            });
+            const m = `Referência: Processo ${d.processo || '...'}\nInteressado: ${d.nome || '...'}\nDESPACHO ${d.desp || '...'}/2026/GOINFRA/GI-GEDEP\n1. Trata-se de pedido de redução de jornada feito ${sa} ${d.nome || '...'}, CPF ${d.cpf || '...'}, com base no Decreto nº 10.849/2026.\n2. Análise:\n${ck}\n${d.sig || '...'}\n${d.sig_c || '...'}`;
+            document.getElementById('ck-txt-despacho').value = m;
+            document.getElementById('ck-txt-controle').value = ['', '', '', '', res.concluido ? 'PRONTO' : 'EM INSTRUÇÃO', 'GI-GEDEP', '', d.processo, 'Redução Jornada', '', d.nome].join('\t');
+        }
+
+        // ============================================================
+        // EXTRATOR TSV EM LOTE (11 Colunas exatas)
+        // ============================================================
+        function ext_processar() {
+            const tEl = document.getElementById('ext-input');
+            const respEl = document.getElementById('ext-responsavel');
+            const outEl = document.getElementById('ext-output');
+            
+            if (!tEl || !outEl) return;
+
+            const t = tEl.value;
+            const resp = respEl ? respEl.value : '';
+            const docs = t.split(/=== CONTEÚDO/);
+            let rows = [];
+
+            docs.forEach(doc => {
+                if (!doc.trim()) return;
+
+                const procMatch = doc.match(/(\d{15})/);
+                const dataEnvMatch = doc.match(/Data\s*Envio:\s*(\d{2}\/\d{4})/i);
+                const statusMatch = doc.match(/Status:\s*(.*)/i);
+                const destinoMatch = doc.match(/Destino:\s*(.*)/i);
+                const assuntoMatch = doc.match(/Assunto:\s*(.*)/i);
+                const interessadoMatch = doc.match(/Interessado\(a\):\s*(.*)/i);
+
+                const dataRecebimento = getDataAtualFormatada(); 
+                const prazoLimite = somarDiasData(dataRecebimento, 10); 
+
+                const atribuicao = resp;
+                const dataEnvio = dataEnvMatch ? dataEnvMatch[1] : '';
+                const status = statusMatch ? statusMatch[1].trim() : 'em andamento';
+                
+                // Procedência extraída dinamicamente do conteúdo do SEI (mantendo o casing original, sem forçar maiúsculas)
+                const procedencia = extrairProcedencia(doc);
+                
+                const destino = destinoMatch ? destinoMatch[1].trim() : '';
+                const processoSei = procMatch ? procMatch[1] : '';
+                const assunto = assuntoMatch ? assuntoMatch[1].trim() : '';
+                const linhaRef = ''; 
+                const interessados = interessadoMatch ? interessadoMatch[1].trim() : '';
+
+                rows.push([
+                    atribuicao,
+                    dataRecebimento,
+                    dataEnvio,
+                    prazoLimite,
+                    status,
+                    procedencia,
+                    destino,
+                    processoSei,
+                    assunto,
+                    linhaRef,
+                    interessados
+                ].join('\t'));
+            });
+
+            outEl.value = rows.join('\n');
+            showToast('Tabela TSV gerada!');
+        }
+
+        // ============================================================
+        // ADMIN E INICIALIZAÇÃO
+        // ============================================================
+        function salvarTmpl() {
+            ['oficio', 'pedido', 'substituicao', 'rescisao', 'acessos', 'whatsapp'].forEach(k => {
+                custom_tmpls[k] = document.getElementById('tmpl-' + k).value;
+            });
+            showToast('Templates Atualizados na Sessão!');
+        }
+
+        window.onload = () => {
+            ck_renderTabelas();
+            Object.keys(custom_tmpls).forEach(k => {
+                const el = document.getElementById('tmpl-' + k); 
+                if (el) el.value = custom_tmpls[k];
+            });
+        };
+    </script>
+</body>
+
+</html>

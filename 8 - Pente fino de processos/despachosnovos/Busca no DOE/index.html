@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscador Diário Oficial</title>
+    <!-- PDF.js para leitura de PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- pdf-lib para manipulação/extração de páginas mantendo o OCR/texto -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <!-- JSZip para ler .zip -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- SheetJS para ler e gerar Excel (.xlsx) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1300px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f4f6f8;
+            color: #333;
+        }
+        h1, h3 { color: #2c3e50; margin-top: 0; }
+        
+        .nav-tabs {
+            display: flex;
+            border-bottom: 2px solid #ccc;
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            padding: 10px 20px;
+            font-weight: bold;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 15px;
+            color: #7f8c8d;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            color: #2c3e50;
+            border-bottom-color: #3498db;
+            background-color: #fff;
+            border-radius: 6px 6px 0 0;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .action-bar {
+            margin: 15px 0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        .btn-pdf { background-color: #e74c3c; color: white; }
+        .btn-zip { background-color: #d35400; color: white; }
+        .btn-excel { background-color: #27ae60; color: white; }
+        .btn-nominal { background-color: #2c3e50; color: white; }
+        .btn-log { background-color: #7f8c8d; color: white; }
+        .btn-clear { background-color: #c0392b; color: white; }
+        .btn-view { background-color: #2980b9; color: white; margin-left: 10px; }
+        .btn-export { background-color: #27ae60; color: white; font-size: 14px; padding: 10px 18px; }
+        .btn-sm { padding: 5px 10px; font-size: 12px; }
+        
+        .badge {
+            display: inline-block;
+            background-color: #eef2f7;
+            color: #34495e;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1px solid #dcdfe6;
+        }
+
+        textarea, select, input[type="text"] {
+            width: 100%;
+            padding: 9px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-family: inherit;
+            font-size: 13px;
+            box-sizing: border-box;
+            margin-top: 5px;
+        }
+        textarea { height: 80px; resize: vertical; }
+
+        .info-header-box {
+            background-color: #eef2f7;
+            border: 1px solid #dcdfe6;
+            border-left: 5px solid #3498db;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+        
+        .date-info-box {
+            background-color: #e8f8f5;
+            border: 1px solid #d0e9c6;
+            border-left: 5px solid #27ae60;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-size: 14px;
+            color: #1f6443;
+        }
+
+        .log-container {
+            background-color: #121212;
+            color: #00ff66;
+            font-family: 'Consolas', 'Courier New', Courier, monospace;
+            font-size: 12px;
+            padding: 15px;
+            border-radius: 6px;
+            height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            border: 1px solid #333;
+        }
+        .log-entry { margin-bottom: 4px; border-bottom: 1px dashed #222; padding-bottom: 2px; }
+        .log-warn { color: #f1c40f; }
+        .log-error { color: #ff4d4d; font-weight: bold; background-color: rgba(255,0,0,0.1); padding: 2px 4px; border-radius: 3px; }
+        .log-info { color: #3498db; }
+        .log-debug { color: #e67e22; }
+        .log-success { color: #2ecc71; font-weight: bold; }
+
+        .result-card {
+            background: #fff;
+            border-left: 5px solid #3498db;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        }
+
+        .status-msg { font-weight: bold; font-size: 14px; }
+        .success { color: #27ae60; }
+        .loading { color: #e67e22; }
+
+        .tag-type { font-size: 11px; padding: 3px 8px; border-radius: 4px; color: white; font-weight: bold; }
+        .tag-name { background-color: #8e44ad; }
+        .tag-cpf { background-color: #27ae60; }
+        .tag-manual { background-color: #34495e; }
+        .tag-excel { background-color: #16a085; }
+        .tag-zip { background-color: #d35400; }
+
+        .highlight-yellow { 
+            background-color: #ffeb3b; 
+            color: #000; 
+            font-weight: bold; 
+            padding: 2px 6px; 
+            border-radius: 3px; 
+            border: 1px solid #f1c40f;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+        }
+        
+        .snippet-box { 
+            background-color: #f8f9fa; 
+            border: 1px solid #e2e8f0; 
+            border-left: 4px solid #3498db; 
+            padding: 12px 14px; 
+            font-family: monospace; 
+            font-size: 13px; 
+            margin-top: 10px; 
+            border-radius: 4px; 
+            line-height: 1.6; 
+            word-break: break-word;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            width: 85%; height: 90%;
+            display: flex; flex-direction: column;
+        }
+        .canvas-container {
+            flex: 1; overflow: auto;
+            background: #525659; text-align: center; padding: 20px;
+        }
+        #pdfCanvas { border: 1px solid #ccc; background: white; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+
+        .segmentation-panel {
+            background: #eef2f7;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            margin-bottom: 15px;
+        }
+        .grid-3-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1.5fr;
+            gap: 10px;
+            align-items: center;
+        }
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 6px;
+            margin: 10px 0;
+            background: #fff;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            max-height: 220px;
+            overflow-y: auto;
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .table-wrapper {
+            max-height: 500px;
+            overflow: auto;
+            margin-top: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; white-space: nowrap; }
+        th, td { border: 1px solid #e2e8f0; padding: 8px 12px; text-align: left; }
+        th { background-color: #1f4e78; color: white; position: sticky; top: 0; z-index: 10; }
+        tr:nth-child(even) { background-color: #f8fafc; }
+        tr:hover { background-color: #e2e8f0; }
+
+        /* Estilo novo para o painel de ações em lote */
+        #bulk-actions {
+            background-color: #eef2f7;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+
+    <h1><a href="https://diariooficial.abc.go.gov.br/" target="_blank" style="text-decoration: none; color: #2c3e50;">Pesquisa Diário Oficial</a></h1>
+    
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('tab-busca')">🔍 Buscador Principal</button>
+        <button class="tab-btn" onclick="switchTab('tab-extracao')">📊 Extração e Segmentação (TXT em Planilha)</button>
+        <button class="tab-btn" id="btnTabLogs" onclick="switchTab('tab-logs')">📋 Console de Logs</button>
+    </div>
+
+    <!-- ABA 1: BUSCADOR PRINCIPAL -->
+    <div id="tab-busca" class="tab-content active">
+        <div class="card">
+            <label><strong>1. Entrada de Arquivos e Listas de Busca:</strong></label>
+            <input type="file" id="pdfInput" accept="application/pdf" style="display: none;" onchange="handlePdfUpload(event)">
+            <input type="file" id="zipInput" accept=".zip" style="display: none;" onchange="handleZipUpload(event)">
+            <input type="file" id="excelInput" accept=".xlsx, .xls" style="display: none;" onchange="handleExcelUpload(event)">
+
+            <div class="action-bar">
+                <button class="btn btn-pdf" onclick="document.getElementById('pdfInput').click()">📄 Carregar PDF</button>
+                <button class="btn btn-zip" onclick="document.getElementById('zipInput').click()">📦 Carregar Pacote (.ZIP)</button>
+                <button class="btn btn-excel" onclick="document.getElementById('excelInput').click()">📊 Carregar Excel (.XLSX)</button>
+                <button class="btn btn-clear" onclick="clearSavedTargets()">🗑️ Limpar Memória de Nomes</button>
+                <span id="dataBadge" class="badge">Aguardando dados...</span>
+            </div>
+
+            <div style="margin-top: 15px;">
+                <label for="manualTerms"><strong>2. Digite ou Cole Nomes/Termos Específicos (separados por linha):</strong></label>
+                <textarea id="manualTerms" placeholder="Exemplo:&#10;João da Silva&#10;Maria de Souza"></textarea>
+            </div>
+
+            <span id="statusMsg" class="status-msg"></span>
+
+            <div style="background-color: #f8f9fa; padding: 12px; border-radius: 6px; margin-top: 15px; border: 1px solid #e9ecef;">
+                <strong>Modo de Varredura:</strong>
+                <label style="margin-left: 15px;"><input type="radio" name="nominalMode" value="both" checked> Nome, CPF e Termos</label>
+                <label style="margin-left: 15px;"><input type="radio" name="nominalMode" value="name"> Apenas Nomes / Termos</label>
+                <label style="margin-left: 15px;"><input type="radio" name="nominalMode" value="cpf"> Apenas CPF</label>
+                <br><br>
+                <button class="btn btn-nominal" onclick="performNominalSearch()">🔍 Executar Varredura</button>
+            </div>
+        </div>
+
+        <div id="fileMetaData"></div>
+        <div id="summary"></div>
+        
+        <!-- Painel de Ações em Lote -->
+        <div id="bulk-actions" style="display:none;">
+            <strong style="color: #2c3e50; margin-right: 10px;">🛠️ Ações em Lote:</strong>
+            <button class="btn btn-sm btn-nominal" onclick="toggleSelectAllResults(true)">☑️ Selecionar Todos</button>
+            <button class="btn btn-sm btn-clear" onclick="toggleSelectAllResults(false)">☐ Desmarcar</button>
+            <button class="btn btn-sm btn-log" onclick="copySelectedText()">📋 Copiar Texto</button>
+            <button class="btn btn-sm btn-excel" onclick="downloadSelectedPdfs()">💾 Baixar PDFs (.zip)</button>
+        </div>
+
+        <div id="results"></div>
+
+        <!-- Iframe dentro da Aba 1 -->
+        <div style="margin-top: 40px; border-top: 2px dashed #ccc; padding-top: 20px;">
+            <h3 style="color: #2c3e50;">Acesso Rápido ao Diário Oficial</h3>
+            <iframe src="https://diariooficial.abc.go.gov.br/" style="height: 500px; width: 100%; border: 1px solid #ccc; border-radius: 8px;"></iframe>
+        </div>
+    </div>
+
+    <!-- ABA 2: EXTRAÇÃO E SEGMENTAÇÃO -->
+    <div id="tab-extracao" class="tab-content">
+        <div class="card">
+            <h3>📊 Extrator e Transformador de TXT em Planilha Excel</h3>
+            <p>Importe e converta a estrutura do TXT. As colunas iniciam desmarcadas para garantir velocidade.</p>
+            
+            <label for="zipFileSelect"><strong>1. Escolha o Arquivo do Pacote ZIP:</strong></label>
+            <select id="zipFileSelect" onchange="initZipFileParsing()">
+                <option value="">-- Nenhum pacote ZIP carregado --</option>
+            </select>
+
+            <div id="fileDateInfo" class="date-info-box" style="display:none;"></div>
+
+            <div id="fileParseOptionsArea" style="display:none; margin-top: 20px;">
+                <div style="background:#fff3cd; border:1px solid #ffeeba; padding:10px 15px; border-radius:6px; margin-bottom:15px; color:#856404; display:flex; align-items:center; gap:15px;">
+                    <label><strong>🏷️ Configuração do Cabeçalho:</strong></label>
+                    <select id="headerRowSelect" onchange="initZipFileParsing()" style="width: auto; margin-top:0;">
+                        <option value="1">Usar Linha 2 como Cabeçalho (Padrão Power Query)</option>
+                        <option value="0">Usar Linha 1 como Cabeçalho</option>
+                    </select>
+                </div>
+
+                <div class="segmentation-panel">
+                    <strong>🎯 2. Segmentar e Filtrar Registros por Coluna:</strong>
+                    <div class="grid-3-col" style="margin-top: 8px;">
+                        <div>
+                            <label style="font-size:12px;">Coluna de Segmentação:</label>
+                            <select id="segmentColumnSelect"></select>
+                        </div>
+                        <div>
+                            <label style="font-size:12px;">Condição:</label>
+                            <select id="segmentCondition">
+                                <option value="contains">Contém o texto</option>
+                                <option value="equals">É exatamente igual a</option>
+                                <option value="starts">Começa com</option>
+                                <option value="not_empty">Não está vazio</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size:12px;">Valor para Filtro:</label>
+                            <input type="text" id="segmentValue" placeholder="Digite o termo para segmentar...">
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-top:15px;">
+                    <label><strong>3. Selecione as Colunas para Exibição / Exportação:</strong></label>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn btn-log btn-sm" onclick="selectAllCheckboxes(true)">☑️ Selecionar Todos</button>
+                        <button class="btn btn-clear btn-sm" onclick="selectAllCheckboxes(false)">☐ Desmarcar Todos</button>
+                        <button class="btn btn-pdf btn-sm" onclick="selectFirstN(20)">⚡ Selecionar Primeiras 20</button>
+                    </div>
+                </div>
+
+                <input type="text" id="columnSearchInput" oninput="filterColumnCheckboxes()" placeholder="🔍 Digite para pesquisar um nome de coluna específico..." style="margin-bottom: 5px;">
+
+                <div id="checkboxContainer" class="checkbox-grid"></div>
+
+                <div style="display:flex; gap:10px; align-items:center; margin-top:10px;">
+                    <button class="btn btn-nominal" onclick="applySegmentationAndRender()">⚙️ Processar e Renderizar Planilha</button>
+                    <button class="btn btn-clear" onclick="resetExtractionFilters()">🔄 Resetar Filtros</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="extractionResultsCard" class="card" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <div>
+                    <h3 style="margin:0;">📑 Matriz de Dados Transformada</h3>
+                    <span id="recordCountBadge" class="badge" style="margin-top:5px;">0 registros encontrados</span>
+                </div>
+                <button class="btn btn-export" onclick="exportExtractionToExcel()">📥 Baixar Planilha em Excel (.xlsx)</button>
+            </div>
+            <div id="tablePreviewWrapper" class="table-wrapper"></div>
+        </div>
+    </div>
+
+    <!-- ABA 3: CONSOLE DE LOGS -->
+    <div id="tab-logs" class="tab-content">
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3>📋 Histórico de Logs e Diagnóstico de Execução</h3>
+                <div>
+                    <button class="btn btn-log" onclick="copyLogs()">📋 Copiar Logs</button>
+                    <button class="btn btn-clear" onclick="clearLogs()">🗑️ Limpar Logs</button>
+                </div>
+            </div>
+            <div id="logConsole" class="log-container">=== Console de Diagnóstico Inicializado ===</div>
+        </div>
+    </div>
+
+    <!-- MODAL DE VISUALIZAÇÃO DO PDF -->
+    <div id="pdfModal" class="modal">
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h3 id="modalTitle" style="margin:0;">📄 Visualizador de Ocorrência no PDF</h3>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn btn-excel" onclick="downloadCurrentPageAsPdf()">💾 Salvar Página em PDF</button>
+                    <button class="btn btn-clear" onclick="closeModal()">❌ Fechar</button>
+                </div>
+            </div>
+            <div class="canvas-container">
+                <canvas id="pdfCanvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        let targetList = [];
+        let excelTargetList = [];
+        let currentPdfDoc = null;
+        let currentPdfArrayBuffer = null;
+        let currentPageNumForModal = null;
+        let pdfPagesData = [];
+        let zipFilesMap = {};
+        
+        let currentRawDataRows = []; 
+        let currentHeaders = [];      
+        let filteredExportData = [];  
+
+        let currentPdfFileName = "Nenhum PDF selecionado";
+        let hasUnreadErrors = false;
+        
+        const BLACKLIST_TERMS = [
+            'CPF', 'CNPJ', 'RUA', 'MATRICULA', 'NUMERO', 'INSCRIÇÃO', 'PROTOCOLO', 
+            'BAIRRO', 'ENDEREÇO', 'BRANCA', 'PRETA', 'VERMELHA', 'AZUL', 'AMARELA', 'MARCA', 
+            'MODELO', 'PLACA'
+        ];
+
+        window.onload = function() { loadSavedTargets(); };
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            const index = ['tab-busca', 'tab-extracao', 'tab-logs'].indexOf(tabId);
+            document.querySelectorAll('.tab-btn')[index].classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+
+            if (tabId === 'tab-logs') {
+                hasUnreadErrors = false;
+                document.getElementById('btnTabLogs').innerText = '📋 Console de Logs';
+            }
+        }
+
+        // --- FUNÇÕES DE AÇÕES EM LOTE ---
+        
+        function toggleSelectAllResults(forceSelect) {
+            document.querySelectorAll('.result-checkbox').forEach(cb => cb.checked = forceSelect);
+        }
+
+        function copySelectedText() {
+            const checkedBoxes = document.querySelectorAll('.result-checkbox:checked');
+            if (checkedBoxes.length === 0) { 
+                alert('Selecione ao menos um resultado para copiar.'); 
+                return; 
+            }
+            
+            let textToCopy = '';
+            checkedBoxes.forEach(cb => {
+                const term = cb.getAttribute('data-term');
+                const page = cb.getAttribute('data-page');
+                const snippet = cb.getAttribute('data-snippet');
+                textToCopy += `Termo Encontrado: ${term} | Página: ${page}\nContexto: ...${snippet}...\n\n`;
+            });
+
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                alert(`Texto de ${checkedBoxes.length} ocorrência(s) copiado com sucesso!`);
+            }).catch(err => {
+                alert('Erro ao copiar texto: ' + err);
+            });
+        }
+
+        async function downloadSelectedPdfs() {
+            const checkedBoxes = document.querySelectorAll('.result-checkbox:checked');
+            if (checkedBoxes.length === 0) { 
+                alert('Selecione ao menos um resultado para baixar.'); 
+                return; 
+            }
+            if (!currentPdfArrayBuffer) { 
+                alert('O PDF original não está carregado.'); 
+                return; 
+            }
+
+            // NOVA LÓGICA DE DATA/HORA PARA O NOME PADRÃO DO ZIP
+            const now = new Date();
+            const dateStr = now.getFullYear() +
+                            String(now.getMonth() + 1).padStart(2, '0') +
+                            String(now.getDate()).padStart(2, '0') + "_" +
+                            String(now.getHours()).padStart(2, '0') +
+                            String(now.getMinutes()).padStart(2, '0');
+            const defaultName = `Resultados_Selecionados_${dateStr}`;
+
+            // Pede o nome do arquivo ao usuário, com a data inserida automaticamente no padrão
+            let zipFileName = prompt("Digite o nome desejado para o arquivo ZIP:", defaultName);
+            
+            // Se o usuário clicar em "Cancelar", interrompe a função
+            if (zipFileName === null) {
+                return; 
+            }
+            // Se o usuário apagar tudo e der "OK", usa o nome padrão
+            if (zipFileName.trim() === '') {
+                zipFileName = defaultName; 
+            }
+            // Garante que o arquivo terá a extensão .zip
+            if (!zipFileName.toLowerCase().endsWith('.zip')) {
+                zipFileName += '.zip';
+            }
+
+            showStatus('⌛ Gerando pacote de PDFs. Isso pode demorar...', 'loading');
+            
+            try {
+                const zip = new JSZip();
+                const srcDoc = await PDFLib.PDFDocument.load(currentPdfArrayBuffer);
+
+                for (let i = 0; i < checkedBoxes.length; i++) {
+                    const cb = checkedBoxes[i];
+                    const pageNum = parseInt(cb.getAttribute('data-page'));
+                    const term = cb.getAttribute('data-term');
+                    const snippet = cb.getAttribute('data-snippet');
+
+                    const newDoc = await PDFLib.PDFDocument.create();
+                    
+                    const [copiedPage] = await newDoc.copyPages(srcDoc, [pageNum - 1]);
+                    newDoc.addPage(copiedPage);
+
+                    newDoc.setTitle(`Ocorrência localizada: ${term}`);
+                    newDoc.setSubject(`Contexto do Documento: ${snippet}`);
+                    newDoc.setAuthor('Buscador Diário Oficial');
+
+                    const pdfBytes = await newDoc.save();
+                    
+                    const safeTerm = term.replace(/[^a-z0-9]/gi, '_');
+                    const fileName = `Pagina_${pageNum}_${safeTerm}.pdf`;
+                    
+                    zip.file(fileName, pdfBytes);
+                }
+
+                const zipBlob = await zip.generateAsync({type: "blob"});
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(zipBlob);
+                
+                // Usa o nome final calculado (seja o padrão ou o customizado)
+                link.download = zipFileName; 
+                link.click();
+
+                showStatus('✓ Download do pacote concluído!', 'success');
+            } catch (e) {
+                writeLog(`❌ ERRO ao gerar pacote PDF: ${e.message}`, 'error');
+                showStatus('Erro ao gerar PDFs.', 'error');
+            }
+        }
+
+        // --- FIM DAS FUNÇÕES DE AÇÕES EM LOTE ---
+
+        function writeLog(msg, type = 'normal') {
+            const consoleDiv = document.getElementById('logConsole');
+            const now = new Date();
+            const timeStr = `${now.toLocaleTimeString()}.${String(now.getMilliseconds()).padStart(3, '0')}`;
+            
+            let colorClass = 'log-info';
+            if (type === 'warn') colorClass = 'log-warn';
+            if (type === 'error') {
+                colorClass = 'log-error';
+                hasUnreadErrors = true;
+                if (!document.querySelector('#tab-logs.active')) {
+                    document.getElementById('btnTabLogs').innerText = '⚠️ Console de Logs (ERRO DETECTADO)';
+                }
+            }
+            if (type === 'success') colorClass = 'log-success';
+            if (type === 'debug') colorClass = 'log-debug';
+
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${colorClass}`;
+            entry.textContent = `[${timeStr}] [${type.toUpperCase()}] ${msg}`;
+            consoleDiv.appendChild(entry);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+
+        function clearLogs() { 
+            document.getElementById('logConsole').innerHTML = '<div class="log-entry">=== Console de Diagnóstico Limpo ===</div>'; 
+            document.getElementById('btnTabLogs').innerText = '📋 Console de Logs';
+            hasUnreadErrors = false;
+        }
+        function copyLogs() { navigator.clipboard.writeText(document.getElementById('logConsole').innerText); alert('Logs copiados!'); }
+
+        function loadSavedTargets() {
+            const saved = localStorage.getItem('app_target_list_v17');
+            if (saved) {
+                try {
+                    targetList = JSON.parse(saved);
+                    writeLog(`Carregados ${targetList.length} alvos salvos.`, 'debug');
+                    updateBadge();
+                } catch(e) { targetList = []; updateBadge(); }
+            } else { updateBadge(); }
+        }
+
+        function clearSavedTargets() {
+            if (confirm("Tem certeza de que deseja apagar todos os nomes salvos?")) {
+                localStorage.removeItem('app_target_list_v17');
+                targetList = [];
+                excelTargetList = [];
+                updateBadge();
+                writeLog('🗑️ Memória limpa com sucesso.', 'warn');
+                showStatus('✓ Memória limpa!', 'success');
+                document.getElementById('manualTerms').value = '';
+            }
+        }
+
+        function updateBadge() {
+            const badge = document.getElementById('dataBadge');
+            const total = targetList.length + excelTargetList.length;
+            badge.innerText = total > 0 ? `👥 ${total} alvos ativos` : `⚠️ Nenhum cadastro carregado`;
+            badge.style.color = total > 0 ? '#27ae60' : '#c0392b';
+        }
+
+        function parseTxtLineOnlyMainTarget(line) {
+            if (!line || line.trim() === '') return { name: '', cpf: '' };
+            let delimiter = line.includes(';') ? ';' : line.includes('\t') ? '\t' : line.includes('|') ? '|' : ',';
+            let parts = delimiter ? line.split(delimiter) : [line];
+            let cpf = '', name = '';
+
+            for (let part of parts) {
+                const cleanDigits = part.replace(/\D/g, '');
+                if (cleanDigits.length === 11) { cpf = part.trim(); break; }
+            }
+
+            for (let part of parts) {
+                const clean = part.trim();
+                const hasNumbers = /\d/.test(clean);
+                const words = clean.split(/\s+/);
+                
+                const isValidName = words.length >= 2 || clean.toUpperCase().includes('GOINFRA');
+
+                if (clean.length >= 4 && isValidName && !hasNumbers && !name) {
+                    name = clean; 
+                    break;
+                }
+            }
+            return { name, cpf };
+        }
+
+        async function handleZipUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            writeLog(`Lendo ZIP: ${file.name}`, 'info');
+            showStatus('⌛ Processando ZIP...', 'loading');
+
+            try {
+                const zip = new JSZip();
+                const zipContent = await zip.loadAsync(file);
+                const newList = [];
+                zipFilesMap = {};
+
+                const selectZip = document.getElementById('zipFileSelect');
+                selectZip.innerHTML = '<option value="">-- Selecione um arquivo --</option>';
+
+                const filesInZip = Object.keys(zipContent.files);
+
+                for (let fileName of filesInZip) {
+                    if (zipContent.files[fileName].dir || !fileName.toLowerCase().endsWith('.txt')) continue;
+
+                    const arrayBuffer = await zipContent.files[fileName].async('arraybuffer');
+                    const decoder = new TextDecoder('iso-8859-1');
+                    const content = decoder.decode(arrayBuffer);
+                    
+                    const lines = content.split(/\r?\n/);
+                    const fileDate = lines.length > 0 ? lines[0] : "Data não encontrada";
+
+                    const baseFileName = fileName.split('/').pop();
+                    zipFilesMap[baseFileName] = { content: content, date: fileDate };
+                    
+                    const opt = document.createElement('option');
+                    opt.value = baseFileName;
+                    opt.textContent = baseFileName;
+                    selectZip.appendChild(opt);
+
+                    lines.forEach(line => {
+                        const parsed = parseTxtLineOnlyMainTarget(line);
+                        if (parsed.name || parsed.cpf) {
+                            newList.push({ name: parsed.name, cpf: parsed.cpf, source: 'ZIP' });
+                        }
+                    });
+                }
+
+                targetList = newList;
+                localStorage.setItem('app_target_list_v17', JSON.stringify(targetList));
+                updateBadge();
+                writeLog(`✅ ZIP Concluído! ${targetList.length} alvos importados.`, 'success');
+                showStatus(`✓ ZIP Importado! (${targetList.length} alvos)`, 'success');
+            } catch (error) {
+                writeLog(`❌ ERRO ao ler ZIP: ${error.message}`, 'error');
+            }
+            event.target.value = '';
+        }
+
+        async function handleExcelUpload(event) {
+            const file = event.target.files[0]; if (!file) return;
+            writeLog(`Lendo Excel: ${file.name}`, 'info');
+            showStatus('⌛ Processando Excel...', 'loading');
+            try {
+                const data = await file.arrayBuffer();
+                const workbook = XLSX.read(data, { type: 'array' });
+                const extractedTermsMap = new Map();
+                workbook.SheetNames.forEach(sheetName => {
+                    const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
+                    sheetData.forEach(row => {
+                        if (Array.isArray(row)) {
+                            row.forEach(cell => {
+                                if (cell !== null && cell !== undefined) {
+                                    const rawStr = String(cell).trim();
+                                    const upperStr = rawStr.toUpperCase();
+                                    const words = rawStr.split(/\s+/);
+                                    
+                                    const isValidName = words.length >= 2 || upperStr.includes('GOINFRA');
+
+                                    if (rawStr.length >= 4 && isValidName && !/\d/.test(rawStr)) {
+                                        extractedTermsMap.set(upperStr, rawStr);
+                                    }
+                                }
+                            });
+                        }
+                    });
+                });
+                excelTargetList = Array.from(extractedTermsMap.values()).map(term => ({ name: term, cpf: '', source: 'EXCEL' }));
+                updateBadge();
+                writeLog(`✅ Excel Importado! ${excelTargetList.length} nomes válidos.`, 'success');
+                showStatus(`✓ Excel Importado! (${excelTargetList.length} nomes)`, 'success');
+            } catch (error) { writeLog(`❌ ERRO no Excel: ${error.message}`, 'error'); }
+            event.target.value = '';
+        }
+
+        async function handlePdfUpload(event) {
+            const file = event.target.files[0]; if (!file) return;
+            currentPdfFileName = file.name;
+            writeLog(`Carregando PDF: ${currentPdfFileName}`, 'info');
+            showStatus('⌛ Indexando PDF...', 'loading');
+            try {
+                currentPdfArrayBuffer = await file.arrayBuffer();
+                currentPdfDoc = await pdfjsLib.getDocument({ data: currentPdfArrayBuffer.slice(0) }).promise;
+                pdfPagesData = [];
+                for (let pageNum = 1; pageNum <= currentPdfDoc.numPages; pageNum++) {
+                    const page = await currentPdfDoc.getPage(pageNum);
+                    const textContent = await page.getTextContent();
+                    pdfPagesData.push({ pageNum, text: textContent.items.map(item => item.str).join(' ') });
+                }
+                writeLog(`✅ PDF Carregado: ${currentPdfDoc.numPages} páginas indexadas.`, 'success');
+                showStatus(`✓ PDF Pronto! (${currentPdfDoc.numPages} págs)`, 'success');
+            } catch (error) { writeLog(`❌ ERRO no PDF: ${error.message}`, 'error'); }
+            event.target.value = '';
+        }
+
+        function performNominalSearch() {
+            const metaDiv = document.getElementById('fileMetaData');
+            const resultsDiv = document.getElementById('results');
+            const summaryDiv = document.getElementById('summary');
+            
+            metaDiv.innerHTML = ''; resultsDiv.innerHTML = ''; summaryDiv.innerHTML = '';
+            if (!currentPdfDoc) { alert('Carregue o PDF primeiro.'); return; }
+            
+            const rawManual = document.getElementById('manualTerms').value;
+            const manualList = rawManual.split(/[\n,]/).map(t => t.trim()).filter(t => t.length >= 3).map(t => ({ name: t, cpf: '', source: 'MANUAL' }));
+            const combinedList = [...targetList, ...excelTargetList, ...manualList];
+            if (combinedList.length === 0) { alert('Nenhum nome/termo para buscar. Digite ou carregue cadastros.'); return; }
+            
+            metaDiv.innerHTML = `
+                <div class="info-header-box">
+                    📁 <strong>Arquivo PDF em Varredura:</strong> ${escapeHtml(currentPdfFileName)}<br>
+                    📋 <strong>Total de Cadastros/Nomes na Varredura:</strong> ${combinedList.length}
+                </div>`;
+                
+            const mode = document.querySelector('input[name="nominalMode"]:checked').value;
+            let totalMatches = 0;
+            const uniquePageMatches = {};
+
+            combinedList.forEach((item) => {
+                const { name, cpf, source } = item;
+                
+                pdfPagesData.forEach(pageData => {
+                    const pageKey = `page-${pageData.pageNum}`;
+                    if (!uniquePageMatches[pageKey]) uniquePageMatches[pageKey] = new Set();
+
+                    if ((mode === 'both' || mode === 'name') && name) {
+                        const searchTerm = name.trim();
+                        if (searchTerm && !uniquePageMatches[pageKey].has(searchTerm.toLowerCase())) {
+                            
+                            const escapedName = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+                            const pattern = new RegExp(escapedName, 'gi');
+                            
+                            if (pattern.test(pageData.text)) {
+                                totalMatches++;
+                                uniquePageMatches[pageKey].add(searchTerm.toLowerCase());
+                                renderPageCard(resultsDiv, pageData.pageNum, pageData.text, pattern, source || 'MANUAL', searchTerm);
+                            }
+                        }
+                    }
+
+                    if ((mode === 'both' || mode === 'cpf') && cpf) {
+                        const cleanDigits = cpf.replace(/\D/g, '');
+                        if (cleanDigits.length === 11 && !uniquePageMatches[pageKey].has(cleanDigits)) {
+                            const formattedFull = cleanDigits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1\\.$2\\.$3-$4');
+                            const pattern = new RegExp(`(?:\\b${cleanDigits}\\b|${formattedFull})`, 'gi');
+                            
+                            if (pattern.test(pageData.text)) {
+                                totalMatches++;
+                                uniquePageMatches[pageKey].add(cleanDigits);
+                                renderPageCard(resultsDiv, pageData.pageNum, pageData.text, pattern, 'CPF', cpf);
+                            }
+                        }
+                    }
+                });
+            });
+
+            summaryDiv.innerHTML = totalMatches === 0 
+                ? `<h3 style="color:#27ae60; background:#e8f8f5; padding:15px; border-radius:6px;">✅ Nenhuma ocorrência localizada.</h3>`
+                : `<h3 style="color:#2c3e50; background:#ebf5fb; padding:15px; border-radius:6px;">🔍 Varredura Concluída: ${totalMatches} resultado(s) localizado(s).</h3>`;
+                
+            document.getElementById('bulk-actions').style.display = totalMatches > 0 ? 'flex' : 'none';
+        }
+
+        function renderPageCard(container, pageNum, pageText, pattern, sourceType, searchTerm) {
+            const resultCard = document.createElement('div');
+            resultCard.className = 'result-card';
+
+            pattern.lastIndex = 0;
+            const match = pattern.exec(pageText);
+            if (!match) return;
+            
+            const matchIndex = match.index;
+            const matchedString = match[0];
+            
+            const snippetContextSize = 510; 
+            const snippetStart = Math.max(0, matchIndex - snippetContextSize);
+            const snippetEnd = Math.min(pageText.length, matchIndex + matchedString.length + snippetContextSize);
+            
+            const rawSnippet = pageText.substring(snippetStart, snippetEnd);
+            
+            const highlightedTerm = `<span class="highlight-yellow">${escapeHtml(matchedString)}</span>`;
+            const safeMatchedStr = matchedString.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const finalSnippet = escapeHtml(rawSnippet).replace(new RegExp(safeMatchedStr, 'gi'), highlightedTerm);
+
+            const dataSnippet = escapeHtml(rawSnippet).replace(/"/g, '&quot;');
+
+            resultCard.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <input type="checkbox" class="result-checkbox" style="width: 18px; height: 18px; cursor: pointer;" 
+                            data-page="${pageNum}" data-term="${escapeHtml(searchTerm)}" data-snippet="${dataSnippet}">
+                            
+                        <span class="tag-type tag-${(sourceType || 'MANUAL').toLowerCase()}">${sourceType || 'MANUAL'}</span>
+                        <strong style="font-size:16px;">${escapeHtml(searchTerm)}</strong>
+                    </div>
+                    <div>
+                        <strong style="color: #2c3e50;">📍 Página ${pageNum}</strong>
+                        <button class="btn btn-view" onclick="openPdfViewer(${pageNum}, '${escapeHtml(matchedString)}')">👁️ Visualizar no PDF</button>
+                    </div>
+                </div>
+                <div class="snippet-box">${snippetStart > 0 ? '...' : ''}${finalSnippet}${snippetEnd < pageText.length ? '...' : ''}</div>
+            `;
+            container.appendChild(resultCard);
+        }
+
+        function initZipFileParsing() {
+            const selectedFile = document.getElementById('zipFileSelect').value;
+            const container = document.getElementById('checkboxContainer');
+            const filterColSelect = document.getElementById('segmentColumnSelect');
+            const area = document.getElementById('fileParseOptionsArea');
+            const dateInfo = document.getElementById('fileDateInfo');
+
+            if (!selectedFile || !zipFilesMap[selectedFile]) {
+                area.style.display = 'none';
+                dateInfo.style.display = 'none';
+                return;
+            }
+
+            const fileData = zipFilesMap[selectedFile];
+            dateInfo.innerHTML = `<strong>📅 Data de Atualização do Arquivo:</strong> ${escapeHtml(fileData.date)}`;
+            dateInfo.style.display = 'block';
+
+            const headerRowIdx = parseInt(document.getElementById('headerRowSelect').value);
+            writeLog(`Analisando ${selectedFile}...`, 'info');
+
+            try {
+                const rawContent = fileData.content;
+                const lines = rawContent.split(/\r?\n/).filter(l => l.trim() !== '');
+
+                let delimiter = ';';
+                if (lines.length > 0 && lines[0].includes(';')) delimiter = ';';
+                else if (lines.length > 0 && lines[0].includes('\t')) delimiter = '\t';
+                else if (lines.length > 0 && lines[0].includes('|')) delimiter = '|';
+                else if (lines.length > 0 && lines[0].includes(',')) delimiter = ',';
+
+                const allParsed = lines.map(line => line.split(delimiter));
+                const rawHeaders = allParsed[headerRowIdx];
+                currentHeaders = rawHeaders.map((h, i) => h ? h.trim() : `Coluna ${i+1}`);
+
+                currentRawDataRows = allParsed.slice(headerRowIdx + 1);
+
+                container.innerHTML = '';
+                filterColSelect.innerHTML = '<option value="-1">-- Filtrar em Qualquer Coluna --</option>';
+
+                const fragment = document.createDocumentFragment();
+                currentHeaders.forEach((h, idx) => {
+                    const div = document.createElement('div');
+                    div.className = 'checkbox-item';
+                    div.dataset.colName = h.toLowerCase();
+                    div.innerHTML = `<input type="checkbox" class="col-cb" value="${idx}"> <span title="${escapeHtml(h)}">${idx + 1}. ${escapeHtml(h)}</span>`;
+                    fragment.appendChild(div);
+
+                    const opt = document.createElement('option');
+                    opt.value = idx;
+                    opt.textContent = `${idx + 1}. ${h}`;
+                    filterColSelect.appendChild(opt);
+                });
+
+                container.appendChild(fragment);
+                area.style.display = 'block';
+                selectFirstN(15);
+            } catch (err) {
+                writeLog(`❌ ERRO no TXT: ${err.message}`, 'error');
+            }
+        }
+
+        function selectAllCheckboxes(status) {
+            document.querySelectorAll('#checkboxContainer .col-cb').forEach(cb => cb.checked = status);
+            applySegmentationAndRender();
+        }
+        function selectFirstN(n) {
+            document.querySelectorAll('#checkboxContainer .col-cb').forEach((cb, idx) => { cb.checked = (idx < n); });
+            applySegmentationAndRender();
+        }
+        function filterColumnCheckboxes() {
+            const query = document.getElementById('columnSearchInput').value.toLowerCase().trim();
+            document.querySelectorAll('#checkboxContainer .checkbox-item').forEach(item => {
+                item.style.display = item.dataset.colName.includes(query) ? 'flex' : 'none';
+            });
+        }
+        function applySegmentationAndRender() {
+            try {
+                const filterColIdx = parseInt(document.getElementById('segmentColumnSelect').value);
+                const condition = document.getElementById('segmentCondition').value;
+                const filterVal = document.getElementById('segmentValue').value.trim().toLowerCase();
+                const checkedBoxes = Array.from(document.querySelectorAll('#checkboxContainer .col-cb:checked'));
+                const checkedIndexes = checkedBoxes.map(cb => parseInt(cb.value));
+                if (checkedIndexes.length === 0) {
+                    document.getElementById('tablePreviewWrapper').innerHTML = '<div style="padding:20px; text-align:center;">Marque ao menos uma coluna acima.</div>';
+                    return;
+                }
+                const filteredRows = currentRawDataRows.filter(row => {
+                    if (!filterVal && condition !== 'not_empty') return true;
+                    if (filterColIdx >= 0) {
+                        return checkCondition(String(row[filterColIdx] || '').toLowerCase(), filterVal, condition);
+                    } else {
+                        return row.some(cell => checkCondition(String(cell || '').toLowerCase(), filterVal, condition));
+                    }
+                });
+                const selectedHeaders = checkedIndexes.map(i => currentHeaders[i]);
+                filteredExportData = [selectedHeaders];
+                filteredRows.forEach(row => {
+                    filteredExportData.push(checkedIndexes.map(i => row[i] || ''));
+                });
+                const previewLimit = Math.min(filteredExportData.length, 101);
+                let tableHtml = '<table><thead><tr>';
+                selectedHeaders.forEach(h => { tableHtml += `<th>${escapeHtml(h)}</th>`; });
+                tableHtml += '</tr></thead><tbody>';
+                for (let i = 1; i < previewLimit; i++) {
+                    tableHtml += '<tr>';
+                    selectedHeaders.forEach((_, c) => {
+                        tableHtml += `<td>${escapeHtml(filteredExportData[i][c])}</td>`;
+                    });
+                    tableHtml += '</tr>';
+                }
+                tableHtml += '</tbody></table>';
+                document.getElementById('tablePreviewWrapper').innerHTML = tableHtml;
+                document.getElementById('recordCountBadge').innerText = `📊 ${filteredRows.length} registro(s) | ${checkedIndexes.length} coluna(s)`;
+                document.getElementById('extractionResultsCard').style.display = 'block';
+            } catch (err) {
+                writeLog(`❌ ERRO na visualização da tabela: ${err.message}`, 'error');
+            }
+        }
+        function checkCondition(cellVal, filterVal, condition) {
+            if (condition === 'contains') return cellVal.includes(filterVal);
+            if (condition === 'equals') return cellVal === filterVal;
+            if (condition === 'starts') return cellVal.startsWith(filterVal);
+            if (condition === 'not_empty') return cellVal.trim() !== '';
+            return true;
+        }
+        function resetExtractionFilters() {
+            document.getElementById('segmentValue').value = '';
+            document.getElementById('segmentColumnSelect').value = '-1';
+            selectFirstN(15);
+        }
+        function exportExtractionToExcel() {
+            if (filteredExportData.length <= 1) return;
+            const ws = XLSX.utils.aoa_to_sheet(filteredExportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Dados");
+            XLSX.writeFile(wb, "exportacao_segmentada.xlsx");
+        }
+
+        async function openPdfViewer(pageNum, searchTerm) {
+            try {
+                currentPageNumForModal = pageNum;
+                document.getElementById('pdfModal').style.display = 'flex';
+                const page = await currentPdfDoc.getPage(pageNum);
+                const viewport = page.getViewport({ scale: 1.5 });
+                const canvas = document.getElementById('pdfCanvas');
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                
+                await page.render({ canvasContext: context, viewport: viewport }).promise;
+                
+                const textContent = await page.getTextContent();
+                const escaped = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+                const pattern = new RegExp(escaped, 'gi');
+                
+                textContent.items.forEach(item => {
+                    if (pattern.test(item.str)) {
+                        const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
+                        context.fillStyle = 'rgba(255, 235, 59, 0.75)';
+                        context.fillRect(tx[4] - 6, tx[5] - item.height - 2, item.width + 12, item.height * 1.3);
+                    }
+                });
+            } catch (err) {
+                console.error("Erro na visualização:", err);
+            }
+        }
+
+        async function downloadCurrentPageAsPdf() {
+            if (!currentPdfArrayBuffer || !currentPageNumForModal) return;
+            try {
+                const srcDoc = await PDFLib.PDFDocument.load(currentPdfArrayBuffer);
+                const newDoc = await PDFLib.PDFDocument.create();
+                const [copiedPage] = await newDoc.copyPages(srcDoc, [currentPageNumForModal - 1]);
+                newDoc.addPage(copiedPage);
+                const pdfBytes = await newDoc.save();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `Pagina_${currentPageNumForModal}.pdf`;
+                link.click();
+            } catch (err) {
+                alert("Erro ao salvar PDF: " + err.message);
+            }
+        }
+        function closeModal() { document.getElementById('pdfModal').style.display = 'none'; }
+        function showStatus(msg, type) {
+            const statusMsg = document.getElementById('statusMsg');
+            statusMsg.className = `status-msg ${type}`;
+            statusMsg.innerText = msg;
+        }
+        function escapeHtml(text) { return text ? String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") : ''; }
+    </script>
+    
+    <footer style="margin-top: 20px; font-size: 13px; color: #7f8c8d;">
+        <p>Versão atualizada 03/08/2026, às 13:55h</p>
+    </footer>
+
+</body>
+</html>

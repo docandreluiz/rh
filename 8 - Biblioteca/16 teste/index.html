@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal GEDEP — GOINFRA | Painel Administrativo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="data.js"></script>
+    <style>
+        .hidden { display: none !important; }
+        body { font-family: 'Inter', sans-serif; }
+        .font-code { font-family: 'JetBrains Mono', monospace; }
+        .sidebar-link.active { background: rgba(255,255,255,0.12); border-left: 3px solid #34d399; }
+        /* --- toques lúdicos --- */
+        .card-doc { transition: transform .2s ease, box-shadow .2s ease; }
+        .card-doc:hover { transform: translateY(-3px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.12); }
+        .section-chip { cursor: pointer; user-select: none; transition: transform .15s ease, box-shadow .15s ease; }
+        .section-chip:hover { transform: translateY(-2px); }
+        .section-chip.active { transform: translateY(-1px); box-shadow: 0 4px 12px -2px rgba(0,0,0,0.15); }
+        .status-pill { display: inline-flex; align-items: center; gap: 4px; }
+        @keyframes card-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .card-in { animation: card-in .25s ease both; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .card-selected { outline: 2px solid #00872d; outline-offset: 2px; background: #f0fdf4; }
+    </style>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.remove()">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" onerror="this.remove()">
+    <style>
+    /* Fallback se FA não carregar - usar emoji/texto */
+    @font-face { font-family: 'FA-fallback'; src: local('Arial'); }
+    i.fa:not([class*="fa-"]):empty::before { content: "•"; }
+    </style>
+
+    <!-- Fallback Font Awesome - ícones unicode se FA não carregar -->
+    <style>
+    i.fa-solid.fa-file-excel::before { content: "📊"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-file-lines::before { content: "📄"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-file-word::before { content: "📝"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-file-arrow-up::before { content: "📤"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-upload::before { content: "⬆️"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-star::before { content: "⭐"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-download::before { content: "⬇️"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-save::before { content: "💾"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-trash::before { content: "🗑️"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-edit::before { content: "✏️"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-pen::before { content: "🖊️"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-folder-tree::before { content: "📁"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-search::before { content: "🔍"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-check::before { content: "✅"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-circle-check::before { content: "✅"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-landmark::before { content: "🏛️"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-gavel::before { content: "⚖️"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-coins::before { content: "🪙"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-users::before { content: "👥"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-umbrella-beach::before { content: "🏖️"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-seedling::before { content: "🌱"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-heart-pulse::before { content: "❤️"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-user-slash::before { content: "🚫"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-suitcase-rolling::before { content: "🧳"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-scale-unbalanced-flip::before { content: "⚖️"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-person-cane::before { content: "👴"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-door-open::before { content: "🚪"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-desktop::before { content: "🖥️"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-graduation-cap::before { content: "🎓"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-calendar-days::before { content: "📅"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-boxes-stacked::before { content: "📦"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-microscope::before { content: "🔬"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-folder::before { content: "📂"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-book::before { content: "📖"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-robot::before { content: "🤖"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-database::before { content: "🗄️"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-file-code::before { content: "📋"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-bolt::before { content: "⚡"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-lock::before { content: "🔒"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-clock::before { content: "🕐"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid fa-sparkles::before { content: "✨"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-book-open::before { content: "📗"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-chart-pie::before { content: "📊"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-sliders::before { content: "🎚️"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-wrench::before { content: "🔧"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-palette::before { content: "🎨"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-heart::before { content: "❤️"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-list::before { content: "📋"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-copy::before { content: "📋"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-link::before { content: "🔗"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-external-link::before { content: "🔗"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-arrow-left::before { content: "◀️"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-arrow-right::before { content: "▶️"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-arrow-down::before { content: "⬇️"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-arrow-up::before { content: "⬆️"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-times::before { content: "❌"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-xmark::before { content: "❌"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-plus::before { content: "➕"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-minus::before { content: "➖"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-filter::before { content: "🔽"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-sort::before { content: "🔃"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-rotate::before { content: "🔄"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-eye::before { content: "👁️"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-eye-slash::before { content: "🙈"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-info::before { content: "ℹ️"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-circle-info::before { content: "ℹ️"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-triangle-exclamation::before { content: "⚠️"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-exclamation-triangle::before { content: "⚠️"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-question-circle::before { content: "❓"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-gear::before { content: "⚙️"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-cog::before { content: "⚙️"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-home::before { content: "🏠"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-house::before { content: "🏠"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-newspaper::before { content: "📰"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-wand-magic-sparkles::before { content: "🪄"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-file-export::before { content: "📤"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-file-import::before { content: "📥"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-table::before { content: "📊"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    i.fa-solid.fa-grip::before { content: "⊞"; font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+    </style>
+</head>
+
+<body class="bg-gray-100 text-gray-800 min-h-screen flex">
+
+    <!-- ============ SIDEBAR ============ -->
+    <aside id="sidebar" class="w-64 bg-slate-900 text-slate-200 flex-shrink-0 flex flex-col fixed inset-y-0 left-0 z-40">
+        <!-- Logo -->
+        <div class="px-5 py-5 border-b border-slate-800">
+            <div class="flex items-center gap-3">
+                <div class="bg-emerald-600 p-2 rounded-lg text-white shadow">
+                    <i class="fa-solid fa-folder-tree"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-white text-sm">Portal GEDEP</h1>
+                    <p class="text-[10px] text-slate-400">GOINFRA • ISAD(G)/NOBRADE</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navegação -->
+        <nav class="flex-1 overflow-y-auto py-3">
+            <p class="px-5 mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Acervo</p>
+            <a onclick="goTo('inicio')" data-nav="inicio" class="sidebar-link flex items-center gap-3 px-5 py-2.5 text-sm cursor-pointer hover:bg-slate-800 transition">
+                <i class="fa-solid fa-house w-4 text-center text-emerald-400"></i> Início
+            </a>
+            <a onclick="goTo('acervo')" data-nav="acervo" class="sidebar-link flex items-center gap-3 px-5 py-2.5 text-sm cursor-pointer hover:bg-slate-800 transition">
+                <i class="fa-solid fa-book-open w-4 text-center text-emerald-400"></i> Acervo Geral <span id="nav-total" class="ml-auto text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded">0</span>
+            </a>
+            <a onclick="goTo('secoes')" data-nav="secoes" class="sidebar-link flex items-center gap-3 px-5 py-2.5 text-sm cursor-pointer hover:bg-slate-800 transition">
+                <i class="fa-solid fa-layer-group w-4 text-center text-lime-400"></i> Seções <span id="nav-secoes" class="ml-auto text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded">0</span>
+            </a>
+            <a onclick="goTo('favoritos')" data-nav="favoritos" class="sidebar-link flex items-center gap-3 px-5 py-2.5 text-sm cursor-pointer hover:bg-slate-800 transition">
+                <i class="fa-solid fa-star w-4 text-center text-amber-400"></i> Favoritos <span id="nav-fav" class="ml-auto text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded">0</span>
+            </a>
+            <a onclick="goTo('historico')" data-nav="historico" class="sidebar-link flex items-center gap-3 px-5 py-2.5 text-sm cursor-pointer hover:bg-slate-800 transition">
+                <i class="fa-solid fa-clock-rotate-left w-4 text-center text-sky-400"></i> Histórico
+            </a>
+            <a onclick="goTo('novidades')" data-nav="novidades" class="sidebar-link flex items-center gap-3 px-5 py-2.5 text-sm cursor-pointer hover:bg-slate-800 transition">
+                <i class="fa-solid fa-sparkles w-4 text-center text-violet-400"></i> Novidades <span id="nav-nov" class="ml-auto text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded">0</span>
+            </a>
+            <a onclick="goTo('interno')" data-nav="interno" class="sidebar-link flex items-center gap-3 px-5 py-2.5 text-sm cursor-pointer hover:bg-slate-800 transition">
+                <i class="fa-solid fa-lock w-4 text-center text-amber-400"></i> Acesso Interno
+            </a>
+
+            <p class="px-5 mb-2 mt-5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Ferramentas</p>
+            <a onclick="goTo('edicao')" data-nav="edicao" class="sidebar-link flex items-center gap-3 px-5 py-2.5 text-sm cursor-pointer hover:bg-slate-800 transition">
+                <i class="fa-solid fa-code-compare w-4 text-center text-blue-400"></i> Edição com Delta
+            </a>
+            <a onclick="goTo('dados')" data-nav="dados" class="sidebar-link flex items-center gap-3 px-5 py-2.5 text-sm cursor-pointer hover:bg-slate-800 transition">
+                <i class="fa-solid fa-file-import w-4 text-center text-violet-400"></i> Dados (19 campos)
+            </a>
+            <a onclick="goTo('relatorio')" data-nav="relatorio" class="sidebar-link flex items-center gap-3 px-5 py-2.5 text-sm cursor-pointer hover:bg-slate-800 transition">
+                <i class="fa-solid fa-scale-balanced w-4 text-center text-rose-400"></i> Relatório Jurídico
+            </a>
+            <a onclick="goTo('gerenciar')" data-nav="gerenciar" class="sidebar-link flex items-center gap-3 px-5 py-2.5 text-sm cursor-pointer hover:bg-slate-800 transition">
+                <i class="fa-solid fa-database w-4 text-center text-orange-400"></i> Gerenciar Acervo
+            </a>
+
+            <p class="px-5 mb-2 mt-5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Suporte</p>
+            <a onclick="goTo('wiki')" data-nav="wiki" class="sidebar-link flex items-center gap-3 px-5 py-2.5 text-sm cursor-pointer hover:bg-slate-800 transition">
+                <i class="fa-solid fa-book-bookmark w-4 text-center text-cyan-400"></i> Wiki GEDEP
+            </a>
+            <a onclick="goTo('ia')" data-nav="ia" class="sidebar-link flex items-center gap-3 px-5 py-2.5 text-sm cursor-pointer hover:bg-slate-800 transition">
+                <i class="fa-solid fa-robot w-4 text-center text-fuchsia-400"></i> Assistente IA
+            </a>
+        </nav>
+
+        <!-- Painel de Ajustes -->
+        <div class="border-t border-slate-800 px-5 py-4 space-y-3">
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-500"><i class="fa-solid fa-palette mr-1"></i> Ajustes visuais</p>
+            <div class="flex items-center gap-3">
+                <label class="text-xs text-slate-400">Cor:</label>
+                <input type="color" id="colorPicker" value="#00872d" class="w-7 h-7 rounded border-0 cursor-pointer" onchange="applyThemeColor(this.value)">
+            </div>
+            <div class="flex items-center gap-3">
+                <label class="text-xs text-slate-400">Fonte:</label>
+                <select id="fontPicker" onchange="applyFont(this.value)" class="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs focus:outline-none">
+                    <option value="Inter">Inter</option>
+                    <option value="Roboto">Roboto</option>
+                    <option value="JetBrains Mono">Mono</option>
+                </select>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ============ CONTEÚDO PRINCIPAL ============ -->
+    <div class="flex-1 flex flex-col min-w-0 ml-64">
+        <!-- Topbar -->
+        
+<header class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between sticky top-0 z-30 shadow-sm">
+            <div>
+                <h2 id="page-title" class="text-base font-bold text-gray-900">Acervo Geral</h2>
+                <p id="page-subtitle" class="text-xs text-gray-500">Pesquise, filtre e selecione os documentos para análise em lote.</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <span id="selection-badge" class="hidden bg-emerald-600 text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow">
+                    <i class="fa-solid fa-check mr-1"></i><span id="selected-count">0</span> selecionados
+                </span>
+                <button onclick="goTo('ia'); document.getElementById('send-selected-btn') && document.getElementById('send-selected-btn').click()" class="text-xs bg-slate-800 hover:bg-slate-900 text-white px-3 py-2 rounded-lg transition hidden" id="header-send-ia">
+                    <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Analisar na IA
+                </button>
+<button onclick="verificarAlteracoesEAvisar()" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5" title="Verificar e salvar alterações pendentes">
+    <i class="fa-solid fa-floppy-disk"></i> Verificar Alterações
+</button>
+
+            </div>
+        </header>
+
+        
+<main class="flex-1 p-6 overflow-y-auto">
+
+            <!-- ========== ABA INÍCIO (estilo Biblioteca de Gestão & Pessoas) ========== -->
+            <section id="tab-inicio" class="tab hidden space-y-6">
+                <!-- Hero banner -->
+                <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-700 via-emerald-600 to-teal-600 p-8 lg:p-10 text-white shadow-lg">
+                    <div class="absolute -right-10 -top-10 w-56 h-56 rounded-full bg-white/10"></div>
+                    <div class="absolute -right-6 bottom-2 w-32 h-32 rounded-full bg-white/10"></div>
+                    <div class="absolute right-20 top-8 w-16 h-16 rounded-full bg-white/10"></div>
+                    <div class="relative max-w-xl">
+                        <p class="text-xs font-bold uppercase tracking-[0.2em] text-emerald-100 mb-2">Portal GEDEP • GOINFRA</p>
+                        <h3 class="text-3xl lg:text-4xl font-extrabold leading-tight mb-3">Conhecimento normativo que transforma a gestão de pessoas.</h3>
+                        <p class="text-emerald-50 text-sm lg:text-base mb-6">Conecte leis, decretos e manuais operacionais, consulte o que vigora hoje e fortaleça decisões de alto nível na gestão e desenvolvimento de pessoas.</p>
+                        <button onclick="goTo('acervo')" class="inline-flex items-center gap-2 bg-white text-emerald-700 font-bold text-sm px-6 py-3 rounded-xl shadow hover:shadow-lg hover:-translate-y-0.5 transition">
+                            Explorar Acervo <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Grade: categorias + acesso rápido -->
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                    <div class="xl:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-gray-900 text-base flex items-center gap-2"><i class="fa-solid fa-layer-group text-emerald-600"></i> Categorias em destaque</h3>
+                            <button onclick="goTo('secoes')" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700">Ver todas <i class="fa-solid fa-arrow-right ml-0.5"></i></button>
+                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3" id="home-cats"></div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                        <h3 class="font-bold text-gray-900 text-base mb-4 flex items-center gap-2"><i class="fa-solid fa-bolt text-amber-500"></i> Acesso rápido</h3>
+                        <div class="space-y-1">
+                            <button onclick="goTo('favoritos')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition text-left">
+                                <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center"><i class="fa-solid fa-star text-sm"></i></div>
+                                <div class="min-w-0"><p class="text-sm font-semibold text-gray-800">Meus Favoritos</p><p class="text-[10px] text-gray-400" id="home-fav-count">0 itens salvos</p></div>
+                            </button>
+                            <button onclick="goTo('historico')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition text-left">
+                                <div class="w-8 h-8 rounded-lg bg-sky-50 text-sky-500 flex items-center justify-center"><i class="fa-solid fa-clock-rotate-left text-sm"></i></div>
+                                <div class="min-w-0"><p class="text-sm font-semibold text-gray-800">Últimos Acessados</p><p class="text-[10px] text-gray-400">Ver histórico</p></div>
+                            </button>
+                            <button onclick="goTo('novidades')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition text-left">
+                                <div class="w-8 h-8 rounded-lg bg-violet-50 text-violet-500 flex items-center justify-center"><i class="fa-solid fa-sparkles text-sm"></i></div>
+                                <div class="min-w-0"><p class="text-sm font-semibold text-gray-800">Novidades</p><p class="text-[10px] text-gray-400">Confira os novos conteúdos</p></div>
+                            </button>
+                            <button onclick="goTo('ia')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition text-left">
+                                <div class="w-8 h-8 rounded-lg bg-fuchsia-50 text-fuchsia-500 flex items-center justify-center"><i class="fa-solid fa-robot text-sm"></i></div>
+                                <div class="min-w-0"><p class="text-sm font-semibold text-gray-800">Assistente IA</p><p class="text-[10px] text-gray-400">Pergunte sobre o acervo</p></div>
+                            </button>
+                            <button onclick="goTo('wiki')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition text-left">
+                                <div class="w-8 h-8 rounded-lg bg-cyan-50 text-cyan-500 flex items-center justify-center"><i class="fa-solid fa-book-bookmark text-sm"></i></div>
+                                <div class="min-w-0"><p class="text-sm font-semibold text-gray-800">Wiki GEDEP</p><p class="text-[10px] text-gray-400">Manual e enciclopédia</p></div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coleções recomendadas -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-gray-900 text-base flex items-center gap-2"><i class="fa-solid fa-layer-group text-teal-600"></i> Coleções recomendadas</h3>
+                        <button onclick="goTo('secoes')" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700">Ver todas <i class="fa-solid fa-arrow-right ml-0.5"></i></button>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="home-cols"></div>
+                </div>
+
+                <!-- Novidades do acervo -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-gray-900 text-base flex items-center gap-2"><i class="fa-solid fa-sparkles text-violet-600"></i> Novidades do acervo</h3>
+                        <button onclick="goTo('novidades')" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700">Ver todas <i class="fa-solid fa-arrow-right ml-0.5"></i></button>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3" id="home-news"></div>
+                </div>
+            </section>
+
+            <!-- ========== ABA ACERVO GERAL ========== -->
+            <section id="tab-acervo" class="tab space-y-5">
+
+            <!-- Botão de ordenação temporal -->
+<div class="flex items-center justify-between mb-3">
+    <div class="text-xs text-gray-500" id="sort-info"></div>
+    <button onclick="toggleSortOrder()" id="sort-toggle" class="bg-white border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 transition flex items-center shadow-sm">
+        <i class="fa-solid fa-arrow-down-wide-short mr-1"></i> Mais recentes primeiro
+    </button>
+                <!-- Barra de busca + ações em lote -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+                    <div class="relative lg:w-96">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-gray-400 text-sm"></i>
+                        <input type="text" id="searchInput" oninput="renderCards()" placeholder="Buscar por ID, título, seção ou resumo..."
+                               class="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="toggleAllCards(true)" class="px-3 py-2 rounded-lg text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 transition"><i class="fa-solid fa-check-double mr-1"></i> Selecionar tudo</button>
+                        <button onclick="toggleAllCards(false)" class="px-3 py-2 rounded-lg text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 transition"><i class="fa-solid fa-xmark mr-1"></i> Limpar</button>
+                        <button onclick="copySelected()" class="px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition shadow-sm"><i class="fa-solid fa-copy mr-1"></i> Copiar selecionados</button>
+                        <button onclick="sendSelectedToIA()" class="px-3 py-2 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-900 text-white transition shadow-sm"><i class="fa-solid fa-robot mr-1"></i> Enviar para IA</button>
+                    </div>
+                </div>
+
+                <!-- Chips de filtro por seção -->
+                <div class="flex flex-wrap gap-2" id="section-chips"></div>
+
+                <!-- Contador de resultados -->
+                <div class="flex items-center justify-between text-xs text-gray-500">
+                    <span id="result-count">0 documentos exibidos</span>
+                    <select id="orderBy" onchange="renderCards()" class="border border-gray-200 rounded-lg px-2 py-1 bg-white text-xs focus:outline-none">
+                        <option value="id">Ordenar por ID</option>
+                        <option value="titulo">Ordenar por Título</option>
+                        <option value="status">Ordenar por Status</option>
+                    </select>
+                </div>
+
+            </div>
+                <!-- Grade de cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="cards-grid"></div>
+            </section>
+
+            <!-- ========== ABA SEÇÕES (NAVEGAÇÃO LÚDICA) ========== -->
+            <section id="tab-secoes" class="tab hidden space-y-6">
+                <div class="bg-gradient-to-r from-lime-50 via-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-5 flex items-start gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-md">
+                        <i class="fa-solid fa-layer-group text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-emerald-900 text-base">Navegue pelo acervo por tema</h3>
+                        <p class="text-sm text-emerald-700 mt-1">Cada seção reúne documentos relacionados ao mesmo tema. Clique em uma seção para abrir o filtro correspondente no acervo.</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4" id="sections-grid"></div>
+            </section>
+
+            <!-- ========== ABA ACESSO INTERNO ========== -->
+            <section id="tab-interno" class="tab hidden space-y-5">
+                <div class="bg-amber-50 border border-amber-200 border-l-4 border-l-amber-500 rounded-r-xl p-4 flex items-start gap-3">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-600 mt-0.5"></i>
+                    <div>
+                        <h3 class="font-bold text-amber-900 text-sm">Área de Acesso Interno</h3>
+                        <p class="text-xs text-amber-700 mt-1">Manuais operacionais e documentos de acesso restrito, segregados do acervo público.</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="divide-y divide-gray-100" id="interno-list"></div>
+                </div>
+            </section>
+
+            <!-- ========== ABA EDIÇÃO COM DELTA ========== -->
+            <section id="tab-edicao" class="tab hidden space-y-5">
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-xs text-blue-800">
+                    <i class="fa-solid fa-circle-info mr-1"></i>
+                    Carregue um documento do acervo (botão <b>"Editar"</b> no card ou na ficha) e altere apenas os campos que deseja modificar. O prompt diferencial gerado contém somente o que foi alterado, ideal para atualizar a IA responsável pelo código.
+                </div>
+
+                        <!-- Seletor de documentos em lote -->
+                        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-2">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-semibold text-amber-800 text-xs uppercase tracking-wide flex items-center gap-1.5"><i class="fa-solid fa-layer-group"></i> Modo em Lote</h4>
+                                <span id="delta-batch-count" class="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold">0 selecionados</span>
+                            </div>
+                            <p class="text-xs text-amber-700 mb-2">Selecione os documentos que receberão o mesmo delta:</p>
+                            <div id="delta-batch-list" class="max-h-40 overflow-y-auto space-y-1 mb-2 border border-amber-200 rounded-lg bg-white p-2">
+                                <!-- Preenchido dinamicamente -->
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="toggleAllDeltaBatch()" class="text-[10px] bg-amber-200 hover:bg-amber-300 text-amber-800 px-3 py-1.5 rounded-lg font-semibold transition">Todos</button>
+                                <button onclick="clearDeltaBatch()" class="text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg font-semibold transition">Limpar</button>
+                                <button onclick="applyDeltaBatch()" class="text-[10px] bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg font-semibold transition"><i class="fa-solid fa-check-to-slot mr-1"></i> Aplicar delta nos selecionados</button>
+                            </div>
+                        </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                    <!-- Formulário -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-semibold text-gray-800 text-sm uppercase tracking-wide">Ficha em edição</h3>
+                            <span id="edit-status" class="text-[10px] bg-gray-100 text-gray-500 px-2 py-1 rounded-full">Nenhum documento carregado</span>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Código de referência</label>
+                            <input type="text" id="edit-ref" readonly class="w-full border border-gray-200 rounded-lg p-2 text-sm bg-gray-50 text-gray-500" placeholder="—">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Título do documento</label>
+                            <input type="text" id="edit-titulo" oninput="calcDelta()" class="w-full border border-gray-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Título completo">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Resumo / Âmbito e conteúdo</label>
+                            <textarea id="edit-conteudo" rows="4" oninput="calcDelta()" class="w-full border border-gray-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Resumo do documento"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Link externo oficial</label>
+                            <input type="text" id="edit-link" oninput="calcDelta()" class="w-full border border-gray-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="https://...">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
+                            <select id="edit-status-sel" onchange="calcDelta()" class="w-full border border-gray-200 rounded-lg p-2 text-sm bg-white focus:outline-none">
+                                <option value="">— não alterar —</option>
+                                <option>Vigente</option>
+                                <option>Em vigor</option>
+                                <option>Alterado</option>
+                                <option>Revogado</option>
+                                <option>Parcialmente Revogado</option>
+                                <option>Em operação</option>
+                                <option>Publicado</option>
+                                <option>Aguardando</option>
+                            </select>
+                        </div>
+                        <button onclick="resetEdit()" class="w-full border border-gray-200 text-gray-600 hover:bg-gray-50 px-4 py-2 rounded-lg text-xs font-semibold transition"><i class="fa-solid fa-rotate-left mr-1"></i> Restaurar valores originais</button>
+                    </div>
+
+                    <!-- Saída delta -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex flex-col">
+                        <h3 class="font-semibold text-gray-800 text-sm uppercase tracking-wide mb-3">Prompt Delta gerado</h3>
+                        <div id="delta-output" class="flex-1 bg-slate-900 text-emerald-400 p-4 rounded-xl font-code text-xs overflow-auto min-h-72">
+// Nenhuma alteração detectada.
+// Edite os campos ao lado para gerar o prompt diferencial.
+                        </div>
+                        <div class="flex flex-wrap gap-2 mt-3">
+                            <button onclick="applyDelta()" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition shadow-sm"><i class="fa-solid fa-check-to-slot mr-2"></i> Aplicar no acervo</button>
+                            <button onclick="copyDelta()" class="bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition shadow-sm"><i class="fa-solid fa-copy mr-2"></i> Copiar prompt delta</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== ABA DADOS (EXPORTAR/IMPORTAR) ========== -->
+            <section id="tab-dados" class="tab hidden space-y-5">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 space-y-3">
+                        <h3 class="font-bold text-gray-800 text-sm flex items-center gap-2"><i class="fa-solid fa-file-excel text-emerald-600"></i> Exportar acervo</h3>
+                        <p class="text-xs text-gray-600">Baixe o acervo completo em planilha Excel (.xlsx) ou texto estruturado (.txt), com todos os 19 campos arquivísticos.</p>
+                        <div class="flex flex-wrap gap-2 pt-1">
+                            <button onclick="exportXlsx()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-semibold transition"><i class="fa-solid fa-file-excel mr-1"></i> Baixar XLSX</button>
+                            <button onclick="exportTxt()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-semibold transition"><i class="fa-solid fa-file-lines mr-1"></i> Baixar TXT</button>
+                            <button onclick="showWordConfigModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-semibold transition"><i class="fa-solid fa-file-word mr-1"></i> Baixar Word</button>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 space-y-3">
+                        <h3 class="font-bold text-gray-800 text-sm flex items-center gap-2"><i class="fa-solid fa-file-arrow-up text-violet-600"></i> Importar planilha</h3>
+                        <p class="text-xs text-gray-600">Selecione um arquivo .xlsx ou .csv exportado anteriormente para restaurar o acervo.</p>
+                        <input type="file" id="importFile" accept=".xlsx,.xls,.csv" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer">
+                        <button onclick="handleImport()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-semibold transition w-full"><i class="fa-solid fa-upload mr-1"></i> Processar importação</button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 space-y-3">
+                    <h3 class="font-bold text-gray-800 text-sm">Transcrição integral do acervo (19 campos)</h3>
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 font-code text-xs text-slate-700 h-72 overflow-y-auto whitespace-pre-wrap" id="transcription-box">Carregando...</div>
+                </div>
+            <!-- ========== EXPORTAR/IMPORTAR FAVORITOS ========== -->
+<div class="bg-gradient-to-br from-violet-500 to-purple-700 rounded-2xl p-6 text-white shadow-lg">
+    <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+            <i class="fa-solid fa-star"></i>
+        </div>
+        <h3 class="font-bold text-lg">Meus Favoritos</h3>
+    </div>
+    <p class="text-white/80 text-sm mb-4">
+        Os favoritos são salvos no navegador (localStorage). Use as opções abaixo para 
+        <strong>exportar</strong> (backup) ou <strong>importar</strong> (restaurar) em outro dispositivo.
+    </p>
+    <div class="grid grid-cols-2 gap-3">
+        <button onclick="exportarFavoritosJSON()" class="bg-white/20 hover:bg-white/30 backdrop-blur px-4 py-3 rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-download"></i> Exportar Favoritos
+        </button>
+        <label class="bg-white/20 hover:bg-white/30 backdrop-blur px-4 py-3 rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2 cursor-pointer">
+            <i class="fa-solid fa-upload"></i> Importar Favoritos
+            <input type="file" accept=".json" onchange="importarFavoritosJSON(this.files[0])" class="hidden">
+        </label>
+        <button onclick="baixarFavoritosComAcervo()" class="col-span-2 bg-emerald-500/80 hover:bg-emerald-500 px-4 py-3 rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-file-export"></i> Baixar TUDO (Acervo + Favoritos)
+        </button>
+    </div>
+    <p class="text-white/60 text-xs mt-3">
+        💡 Ao fechar a aba com alterações, o sistema também oferece baixar tudo automaticamente.
+    </p>
+</div>
+
+            </section>
+
+            
+
+            <section id="tab-gerenciar" class="tab hidden space-y-5">
+<div class="flex items-center justify-between mb-3">
+    <p class="text-xs text-gray-500">Use os checkboxes para selecionar documentos e aplicar ações em lote.</p>
+    <button onclick="toggleAllGerenciar()" class="bg-white border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 transition flex items-center shadow-sm">
+        <i class="fa-solid fa-check-double mr-1"></i> Selecionar / Desmarcar todos
+    </button>
+</div>
+            
+                <div class="bg-emerald-50 border border-emerald-200 border-l-4 border-l-emerald-500 rounded-r-xl p-4 flex items-start gap-3">
+                    <i class="fa-solid fa-circle-info text-emerald-600 mt-0.5"></i>
+                    <div>
+                        <h3 class="font-bold text-emerald-900 text-sm">Edição independente — sem depender da IA</h3>
+                        <p class="text-xs text-emerald-700 mt-1">Adicione, edite ou exclua documentos diretamente. Ao terminar, clique em <b>"Baixar data.js atualizado"</b> e substitua o arquivo na pasta do painel.</p>
+                    </div>
+                </div>
+            
+<!-- Barra de ações em lote (gerenciar) -->
+<div id="gerenciar-batch-bar" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-4 z-50">
+    <span class="text-xs font-semibold"><i class="fa-solid fa-layer-group mr-1"></i> <span id="gerenciar-selected-count">0</span> selecionados</span>
+    <div class="h-4 w-px bg-gray-600"></div>
+    <button onclick="showBatchEditModal()" class="text-xs bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 rounded-lg transition" title="Editar todos selecionados"><i class="fa-solid fa-pen-to-square mr-1"></i> Editar Lote</button><button onclick="editarLote()" class="text-xs bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-lg transition" title="Editar primeiro selecionado individualmente"><i class="fa-solid fa-pen mr-1"></i> Editar 1</button>
+    <button onclick="copiarSelecionadosGerenciar()" class="text-xs bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-lg transition" title="Copiar IDs"><i class="fa-solid fa-copy mr-1"></i> Copiar IDs</button>
+    <button onclick="gerarPromptLote()" class="text-xs bg-purple-600 hover:bg-purple-700 px-3 py-1.5 rounded-lg transition" title="Gerar prompt delta"><i class="fa-solid fa-robot mr-1"></i> Prompt Lote</button>
+    <button onclick="excluirSelecionadosGerenciar()" class="text-xs bg-rose-600 hover:bg-rose-700 px-3 py-1.5 rounded-lg transition" title="Excluir todos"><i class="fa-solid fa-trash mr-1"></i> Excluir</button>
+    <button onclick="gerenciarSelecionados.clear(); renderManager(); updateGerenciarBatchBar();" class="text-xs bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded-lg transition" title="Limpar seleção"><i class="fa-solid fa-xmark mr-1"></i> Limpar</button>
+</div>
+
+            
+
+
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+                    <div class="relative lg:w-96">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-gray-400 text-sm"></i>
+                        <input type="text" id="manageSearch" oninput="renderManager()" placeholder="Buscar na tabela de gerenciamento..."
+                               class="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="openForm()" class="px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition shadow-sm"><i class="fa-solid fa-plus mr-1"></i> Novo documento</button>
+                        <button onclick="downloadDataJs()" class="px-3 py-2 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-900 text-white transition shadow-sm"><i class="fa-solid fa-download mr-1"></i> Baixar data.js atualizado</button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs">
+                            <thead class="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                    <th class="text-center px-4 py-2.5"><input type="checkbox" onchange="toggleAllGerenciar()" class="w-4 h-4 rounded border-gray-300 text-emerald-600 cursor-pointer"></th><th class="text-left px-4 py-2.5 font-semibold text-gray-600 uppercase tracking-wide text-[10px]">ID</th>
+                                    <th class="text-left px-4 py-2.5 font-semibold text-gray-600 uppercase tracking-wide text-[10px]">Título</th>
+                                    <th class="text-left px-4 py-2.5 font-semibold text-gray-600 uppercase tracking-wide text-[10px]">Seção</th>
+                                    <th class="text-left px-4 py-2.5 font-semibold text-gray-600 uppercase tracking-wide text-[10px]">Tipo</th>
+                                    <th class="text-left px-4 py-2.5 font-semibold text-gray-600 uppercase tracking-wide text-[10px]">Status</th>
+                                    <th class="text-right px-4 py-2.5 font-semibold text-gray-600 uppercase tracking-wide text-[10px]">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="manager-tbody" class="divide-y divide-gray-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== ABA RELATÓRIO JURÍDICO ========== -->
+            <section id="tab-relatorio" class="tab hidden space-y-5">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="report-stats"></div>
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                    <h3 class="font-bold text-gray-800 text-sm mb-4">Documentos por status</h3>
+                    <div id="report-status-list" class="space-y-2"></div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                    <h3 class="font-bold text-gray-800 text-sm mb-4">Atenção: documentos revogados ou aguardando</h3>
+                    <div id="report-alerts" class="space-y-2"></div>
+                </div>
+            </section>
+
+            <!-- ========== ABA FAVORITOS ========== -->
+            <section id="tab-favoritos" class="tab hidden space-y-5">
+                <div class="bg-gradient-to-r from-amber-50 via-yellow-50 to-orange-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-md shrink-0"><i class="fa-solid fa-star text-white text-xl"></i></div>
+                    <div>
+                        <h3 class="font-bold text-amber-900 text-base">Meus Favoritos</h3>
+                        <p class="text-sm text-amber-700 mt-1">Documentos que você marcou com a estrela. Fica salvo neste navegador. Clique na estrela de qualquer card do acervo para adicionar ou remover.</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="fav-grid"></div>
+            </section>
+
+            <!-- ========== ABA HISTÓRICO ========== -->
+            <section id="tab-historico" class="tab hidden space-y-5">
+                <div class="bg-gradient-to-r from-sky-50 via-blue-50 to-indigo-50 border border-sky-200 rounded-2xl p-5 flex items-start gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center shadow-md shrink-0"><i class="fa-solid fa-clock-rotate-left text-white text-xl"></i></div>
+                    <div>
+                        <h3 class="font-bold text-sky-900 text-base">Histórico de acesso</h3>
+                        <p class="text-sm text-sky-700 mt-1">Os documentos que você abriu recentemente, na ordem em que foram acessados. Fica salvo neste navegador.</p>
+                    </div>
+                </div>
+                <div class="space-y-2" id="hist-list"></div>
+            </section>
+
+            <!-- ========== ABA NOVIDADES ========== -->
+            <section id="tab-novidades" class="tab hidden space-y-5">
+                <div class="bg-gradient-to-r from-violet-50 via-fuchsia-50 to-pink-50 border border-violet-200 rounded-2xl p-5 flex items-start gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-md shrink-0"><i class="fa-solid fa-sparkles text-white text-xl"></i></div>
+                    <div>
+                        <h3 class="font-bold text-violet-900 text-base">Novidades do acervo</h3>
+                        <p class="text-sm text-violet-700 mt-1">Os documentos mais recentes do acervo, ordenados pela data da ficha. Selo "NOVO" para os últimos cadastrados.</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4" id="nov-grid"></div>
+            </section>
+
+            <!-- ========== ABA WIKI ========== -->
+            <section id="tab-wiki" class="tab hidden space-y-5">
+                <!-- alternador Manual / Enciclopédia -->
+                <div class="flex gap-2">
+                    <button onclick="setWikiMode('manual')" id="wiki-mode-manual" class="wiki-mode-btn px-4 py-2 rounded-xl text-xs font-bold transition bg-emerald-600 text-white shadow"><i class="fa-solid fa-book-bookmark mr-1"></i> Manual do portal</button>
+                    <button onclick="setWikiMode('ency')" id="wiki-mode-ency" class="wiki-mode-btn px-4 py-2 rounded-xl text-xs font-bold transition bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"><i class="fa-solid fa-landmark mr-1"></i> Enciclopédia GEDEP</button>
+                </div>
+
+                <!-- MODO 1: MANUAL OPERACIONAL -->
+                <div id="wiki-manual" class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 space-y-5 text-sm text-gray-700">
+                    <h3 class="font-bold text-gray-900 text-base flex items-center gap-2"><i class="fa-solid fa-book-bookmark text-cyan-600"></i> Manual Operacional do Portal GEDEP</h3>
+                    <div class="space-y-3">
+                        <div class="border border-gray-100 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-800 mb-1">1. Como usar o Acervo Geral</h4>
+                            <p class="text-xs text-gray-600">Pesquise pelo campo de busca, filtre clicando nos chips de seção e ordene por ID, título ou status. Marque os checkboxes dos cards para ações em lote (copiar ou enviar para análise pela IA).</p>
+                        </div>
+                        <div class="border border-gray-100 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-800 mb-1">2. Ficha ISAD(G)/NOBRADE (19 campos)</h4>
+                            <p class="text-xs text-gray-600">Cada documento possui uma ficha arquivística com 19 campos: código de referência, título, data, tipo, dimensão, fundo produtor, história administrativa, história arquivística, procedimento de entrada, âmbito e conteúdo, citação ABNT, arranjo, condições de acesso, originais, observações, link externo e status. Acesse pelo botão "Ficha completa" de cada card.</p>
+                        </div>
+                        <div class="border border-gray-100 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-800 mb-1">3. Edição com Delta</h4>
+                            <p class="text-xs text-gray-600">Carregue um documento na aba "Edição com Delta", altere apenas o que mudou. Você pode aplicar as alterações diretamente no acervo local com o botão "Aplicar no acervo", ou copiar o prompt diferencial para levar à IA responsável pelo código.</p>
+                        </div>
+                        <div class="border border-gray-100 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-800 mb-1">4. Dados (Exportar / Importar)</h4>
+                            <p class="text-xs text-gray-600">Exporte o acervo em XLSX ou TXT. Para importar, use um arquivo XLSX gerado pelo próprio portal (o cabeçalho das colunas deve ser preservado). A importação substitui todo o acervo atual.</p>
+                        </div>
+                        <div class="border border-gray-100 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-800 mb-1">5. Gerenciar Acervo (sem IA)</h4>
+                            <p class="text-xs text-gray-600">Use "Novo documento" (formulário simplificado), "Editar" ou "Excluir" na tabela. Os campos técnicos são preenchidos automaticamente. Ao final da sessão, clique em "Baixar data.js atualizado" e substitua o arquivo na pasta para tornar as alterações permanentes.</p>
+                        </div>
+                        <div class="border border-gray-100 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-800 mb-1">6. Padrões adotados</h4>
+                            <p class="text-xs text-gray-600">Catalogação conforme ISAD(G) e NOBRADE. Citações em formato ABNT. IDs no padrão GEDEP-XXX com código de referência BR-GO-GOINFRA-GEDEP-GEDEP-XXX.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODO 2: ENCICLOPÉDIA POR TEMA -->
+                <div id="wiki-ency" class="hidden space-y-4">
+                    <div class="bg-gradient-to-r from-sky-50 via-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-5 flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md shrink-0">
+                            <i class="fa-solid fa-landmark text-white text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-blue-900 text-base">Enciclopédia GEDEP — o conhecimento do acervo em linguagem simples</h3>
+                            <p class="text-sm text-blue-700 mt-1">Uma entrada por tema do acervo, explicando o que cada conjunto de leis e normas diz na prática. Todo o conteúdo é gerado a partir dos documentos reais do acervo; clique em uma entrada para expandir e ver os documentos relacionados.</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4" id="ency-grid"></div>
+                </div>
+            </section>
+
+            <!-- ========== ABA ASSISTENTE IA ========== -->
+            <section id="tab-ia" class="tab hidden space-y-5">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-2">
+                    <div class="flex flex-col md:flex-row md:items-center gap-3">
+                        <div class="flex items-center gap-2 shrink-0">
+                            <div class="bg-fuchsia-100 text-fuchsia-600 p-2 rounded-lg"><i class="fa-solid fa-key"></i></div>
+                            <div>
+                                <h3 class="font-bold text-gray-900 text-xs">Gemini (Google) — API gratuita</h3>
+                                <p class="text-[10px] text-gray-500">Cole sua chave para ativar respostas com IA real + contexto do acervo.</p>
+                            </div>
+                        </div>
+                        <div class="flex flex-1 gap-2">
+                            <input type="password" id="gemini-key" placeholder="Cole aqui sua chave AIza... (ficará salva neste navegador)"
+                                   class="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-xs font-code focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            <button onclick="saveGeminiKey()" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0">Salvar chave</button>
+                            <span id="gemini-status" class="text-xs font-semibold self-center text-rose-600"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex flex-col" style="height: 500px;">
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="bg-fuchsia-100 text-fuchsia-600 p-2 rounded-lg"><i class="fa-solid fa-robot"></i></div>
+                        <div>
+                            <h3 class="font-bold text-gray-900 text-sm">Assistente IA — GEDEP</h3>
+                            <p class="text-[10px] text-gray-500">Contexto: acervo com <span id="ia-total">0</span> documentos. Use "Enviar para IA" na aba Acervo para iniciar a análise de itens selecionados.</p>
+                        </div>
+                        <span id="ia-mode" class="ml-auto text-[10px] font-bold px-2 py-1 rounded-full bg-gray-200 text-gray-600">Modo simulado</span>
+                    </div>
+                    <div id="chat-box" class="flex-1 bg-gray-50 border border-gray-200 rounded-xl p-4 overflow-y-auto space-y-3 text-sm mb-3">
+                        <div class="bg-white border border-gray-200 p-3 rounded-lg max-w-lg">
+                            Olá! Selecione os cards na aba <b>Acervo Geral</b> e clique em <b>"Enviar para IA"</b> para eu analisar os itens. Você também pode me perguntar sobre qualquer documento do acervo.
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="chat-input" placeholder="Digite sua pergunta sobre o acervo..." class="flex-1 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" onkeypress="if(event.key==='Enter') sendChat()">
+                        <button onclick="sendChat()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-lg text-sm font-medium transition"><i class="fa-solid fa-paper-plane mr-1"></i> Enviar</button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-white border-t border-gray-200 px-6 py-3 flex flex-col sm:flex-row justify-between items-center gap-1 text-[10px] text-gray-500">
+            <span><i class="fa-solid fa-building-columns text-emerald-500 mr-1"></i> Biblioteca Física GOINFRA: atendimento presencial, seg–sex, 08h–17h (Goiânia/GO)</span>
+            <span>Portal GEDEP v8.0 • Padrão ISAD(G)/NOBRADE</span>
+        </footer>
+    </div>
+
+    <!-- ============ MODAL FORMULÁRIO DE DOCUMENTO ============ -->
+    <div id="form-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[92vh] flex flex-col overflow-hidden">
+            <div class="bg-slate-900 text-white px-5 py-4 flex justify-between items-center shrink-0">
+                <h3 id="form-modal-title" class="font-bold text-sm">Novo documento</h3>
+                <button onclick="closeForm()" class="text-slate-300 hover:text-white text-xl">&times;</button>
+            </div>
+            <div class="p-5 overflow-y-auto space-y-3">
+                <p class="text-xs text-gray-500 -mt-1">Preencha apenas o essencial — os campos técnicos ISAD(G) são completados automaticamente. O modo avançado está disponível abaixo quando precisar.</p>
+                <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 space-y-3">
+                    <p class="text-[10px] font-bold text-emerald-700 uppercase tracking-wide"><i class="fa-solid fa-bolt mr-1"></i> Cadastro rápido (obrigatório)</p>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Título do documento *</label>
+                        <input type="text" id="form-titulo" class="w-full border border-gray-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Seção *</label>
+                            <select id="form-secao" class="w-full border border-gray-200 rounded-lg p-2 text-sm bg-white focus:outline-none"></select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Tipo de conteúdo *</label>
+                            <select id="form-tipo" class="w-full border border-gray-200 rounded-lg p-2 text-sm bg-white focus:outline-none">
+                                <option value="">Selecione…</option>
+                                <option>Lei Ordinária</option>
+                                <option>Lei Estadual</option>
+                                <option>Lei Complementar</option>
+                                <option>Decreto</option>
+                                <option>Decreto Estadual</option>
+                                <option>Emenda Constitucional</option>
+                                <option>Súmula Vinculante</option>
+                                <option>Instruções Normativas</option>
+                                <option>Instrumento Legal</option>
+                                <option>Manual de Sistema</option>
+                                <option>Manual Interno</option>
+                                <option>Sistema de Informação</option>
+                                <option>Portal de Serviços</option>
+                                <option>Sistema/Plataforma</option>
+                                <option>Artigo / Publicação</option>
+                                <option>Relatório Técnico</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Data (publicação/revisão)</label>
+                            <input type="text" id="form-data" class="w-full border border-gray-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="2026">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Status *</label>
+                            <select id="form-status" class="w-full border border-gray-200 rounded-lg p-2 text-sm bg-white focus:outline-none">
+                                <option>Vigente</option>
+                                <option>Em vigor</option>
+                                <option>Alterado</option>
+                                <option>Revogado</option>
+                                <option>Parcialmente Revogado</option>
+                                <option>Em operação</option>
+                                <option>Publicado</option>
+                                <option>Aguardando</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Resumo do documento * <span class="text-gray-400 font-normal">(uma frase dizendo sobre o que trata)</span></label>
+                            <textarea id="form-conteudo" rows="3" class="w-full border border-gray-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Ex.: Cria o Adicional de Responsabilidade Técnica para as atividades de Arquitetura e de Engenharia no âmbito do Poder Executivo do Estado de Goiás"></textarea>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Link externo oficial *</label>
+                            <input type="text" id="form-link" class="w-full border border-gray-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="https://">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border border-gray-200 rounded-xl">
+                    <button type="button" onclick="toggleAdvancedFields()" class="w-full px-4 py-2.5 text-left text-xs font-semibold text-gray-600 hover:bg-gray-50 rounded-xl flex items-center justify-between">
+                        <span><i class="fa-solid fa-sliders mr-2"></i> Modo avançado — campos técnicos ISAD(G) (opcional, preenchimento automático)</span>
+                        <i id="adv-arrow" class="fa-solid fa-chevron-down text-gray-400"></i>
+                    </button>
+                    <div id="advanced-fields" class="hidden px-4 pb-4 space-y-3">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">ID (automático)</label>
+                                <input type="text" id="form-id" class="w-full border border-gray-200 rounded-lg p-2 text-sm font-code bg-gray-50 focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="GEDEP-025">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Código de referência (automático)</label>
+                                <input type="text" id="form-ref" class="w-full border border-gray-200 rounded-lg p-2 text-sm font-code bg-gray-50 focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="BR-GO-GOINFRA-GEDEP-GEDEP-025">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Dimensão e suporte</label>
+                                <input type="text" id="form-dimensao" class="w-full border border-gray-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Documento Digital | Arquivo Eletrônico (PDF)">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Fundo produtor</label>
+                                <input type="text" id="form-produtor" class="w-full border border-gray-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Goinfra / Legislação">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-medium text-gray-600 mb-1">História administrativa</label>
+                                <textarea id="form-historiaAdmin" rows="2" class="w-full border border-gray-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-medium text-gray-600 mb-1">História arquivística</label>
+                                <textarea id="form-historiaArq" rows="2" class="w-full border border-gray-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Procedimento de entrada</label>
+                                <input type="text" id="form-entrada" class="w-full border border-gray-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Incorporação oficial via Repositório Digital GEDEP.">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Sistema de arranjo</label>
+                                <input type="text" id="form-arranjo" class="w-full border border-gray-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Série Documental — Seção">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Condições de acesso</label>
+                                <select id="form-acesso" class="w-full border border-gray-200 rounded-lg p-2 text-sm bg-white focus:outline-none">
+                                    <option>Público</option>
+                                    <option>Interno Restrito (Manuais/Técnico)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Originais e cópias</label>
+                                <input type="text" id="form-originais" class="w-full border border-gray-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Repositório Digital Central GOINFRA">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Citação ABNT (automático)</label>
+                                <input type="text" id="form-citacaoABNT" class="w-full border border-gray-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Observações e tags</label>
+                                <input type="text" id="form-obs" class="w-full border border-gray-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Status: Em vigor | Fonte: Externo/ Legislação">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-5 py-3 border-t flex justify-between items-center shrink-0">
+                <span id="form-error" class="text-xs text-rose-600 font-semibold"></span>
+                <div class="flex gap-2">
+                    <button onclick="closeForm()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-xs font-semibold transition">Cancelar</button>
+                    <button onclick="generateFormDelta()" class="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-xs font-semibold transition"><i class="fa-solid fa-file-code mr-1"></i> Gerar prompt delta</button>
+                    <button onclick="applyFormDelta()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-semibold transition"><i class="fa-solid fa-check-to-slot mr-1"></i> Salvar e aplicar</button>
+                    <button onclick="saveForm()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-lg text-xs font-semibold transition"><i class="fa-solid fa-floppy-disk mr-1"></i> Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ MODAL FICHA COMPLETA ============ -->
+    <div id="ficha-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="bg-slate-900 text-white px-5 py-4 flex justify-between items-center">
+                <h3 id="modal-title" class="font-bold text-sm">Ficha Arquivística</h3>
+                <button onclick="closeModal()" class="text-slate-300 hover:text-white text-xl">&times;</button>
+            </div>
+            <div id="modal-content" class="p-5 overflow-y-auto space-y-2 text-xs divide-y divide-gray-100"></div>
+            <div class="bg-gray-50 px-5 py-3 border-t flex flex-wrap justify-end gap-2">
+                <a id="modal-link" href="#" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-semibold transition"><i class="fa-solid fa-external-link-alt mr-1"></i> Abrir link externo</a>
+                <button onclick="editFromModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-semibold transition"><i class="fa-solid fa-pen mr-1"></i> Editar (Delta)</button>
+                <button onclick="closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-xs font-semibold transition">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ TOAST ============ -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden bg-slate-900 text-white text-sm px-4 py-3 rounded-lg shadow-xl flex items-center gap-2 max-w-sm">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toast-msg"></span>
+    </div>
+    <script src="app.js"></script>
+
+    <!-- Modal de saída com alterações não salvas -->
+<div id="exit-warning-modal" class="hidden fixed inset-0 z-[10000] flex items-center justify-center" style="background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);">
+    <div style="background:white;border-radius:20px;padding:32px;max-width:420px;width:90%;box-shadow:0 25px 60px rgba(0,0,0,0.3);text-align:center;">
+        <div style="font-size:48px;margin-bottom:12px;">⚠️</div>
+        <h2 style="font-size:20px;font-weight:700;color:#1e293b;margin-bottom:8px;">Alterações não salvas!</h2>
+        <p style="font-size:14px;color:#64748b;margin-bottom:24px;line-height:1.5;">
+            Você modificou o acervo, mas ainda não baixou o arquivo atualizado.<br>
+            <strong>Se sair agora, as alterações serão perdidas.</strong>
+        </p>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+            <button id="modal-btn-save" style="background:linear-gradient(135deg,#10b981,#059669);color:white;padding:14px 20px;border-radius:12px;border:none;font-size:15px;font-weight:600;cursor:pointer;width:100%;">
+                💾 Salvar e Sair (Baixar data.js)
+            </button>
+            <button id="modal-btn-leave" style="background:#f1f5f9;color:#475569;padding:12px 20px;border-radius:12px;border:none;font-size:14px;font-weight:500;cursor:pointer;width:100%;">
+                ✕ Sair sem salvar
+            </button>
+            <button id="modal-btn-cancel" style="background:transparent;color:#94a3b8;padding:8px 20px;border-radius:8px;border:none;font-size:13px;cursor:pointer;">
+                ← Voltar / Continuar trabalhando
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Edição em Lote (Gerenciar) -->
+<div id="batch-edit-modal" class="hidden fixed inset-0 z-[9999] flex items-center justify-center" style="background:rgba(0,0,0,0.5);backdrop-filter:blur(2px);">
+    <div style="background:white;border-radius:16px;padding:28px;max-width:600px;width:95%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+            <h3 style="font-size:16px;font-weight:700;color:#1e293b;"><i class="fa-solid fa-layer-group mr-2 text-emerald-600"></i>Editar em Lote — Campos Completos</h3>
+            <button onclick="document.getElementById('batch-edit-modal').classList.add('hidden')" style="background:none;border:none;font-size:20px;color:#94a3b8;cursor:pointer;">&times;</button>
+        </div>
+        <p style="font-size:13px;color:#64748b;margin-bottom:16px;">
+            Alterando campos de <strong id="batch-edit-count">0</strong> documento(s) selecionado(s).<br>
+            <em>Preencha apenas os campos que deseja alterar. Vazios = manter valor atual.</em>
+        </p>
+        
+        <!-- Campos Básicos -->
+        <div style="font-size:12px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:0.05em;margin:16px 0 8px;border-bottom:2px solid #059669;padding-bottom:4px;">Campos Básicos</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+                <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Seção</label>
+                <select id="batch-secao-select" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;"></select>
+            </div>
+            <div>
+                <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Tipo</label>
+                <select id="batch-tipo-select" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;"></select>
+            </div>
+            <div>
+                <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Status</label>
+                <select id="batch-status-select" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;"></select>
+            </div>
+            <div>
+                <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Data</label>
+                <input type="text" id="batch-data-input" placeholder="(manter atual)" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+            </div>
+        </div>
+        
+        <!-- Título e Resumo -->
+        <div style="font-size:12px;font-weight:700;color:#2563eb;text-transform:uppercase;letter-spacing:0.05em;margin:16px 0 8px;border-bottom:2px solid #2563eb;padding-bottom:4px;">Título e Conteúdo</div>
+        <div style="display:grid;gap:10px;">
+            <div>
+                <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Título do documento</label>
+                <input type="text" id="batch-titulo-input" placeholder="(manter atual)" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+            </div>
+            <div>
+                <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Resumo / Âmbito e conteúdo</label>
+                <textarea id="batch-conteudo-input" rows="3" placeholder="(manter atual)" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;resize:vertical;"></textarea>
+            </div>
+        </div>
+        
+        <!-- Campos Avançados ISAD(G) -->
+        <div style="font-size:12px;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:0.05em;margin:16px 0 8px;border-bottom:2px solid #7c3aed;padding-bottom:4px;">Campos Avançados (ISAD/G)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+                <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Código de referência</label>
+                <input type="text" id="batch-ref-input" placeholder="(manter atual)" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+            </div>
+            <div>
+                <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Dimensões e suporte</label>
+                <input type="text" id="batch-dimensao-input" placeholder="(manter atual)" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+            </div>
+            <div>
+                <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Produtor</label>
+                <input type="text" id="batch-produtor-input" placeholder="(manter atual)" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+            </div>
+            <div>
+                <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Modalidade de acesso</label>
+                <input type="text" id="batch-acesso-input" placeholder="(manter atual)" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+            </div>
+            <div style="grid-column:1/-1;">
+                <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">História administrativa</label>
+                <textarea id="batch-historiaAdmin-input" rows="2" placeholder="(manter atual)" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;resize:vertical;"></textarea>
+            </div>
+            <div style="grid-column:1/-1;">
+                <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">História arquivística</label>
+                <textarea id="batch-historiaArq-input" rows="2" placeholder="(manter atual)" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;resize:vertical;"></textarea>
+            </div>
+            <div>
+                <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Forma de ingresso</label>
+                <input type="text" id="batch-entrada-input" placeholder="(manter atual)" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+            </div>
+            <div>
+                <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Arranjo</label>
+                <input type="text" id="batch-arranjo-input" placeholder="(manter atual)" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+            </div>
+            <div>
+                <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Localização dos originais</label>
+                <input type="text" id="batch-originais-input" placeholder="(manter atual)" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+            </div>
+            <div>
+                <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Citação ABNT</label>
+                <input type="text" id="batch-citacaoABNT-input" placeholder="(manter atual)" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+            </div>
+            <div>
+                <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Observações</label>
+                <input type="text" id="batch-obs-input" placeholder="(manter atual)" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+            </div>
+            <div>
+                <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Link externo</label>
+                <input type="text" id="batch-link-input" placeholder="(manter atual)" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+            </div>
+        </div>
+        
+        <!-- Botões -->
+        <div style="display:flex;gap:10px;margin-top:20px;">
+            <button onclick="applyBatchEdit()" style="flex:1;background:linear-gradient(135deg,#10b981,#059669);color:white;padding:12px;border-radius:10px;border:none;font-size:14px;font-weight:600;cursor:pointer;">
+                <i class="fa-solid fa-check mr-1"></i> Aplicar Alterações
+            </button>
+            <button onclick="document.getElementById('batch-edit-modal').classList.add('hidden')" style="background:#f1f5f9;color:#475569;padding:12px 20px;border-radius:10px;border:none;font-size:14px;cursor:pointer;">
+                Cancelar
+            </button>
+        </div>
+    </div>
+</div>
+<script>
+// Ligar botões do modal de saída
+document.addEventListener('DOMContentLoaded', function() {
+    const btnSave = document.getElementById('modal-btn-save');
+    const btnLeave = document.getElementById('modal-btn-leave');
+    const btnCancel = document.getElementById('modal-btn-cancel');
+    
+    if (btnSave) btnSave.addEventListener('click', function() {
+        downloadDataJs(true);
+        document.getElementById('exit-warning-modal').classList.add('hidden');
+        window.close();
+    });
+    if (btnLeave) btnLeave.addEventListener('click', function() {
+        if (typeof acervoModificado !== 'undefined') acervoModificado = false;
+        document.getElementById('exit-warning-modal').classList.add('hidden');
+        window.close();
+    });
+    if (btnCancel) btnCancel.addEventListener('click', function() {
+        document.getElementById('exit-warning-modal').classList.add('hidden');
+    });
+});
+</script>
+
+
+ 
+    <div id="debug-toggle" onclick="toggleDebug()" style="position:fixed;bottom:8px;right:8px;z-index:99999;width:28px;height:28px;background:#e74c3c;color:white;border:none;border-radius:50%;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.3);opacity:0.6;transition:opacity 0.2s;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0.6'" title="Debug">🐛</div>
+    <div id="debug-overlay" style="position:fixed;bottom:44px;right:8px;z-index:99999;width:380px;max-height:300px;background:#1e1e1e;color:#d4d4d4;font-family:monospace;font-size:10px;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.5);display:none;flex-direction:column;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid #333;">
+            <span style="color:#e74c3c;font-weight:bold;font-size:10px;">🐛 Debug</span>
+            <button onclick="clearDebug()" style="background:#333;color:#fff;border:none;padding:1px 6px;cursor:pointer;font-size:9px;border-radius:3px;margin-right:4px;">Limpar</button>
+            <button onclick="toggleDebug()" style="background:#333;color:#fff;border:none;padding:1px 6px;cursor:pointer;font-size:9px;border-radius:3px;">✕</button>
+        </div>
+        <div id="debug-log" style="overflow-y:auto;padding:6px 10px;flex:1;"></div>
+    </div>
+    <script>
+    // Debug discreto
+    (function() {
+        const logDiv = document.getElementById('debug-log');
+        const overlay = document.getElementById('debug-overlay');
+        let errorCount = 0;
+        
+        window.toggleDebug = function() {
+            const isVisible = overlay.style.display === 'flex';
+            overlay.style.display = isVisible ? 'none' : 'flex';
+            if (!isVisible) logDiv.scrollTop = logDiv.scrollHeight;
+        };
+        
+        window.clearDebug = function() {
+            logDiv.innerHTML = '';
+            errorCount = 0;
+        };
+        
+        function addLog(type, msg) {
+            const entry = document.createElement('div');
+            const colors = { error: '#e74c3c', warn: '#f39c12', info: '#3498db', log: '#bdc3c7' };
+            entry.style.color = colors[type] || '#bdc3c7';
+            entry.style.marginBottom = '1px';
+            entry.style.padding = '2px 0';
+            entry.style.borderBottom = '1px solid #2a2a2a';
+            const time = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+            entry.textContent = '[' + time + '] ' + msg;
+            logDiv.appendChild(entry);
+            
+            if (type === 'error') {
+                errorCount++;
+                // Pulsar o botão para indicar erro
+                const btn = document.getElementById('debug-toggle');
+                if (btn && errorCount === 1) {
+                    btn.style.animation = 'pulse 1s ease-in-out 3';
+                    btn.style.opacity = '1';
+                }
+            }
+            
+            // Limitar a 100 entradas
+            while (logDiv.children.length > 100) logDiv.removeChild(logDiv.firstChild);
+        }
+        
+        window.addEventListener('error', function(e) {
+            addLog('error', e.message + ' (linha ' + (e.lineno||'?') + ')');
+        });
+        
+        window.addEventListener('unhandledrejection', function(e) {
+            addLog('error', 'Promise: ' + String(e.reason));
+        });
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                addLog('info', 'Página OK');
+                // Verificar elementos críticos
+                const checks = [
+                    ['acervo', typeof acervo !== 'undefined' ? acervo.length + ' docs' : '❌ indefinido'],
+                    ['goTo', typeof goTo === 'function' ? 'OK' : '❌ indefinido'],
+                    ['FA', document.querySelectorAll('i.fa').length > 0 ? 'OK' : '❌ não carregado'],
+                ];
+                checks.forEach(function(c) { addLog('info', c[0] + ': ' + c[1]); });
+            }, 2000);
+        });
+    })();
+    </script>
+    <style>
+    @keyframes pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.3); } }
+    </style>
+
+<!-- Modal de configuração de exportação Word -->
+<div id="word-config-modal" class="hidden fixed inset-0 z-[9998] flex items-center justify-center" style="background: rgba(0,0,0,0.4)">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4" style="max-height: 80vh; overflow-y: auto">
+        <h3 class="text-lg font-bold text-gray-800 mb-1 flex items-center gap-2"><i class="fa-solid fa-file-word text-blue-600"></i> Configurar Exportação Word</h3>
+        <p class="text-xs text-gray-500 mb-4">Selecione os campos que deseja incluir nos documentos:</p>
+        
+        <div class="grid grid-cols-2 gap-2 mb-4">
+            <label class="flex items-center gap-2 p-2 rounded-lg bg-gray-50 hover:bg-blue-50 cursor-pointer text-sm">
+                <input type="checkbox" id="wc-id" checked class="w-4 h-4 text-blue-600 rounded"> ID
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded-lg bg-gray-50 hover:bg-blue-50 cursor-pointer text-sm">
+                <input type="checkbox" id="wc-titulo" checked class="w-4 h-4 text-blue-600 rounded"> Título
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded-lg bg-gray-50 hover:bg-blue-50 cursor-pointer text-sm">
+                <input type="checkbox" id="wc-tipo" checked class="w-4 h-4 text-blue-600 rounded"> Tipo
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded-lg bg-gray-50 hover:bg-blue-50 cursor-pointer text-sm">
+                <input type="checkbox" id="wc-data" checked class="w-4 h-4 text-blue-600 rounded"> Data
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded-lg bg-gray-50 hover:bg-blue-50 cursor-pointer text-sm">
+                <input type="checkbox" id="wc-status" checked class="w-4 h-4 text-blue-600 rounded"> Status
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded-lg bg-gray-50 hover:bg-blue-50 cursor-pointer text-sm">
+                <input type="checkbox" id="wc-secao" class="w-4 h-4 text-blue-600 rounded"> Seção
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded-lg bg-gray-50 hover:bg-blue-50 cursor-pointer text-sm">
+                <input type="checkbox" id="wc-conteudo" checked class="w-4 h-4 text-blue-600 rounded"> Resumo/Conteúdo
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded-lg bg-gray-50 hover:bg-blue-50 cursor-pointer text-sm">
+                <input type="checkbox" id="wc-link" checked class="w-4 h-4 text-blue-600 rounded"> Link
+            </label>
+        </div>
+        
+        <div class="border-t pt-3 mb-4">
+            <p class="text-xs text-gray-500 mb-2">Seções a incluir:</p>
+            <label class="flex items-center gap-2 p-2 rounded-lg bg-blue-50 hover:bg-blue-100 cursor-pointer text-sm font-semibold">
+                <input type="checkbox" id="wc-all-sections" checked class="w-4 h-4 text-blue-600 rounded"> Todas as seções
+            </label>
+            <div id="wc-sections-list" class="mt-2 max-h-32 overflow-y-auto space-y-1">
+                <!-- Preenchido dinamicamente -->
+            </div>
+        </div>
+        
+        <div class="flex gap-2 justify-end">
+            <button onclick="hideWordConfigModal()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 transition">Cancelar</button>
+            <button onclick="exportToWord()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition"><i class="fa-solid fa-download mr-1"></i> Exportar</button>
+        </div>
+    </div>
+</div>
+</body>
+</html>

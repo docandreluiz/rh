@@ -1,0 +1,1438 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GEDEP - Gestão de FCPEs e Minutas de Portarias</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Arial', sans-serif; }
+        @media print {
+            header, nav, footer, button, input[type="text"], .no-print { display: none !important; }
+            body { background: white !important; color: black !important; }
+            main { padding: 0 !important; max-width: 100% !important; }
+            .tab-content { display: block !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Top Bar -->
+    <header class="bg-slate-900 text-white shadow-md no-print">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center">
+            <div class="flex items-center space-x-3 mb-2 md:mb-0">
+                <i class="fa-solid fa-file-shield text-2xl text-blue-400"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wide">GEDEP - Gestão de FCPEs</h1>
+                    <p class="text-xs text-slate-400">Sistema Portátil de Minutas e Controle Executivo GOINFRA</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 text-sm flex-wrap gap-2">
+                <span id="appVersionBadge" class="bg-blue-600 px-3 py-1 rounded-full font-semibold text-xs">v1.8.3 - Importação SEI</span>
+                <label class="bg-indigo-700 hover:bg-indigo-600 px-3 py-1.5 rounded border border-indigo-600 transition cursor-pointer flex items-center space-x-1 shadow" title="Importar Portaria HTML do SEI">
+                    <i class="fa-solid fa-file-code text-xs"></i> <span>Importar Portaria SEI</span>
+                    <input type="file" id="importPortariaHtml" class="hidden" accept=".html,.htm" onchange="importarPortariaHTML(event)">
+                </label>
+                <label class="bg-emerald-700 hover:bg-emerald-600 px-3 py-1.5 rounded border border-emerald-600 transition cursor-pointer flex items-center space-x-1 shadow">
+                    <i class="fa-solid fa-file-excel text-xs"></i> <span>Importar Planilha</span>
+                    <input type="file" id="importCsvModel" class="hidden" accept=".csv" onchange="importarPlanilhaModeloCSV(event)">
+                </label>
+                <button onclick="exportarBackupJSON()" class="bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded border border-slate-700 transition flex items-center space-x-1">
+                    <i class="fa-solid fa-download text-xs"></i> <span>Backup JSON</span>
+                </button>
+                <label class="bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded border border-slate-700 transition cursor-pointer flex items-center space-x-1">
+                    <i class="fa-solid fa-upload text-xs"></i> <span>Restaurar</span>
+                    <input type="file" id="importFile" class="hidden" accept=".json" onchange="importarBackupJSON(event)">
+                </label>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="bg-white shadow border-b border-slate-200 no-print">
+        <div class="max-w-7xl mx-auto px-4 flex space-x-1 overflow-x-auto">
+            <button onclick="switchTab('dashboard')" id="btn-dashboard" class="tab-btn px-4 py-3 font-medium text-sm border-b-2 border-blue-600 text-blue-600 flex items-center space-x-2 whitespace-nowrap">
+                <i class="fa-solid fa-chart-pie"></i> <span>Início & Guia</span>
+            </button>
+            <button onclick="switchTab('servidores')" id="btn-servidores" class="tab-btn px-4 py-3 font-medium text-sm border-b-2 border-transparent text-slate-600 hover:text-slate-900 flex items-center space-x-2 whitespace-nowrap">
+                <i class="fa-solid fa-users"></i> <span>Servidores</span>
+            </button>
+            <button onclick="switchTab('fichas')" id="btn-fichas" class="tab-btn px-4 py-3 font-medium text-sm border-b-2 border-transparent text-slate-600 hover:text-slate-900 flex items-center space-x-2 whitespace-nowrap">
+                <i class="fa-solid fa-id-card"></i> <span>Catálogo FCPEs</span>
+            </button>
+            <button onclick="switchTab('lancamentos')" id="btn-lancamentos" class="tab-btn px-4 py-3 font-medium text-sm border-b-2 border-transparent text-slate-600 hover:text-slate-900 flex items-center space-x-2 whitespace-nowrap">
+                <i class="fa-solid fa-pen-to-square"></i> <span>Lançamentos</span>
+            </button>
+            <button onclick="switchTab('minuta')" id="btn-minuta" class="tab-btn px-4 py-3 font-medium text-sm border-b-2 border-transparent text-slate-600 hover:text-slate-900 flex items-center space-x-2 whitespace-nowrap">
+                <i class="fa-solid fa-file-lines"></i> <span>Minuta & Status</span>
+            </button>
+            <button onclick="switchTab('portarias-pub')" id="btn-portarias-pub" class="tab-btn px-4 py-3 font-medium text-sm border-b-2 border-transparent text-slate-600 hover:text-slate-900 flex items-center space-x-2 whitespace-nowrap">
+                <i class="fa-solid fa-folder-open"></i> <span>Portarias Publicadas</span>
+            </button>
+            <button onclick="switchTab('relatorio')" id="btn-relatorio" class="tab-btn px-4 py-3 font-medium text-sm border-b-2 border-transparent text-slate-600 hover:text-slate-900 flex items-center space-x-2 whitespace-nowrap">
+                <i class="fa-solid fa-chart-column"></i> <span>Relatório Gerencial</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
+
+        <!-- TAB: DASHBOARD & GUIA ESTRATÉGICO -->
+        <section id="tab-dashboard" class="tab-content space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-lg shadow border border-slate-200">
+                    <div class="text-slate-500 text-xs font-bold uppercase">Servidores Cadastrados</div>
+                    <div id="statTotalServidores" class="text-3xl font-extrabold text-slate-900 mt-2">0</div>
+                </div>
+                <div class="bg-white p-5 rounded-lg shadow border border-slate-200">
+                    <div class="text-slate-500 text-xs font-bold uppercase">FCPEs Ativas (Recebendo)</div>
+                    <div id="statTotalAtivos" class="text-3xl font-extrabold text-green-600 mt-2">0</div>
+                </div>
+                <div class="bg-white p-5 rounded-lg shadow border border-slate-200">
+                    <div class="text-slate-500 text-xs font-bold uppercase">Portarias Publicadas</div>
+                    <div id="statTotalPortariasPub" class="text-3xl font-extrabold text-indigo-600 mt-2">0</div>
+                </div>
+                <div class="bg-white p-5 rounded-lg shadow border border-slate-200">
+                    <div class="text-slate-500 text-xs font-bold uppercase">Catálogo de FCPEs</div>
+                    <div id="statTotalCatalogos" class="text-3xl font-extrabold text-purple-600 mt-2">0</div>
+                </div>
+            </div>
+
+            <!-- Guia Estratégico de Uso -->
+            <div class="bg-white p-6 rounded-lg shadow border border-slate-200 space-y-4">
+                <h2 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-compass text-blue-600 mr-2"></i>Guia Estratégico: Como Utilizar o Sistema no Dia a Dia</h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                        <div class="text-blue-600 font-bold text-sm"><i class="fa-solid fa-1 mr-1"></i> Base e Servidores</div>
+                        <p class="text-xs text-slate-600 leading-relaxed">Cadastre os servidores ou importe sua planilha modelo CSV. Verifique se o catálogo de FCPEs contém os níveis e atribuições corretos.</p>
+                    </div>
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                        <div class="text-blue-600 font-bold text-sm"><i class="fa-solid fa-2 mr-1"></i> Lançamentos do Lote</div>
+                        <p class="text-xs text-slate-600 leading-relaxed">Vá em <strong>Lançamentos</strong> e adicione as ações pretendidas (Incluir, Excluir ou Alterar) para montar a portaria conjunta.</p>
+                    </div>
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                        <div class="text-blue-600 font-bold text-sm"><i class="fa-solid fa-3 mr-1"></i> Minuta e Publicação</div>
+                        <p class="text-xs text-slate-600 leading-relaxed">Utilize o botão superior <strong>Importar Portaria SEI</strong> para carregar portarias já publicadas ou registre manualmente na aba Minuta[cite: 3].</p>
+                    </div>
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                        <div class="text-blue-600 font-bold text-sm"><i class="fa-solid fa-4 mr-1"></i> Histórico e Auditoria</div>
+                        <p class="text-xs text-slate-600 leading-relaxed">Consulte o botão <strong>Histórico</strong> na aba de Relatório/Servidores para auditar gratificações passadas e utilize o Backup JSON regularmente.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: SERVIDORES -->
+        <section id="tab-servidores" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-lg shadow border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-800 mb-4" id="formServidorTitle">Cadastrar Novo Servidor</h2>
+                <form id="formServidor" onsubmit="salvarServidor(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <input type="hidden" id="servidorId">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Nome Completo</label>
+                        <input type="text" id="servNome" required class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500" placeholder="Ex: Breno Hvala">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">CPF</label>
+                        <input type="text" id="servCpf" required class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500" placeholder="Ex: ***.010.061-**">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Cargo / Vínculo</label>
+                        <input type="text" id="servCargo" required class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500" placeholder="Ex: Gestor de Infraestrutura - 22.495">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Lotação / Unidade Administrativa</label>
+                        <input type="text" id="servLotacao" required class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500" placeholder="Ex: Diretoria de Obras Rodoviárias">
+                    </div>
+                    <div class="md:col-span-2 flex items-end space-x-2">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded text-sm transition">Salvar Servidor</button>
+                        <button type="button" onclick="limparFormServidor()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-4 py-2 rounded text-sm transition">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow border border-slate-200">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-slate-800">Servidores Cadastrados</h2>
+                    <input type="text" id="searchServidor" onkeyup="renderTabelaServidores()" placeholder="Buscar servidor..." class="border border-slate-300 rounded px-3 py-1.5 text-sm w-64">
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase text-xs">
+                                <th class="p-3">Nome</th>
+                                <th class="p-3">CPF</th>
+                                <th class="p-3">Cargo</th>
+                                <th class="p-3">Lotação</th>
+                                <th class="p-3 text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaServidoresBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: CATÁLOGO FCPES -->
+        <section id="tab-fichas" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-lg shadow border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-800 mb-4" id="formFcpeTitle">Cadastrar Ficha / Nível de FCPE</h2>
+                <form id="formFcpe" onsubmit="salvarFcpe(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <input type="hidden" id="fcpeId">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Nível da FCPE</label>
+                        <input type="text" id="fcpeNivel" required class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500" placeholder="Ex: FCPE-1">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Área de Atuação</label>
+                        <input type="text" id="fcpeArea" required class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500" placeholder="Ex: FINALÍSTICA">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Unidade Específica (Opcional)</label>
+                        <input type="text" id="fcpeUnidade" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500" placeholder="Ex: Geral">
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Atribuições / Descrição</label>
+                        <textarea id="fcpeAtribuicoes" rows="3" required class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500" placeholder="Ex: Gestão ou fiscalização de contratos"></textarea>
+                    </div>
+                    <div class="md:col-span-3 flex space-x-2">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded text-sm transition">Salvar Ficha</button>
+                        <button type="button" onclick="limparFormFcpe()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-4 py-2 rounded text-sm transition">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-800 mb-4">Catálogo de Fichas FCPE</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase text-xs">
+                                <th class="p-3">Nível</th>
+                                <th class="p-3">Área de Atuação</th>
+                                <th class="p-3">Atribuições</th>
+                                <th class="p-3 text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaFcpesBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: LANÇAMENTOS -->
+        <section id="tab-lancamentos" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-lg shadow border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-800 mb-4">Novo Lançamento (Movimentação)</h2>
+                <form id="formLancamento" onsubmit="salvarLancamento(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Servidor</label>
+                        <select id="lancServidorId" required class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                            <option value="">Selecione o servidor...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Tipo de Relação / Ação</label>
+                        <select id="lancAcao" required onchange="toggleCampofcpeAnterior()" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                            <option value="INCLUIR">INCLUIR</option>
+                            <option value="EXCLUIR">EXCLUIR</option>
+                            <option value="ALTERAR">ALTERAR</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">FCPE Alvo / Nova FCPE</label>
+                        <select id="lancFcpeId" required class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                            <option value="">Selecione a FCPE...</option>
+                        </select>
+                    </div>
+                    <div id="divFcpeAnterior" class="hidden">
+                        <label class="block text-xs font-bold text-slate-600 mb-1">FCPE Anterior (Para Alteração)</label>
+                        <input type="text" id="lancFcpeAnterior" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500" placeholder="Ex: FCPE-6">
+                    </div>
+                    <div class="md:col-span-3 flex items-end">
+                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-medium px-5 py-2 rounded text-sm transition flex items-center space-x-2">
+                            <i class="fa-solid fa-plus"></i> <span>Adicionar ao Lote da Portaria</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow border border-slate-200">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-slate-800">Lançamentos Pendentes</h2>
+                    <button onclick="limparLancamentosPendentes()" class="text-red-600 hover:text-red-800 text-xs font-bold flex items-center space-x-1">
+                        <i class="fa-solid fa-trash"></i> <span>Limpar Lote</span>
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase text-xs">
+                                <th class="p-3">Servidor</th>
+                                <th class="p-3">Cargo / Lotação</th>
+                                <th class="p-3">Ação</th>
+                                <th class="p-3">FCPE Envolvida</th>
+                                <th class="p-3 text-center">Remover</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaLancamentosBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: MINUTA DE PORTARIA & STATUS -->
+        <section id="tab-minuta" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-lg shadow border border-slate-200 space-y-4">
+                <h2 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-gear text-blue-600 mr-2"></i>Parâmetros e Status da Portaria</h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Número da Portaria</label>
+                        <input type="text" id="minutaNumero" value="135" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500" oninput="atualizarMinutaTextos()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Ano</label>
+                        <input type="text" id="minutaAno" value="2026" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500" oninput="atualizarMinutaTextos()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Data Assinatura</label>
+                        <input type="text" id="minutaData" value="06 de agosto de 2026" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500" oninput="atualizarMinutaTextos()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Processo SEI nº</label>
+                        <input type="text" id="minutaProcessoSei" value="202600036013198" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500" oninput="atualizarMinutaTextos()">
+                    </div>
+                </div>
+
+                <!-- Status Buttons -->
+                <div class="pt-4 border-t border-slate-200 flex flex-wrap items-center gap-3">
+                    <span class="text-xs font-bold text-slate-700 uppercase">Status da Minuta:</span>
+                    <span id="badgeStatusMinuta" class="bg-blue-100 text-blue-800 px-3 py-1 rounded text-xs font-bold">EM ELABORAÇÃO</span>
+                    <div class="ml-auto flex flex-wrap gap-2">
+                        <button onclick="registrarStatusMinuta('PUBLICADA')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded text-xs font-semibold transition flex items-center space-x-1">
+                            <i class="fa-solid fa-check-circle"></i> <span>Registrar Publicada</span>
+                        </button>
+                        <button onclick="registrarStatusMinuta('CANCELADA')" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded text-xs font-semibold transition flex items-center space-x-1">
+                            <i class="fa-solid fa-ban"></i> <span>Marcar Cancelada</span>
+                        </button>
+                        <button onclick="registrarStatusMinuta('REVOGADA')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs font-semibold transition flex items-center space-x-1">
+                            <i class="fa-solid fa-triangle-exclamation"></i> <span>Marcar Revogada</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow border border-slate-200">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-slate-800">Minuta Gerada (Pronta para SEI / Word)</h2>
+                    <button onclick="copiarMinuta()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded text-sm transition flex items-center space-x-1">
+                        <i class="fa-solid fa-copy"></i> <span>Copiar para Área de Transferência</span>
+                    </button>
+                </div>
+                <div id="minutaContainer" class="bg-slate-50 border border-slate-300 p-8 rounded font-serif text-sm leading-relaxed text-slate-900 select-all space-y-4">
+                    <!-- Gerado dinamicamente -->
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: PORTARIAS PUBLICADAS -->
+        <section id="tab-portarias-pub" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-lg shadow border border-slate-200 space-y-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-folder-open text-indigo-600 mr-2"></i>Relatório de Portarias Publicadas</h2>
+                    <input type="text" id="searchPortariasPub" onkeyup="renderPortariasPublicadas()" placeholder="Buscar por número ou processo..." class="border border-slate-300 rounded px-3 py-1.5 text-sm w-72">
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase text-xs">
+                                <th class="p-3">Portaria</th>
+                                <th class="p-3">Data de Publicação</th>
+                                <th class="p-3">Processo SEI</th>
+                                <th class="p-3 text-center">Qtd. Alterações</th>
+                                <th class="p-3 text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaPortariasPubBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: RELATÓRIO GERENCIAL -->
+        <section id="tab-relatorio" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white p-5 rounded-lg shadow border border-slate-200">
+                    <div class="text-slate-500 text-xs font-bold uppercase">Total de Servidores com FCPE</div>
+                    <div id="gerTotalOcupados" class="text-3xl font-extrabold text-blue-600 mt-2">0</div>
+                </div>
+                <div class="bg-white p-5 rounded-lg shadow border border-slate-200">
+                    <div class="text-slate-500 text-xs font-bold uppercase">Cotas Máximas Autorizadas</div>
+                    <div class="text-3xl font-extrabold text-slate-900 mt-2">145</div>
+                </div>
+                <div class="bg-white p-5 rounded-lg shadow border border-slate-200">
+                    <div class="text-slate-500 text-xs font-bold uppercase">Taxa Média de Ocupação</div>
+                    <div id="gerTaxaOcupacao" class="text-3xl font-extrabold text-emerald-600 mt-2">0%</div>
+                </div>
+            </div>
+
+            <!-- Balanço de Cotas -->
+            <div class="bg-white p-6 rounded-lg shadow border border-slate-200 space-y-4">
+                <div class="flex justify-between items-center flex-wrap gap-2">
+                    <h2 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-chart-pie text-blue-600 mr-2"></i>Balanço de Cotas por Nível de FCPE</h2>
+                    <div class="flex space-x-2">
+                        <button onclick="exportarCotasExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded text-xs font-semibold transition flex items-center space-x-1">
+                            <i class="fa-solid fa-file-excel"></i> <span>Exportar Excel</span>
+                        </button>
+                        <button onclick="exportarPDF()" class="bg-slate-700 hover:bg-slate-800 text-white px-3 py-1.5 rounded text-xs font-semibold transition flex items-center space-x-1">
+                            <i class="fa-solid fa-file-pdf"></i> <span>Exportar PDF</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase text-xs">
+                                <th class="p-3">Complexidade</th>
+                                <th class="p-3">Tipo FCPE</th>
+                                <th class="p-3 text-center">Autorizadas</th>
+                                <th class="p-3 text-center">Ocupadas</th>
+                                <th class="p-3 text-center">Livres (Saldo)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaResumoCotasBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Relatório Servidores -->
+            <div class="bg-white p-6 rounded-lg shadow border border-slate-200 space-y-4">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4 flex-wrap">
+                    <h2 class="text-lg font-bold text-slate-800">Relatório e Gestão de Servidores</h2>
+                    <div class="flex items-center space-x-2 flex-wrap gap-2">
+                        <input type="text" id="searchRelatorio" onkeyup="renderRelatorioGerencial()" placeholder="Filtrar por nome ou lotação..." class="border border-slate-300 rounded px-3 py-1.5 text-sm w-72">
+                        <button onclick="exportarServidoresExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded text-xs font-semibold transition flex items-center space-x-1">
+                            <i class="fa-solid fa-file-excel"></i> <span>Exportar Excel</span>
+                        </button>
+                        <button onclick="exportarPDF()" class="bg-slate-700 hover:bg-slate-800 text-white px-3 py-1.5 rounded text-xs font-semibold transition flex items-center space-x-1">
+                            <i class="fa-solid fa-file-pdf"></i> <span>Exportar PDF</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase text-xs">
+                                <th class="p-3">Servidor / CPF</th>
+                                <th class="p-3">Cargo / Lotação</th>
+                                <th class="p-3">FCPE Atual</th>
+                                <th class="p-3">Status Minuta</th>
+                                <th class="p-3 text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaRelatorioBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal Detalhes Portaria Publicada -->
+    <div id="modalPortariaPub" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-lg font-bold text-slate-800" id="modalPortariaTitle">Detalhes da Portaria Publicada</h3>
+                <button onclick="fecharModalPortaria()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div id="modalPortariaConteudo" class="space-y-3 text-sm text-slate-700"></div>
+            <div class="flex justify-end pt-3 border-t">
+                <button onclick="fecharModalPortaria()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-sm">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Histórico do Servidor -->
+    <div id="modalHistoricoServidor" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-lg font-bold text-slate-800" id="modalHistoricoTitle">Histórico de Gratificações</h3>
+                <button onclick="fecharModalHistorico()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div id="modalHistoricoConteudo" class="space-y-3 text-sm text-slate-700"></div>
+            <div class="flex justify-end pt-3 border-t">
+                <button onclick="fecharModalHistorico()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-sm">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-auto py-4 text-center text-xs text-slate-500 no-print">
+        GEDEP HTML Portável — Gestão de Funções Comissionadas GOINFRA
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        let appData = {
+            servidores: [
+                { id: "s1", nome: "Breno Hvala de Figueiredo", cpf: "***.010.061-**", cargo: "Gestor de Infraestrutura - 22.495", lotacao: "Diretoria de Obras Rodoviárias", fcpeAtual: "FCPE-1", areaAtual: "FINALÍSTICA", statusMinuta: "Em elaboração", historico: [] },
+                { id: "s2", nome: "Glauber Fernandes Jacinto", cpf: "***.720.671-**", cargo: "Gestor de Infraestrutura - 22.495", lotacao: "Gerência de Custos de Obras Rodoviárias", fcpeAtual: "FCPE-1", areaAtual: "FINALÍSTICA", statusMinuta: "Em elaboração", historico: [] },
+                { id: "s3", nome: "Gustavo Oliveira Freitas", cpf: "***.801.801-**", cargo: "Analista de Gestão Governamental", lotacao: "Diretoria de Projetos de Obras Rodoviárias", fcpeAtual: "FCPE-6", areaAtual: "FINALÍSTICA", statusMinuta: "Em elaboração", historico: [] }
+            ],
+            fcpes: [
+                { id: "f1", nivel: "FCPE-1", area: "FINALÍSTICA", unidade: "Geral", atribuicoes: "Gestão ou fiscalização de contratos" },
+                { id: "f2", nivel: "FCPE-6", area: "FINALÍSTICA", unidade: "Gerência de Custos", atribuicoes: "Desempenha atividades técnicas relacionadas à análise, conferência e aprovação." }
+            ],
+            lancamentos: [],
+            portariasPublicadas: [],
+            statusGlobalMinuta: "Em elaboração"
+        };
+
+        const cotasModelo = [
+            { complexidade: "Muito Alta", nivel: "FCPE-1", total: 13 },
+            { complexidade: "Muito Alta", nivel: "FCPE-2", total: 0 },
+            { complexidade: "Muito Alta", nivel: "FCPE-3", total: 6 },
+            { complexidade: "Muito Alta", nivel: "FCPE-4", total: 2 },
+            { complexidade: "Muito Alta", nivel: "FCPE-5", total: 1 },
+            { complexidade: "Alta", nivel: "FCPE-6", total: 28 },
+            { complexidade: "Alta", nivel: "FCPE-7", total: 5 },
+            { complexidade: "Alta", nivel: "FCPE-8", total: 7 },
+            { complexidade: "Alta", nivel: "FCPE-9", total: 1 },
+            { complexidade: "Média", nivel: "FCPE-10", total: 3 },
+            { complexidade: "Média", nivel: "FCPE-11", total: 27 },
+            { complexidade: "Média", nivel: "FCPE-12", total: 2 },
+            { complexidade: "Baixa", nivel: "FCPE-13", total: 2 },
+            { complexidade: "Baixa", nivel: "FCPE-14", total: 1 },
+            { complexidade: "Baixa", nivel: "FCPE-15", total: 15 },
+            { complexidade: "Muito Baixa", nivel: "FCPE-16", total: 3 },
+            { complexidade: "Muito Baixa", nivel: "FCPE-17", total: 25 },
+            { complexidade: "Muito Baixa", nivel: "FCPE-18", total: 4 }
+        ];
+
+        const STORAGE_KEY = "gedep_fcpe_data_v10";
+        let editandoLinhaId = null;
+
+        function carregarDados() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try { appData = JSON.parse(saved); } catch (e) { console.error(e); }
+            }
+            if (!appData.portariasPublicadas) appData.portariasPublicadas = [];
+            appData.servidores.forEach(s => { if (!s.historico) s.historico = []; });
+            atualizarTudo();
+        }
+
+        function salvarDados() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+            atualizarTudo();
+        }
+
+        function atualizarTudo() {
+            renderTabelaServidores();
+            renderTabelaFcpes();
+            renderSelects();
+            renderTabelalancamentos();
+            atualizarMinutaTextos();
+            renderRelatorioGerencial();
+            renderPortariasPublicadas();
+            atualizarEstatisticas();
+            atualizarBadgeStatus();
+        }
+
+        function atualizarEstatisticas() {
+            const el1 = document.getElementById('statTotalServidores');
+            if (el1) el1.innerText = appData.servidores.length;
+
+            const totalAtivos = appData.servidores.filter(s => s.fcpeAtual && s.fcpeAtual !== 'NENHUMA').length;
+            const el2 = document.getElementById('statTotalAtivos');
+            if (el2) el2.innerText = totalAtivos;
+
+            const el4 = document.getElementById('statTotalCatalogos');
+            if (el4) el4.innerText = appData.fcpes.length;
+
+            const statPortPub = document.getElementById('statTotalPortariasPub');
+            if (statPortPub) statPortPub.innerText = appData.portariasPublicadas.length;
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-blue-600', 'text-blue-600');
+                btn.classList.add('border-transparent', 'text-slate-600');
+            });
+            const targetTab = document.getElementById('tab-' + tabId);
+            if (targetTab) targetTab.classList.remove('hidden');
+            const activeBtn = document.getElementById('btn-' + tabId);
+            if (activeBtn) {
+                activeBtn.classList.remove('border-transparent', 'text-slate-600');
+                activeBtn.classList.add('border-blue-600', 'text-blue-600');
+            }
+        }
+
+        function registrarStatusMinuta(tipo) {
+            if (tipo === 'PUBLICADA') {
+                if (appData.lancamentos.length === 0) {
+                    alert('Não há lançamentos pendentes no lote para publicar.');
+                    return;
+                }
+                const dataPub = prompt("Informe a data de publicação da portaria (Ex: 06/08/2026):", "06/08/2026");
+                if (dataPub) {
+                    const numeroPortaria = document.getElementById('minutaNumero').value;
+                    const anoPortaria = document.getElementById('minutaAno').value;
+                    const processoSei = document.getElementById('minutaProcessoSei').value;
+
+                    appData.lancamentos.forEach(l => {
+                        const s = appData.servidores.find(item => item.id === l.servidorId);
+                        const f = appData.fcpes.find(item => item.id === l.fcpeId);
+                        if (s) {
+                            if (!s.historico) s.historico = [];
+                            let nivelDestino = f ? f.nivel : (l.fcpeAnterior || 'NENHUMA');
+
+                            s.historico.push({
+                                dataPub: dataPub,
+                                portaria: `${numeroPortaria}/${anoPortaria}`,
+                                processoSei: processoSei,
+                                acao: l.acao,
+                                fcpeEnvolvida: nivelDestino
+                            });
+
+                            if (l.acao === 'INCLUIR' || l.acao === 'ALTERAR') {
+                                if (f) s.fcpeAtual = f.nivel;
+                            } else if (l.acao === 'EXCLUIR') {
+                                s.fcpeAtual = 'NENHUMA';
+                            }
+                            s.statusMinuta = `Publicada (Port. ${numeroPortaria}/${anoPortaria})`;
+                        }
+                    });
+
+                    const novaPortariaPub = {
+                        id: 'pub_' + Date.now(),
+                        numero: numeroPortaria,
+                        ano: anoPortaria,
+                        dataPub: dataPub,
+                        processoSei: processoSei,
+                        lancamentos: [...appData.lancamentos]
+                    };
+
+                    appData.portariasPublicadas.push(novaPortariaPub);
+                    appData.statusGlobalMinuta = `Publicada em ${dataPub} (Port. ${numeroPortaria}/${anoPortaria})`;
+                    appData.lancamentos = [];
+                    salvarDados();
+                    alert('Portaria marcada como publicada e histórico atualizado com sucesso!');
+                }
+            } else if (tipo === 'CANCELADA') {
+                if (confirm("Deseja marcar esta minuta como cancelada?")) {
+                    appData.statusGlobalMinuta = "Cancelada";
+                    salvarDados();
+                }
+            } else if (tipo === 'REVOGADA') {
+                if (confirm("Deseja marcar esta minuta como revogada?")) {
+                    appData.statusGlobalMinuta = "Revogada";
+                    salvarDados();
+                }
+            }
+        }
+
+        // Função para Importar Portaria Publicada via HTML (SEI)
+        function importarPortariaHTML(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.readAsText(file, 'ISO-8859-1');
+            reader.onload = function(e) {
+                try {
+                    const htmlContent = e.target.result;
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(htmlContent, 'text/html');
+
+                    let numeroPortaria = "130";
+                    let anoPortaria = "2026";
+                    let dataPub = "30 de julho de 2026";
+                    let processoSei = "202600036012755";
+
+                    const bodyText = doc.body.innerText || "";
+                    
+                    const matchPortaria = bodyText.match(/PORTARIA\s+GOINFRA\s+N[º°]\s*(\d+)[^,]*,\s*DE\s*([0-9]+\s+DE\s+[^\s]+\s+DE\s+\d{4})/i);
+                    if (matchPortaria) {
+                        numeroPortaria = matchPortaria[1];
+                        dataPub = matchPortaria[2];
+                        const matchAno = dataPub.match(/\d{4}/);
+                        if (matchAno) anoPortaria = matchAno[0];
+                    }
+
+                    const matchSei = bodyText.match(/Processo\s*n[º°]\s*([0-9]+)/i);
+                    if (matchSei) {
+                        processoSei = matchSei[1];
+                    }
+
+                    const rows = doc.querySelectorAll('table tr');
+                    let lancamentosImportados = [];
+                    let countAtualizados = 0;
+
+                    rows.forEach(tr => {
+                        const tds = tr.querySelectorAll('td');
+                        if (tds.length >= 7) {
+                            const colServidor = tds[0].innerText.trim();
+                            const colCargo = tds[1].innerText.trim();
+                            const colLotacao = tds[2].innerText.trim();
+                            const colAcao = tds[5].innerText.trim().toUpperCase();
+                            const colFcpe = tds[6].innerText.trim().toUpperCase();
+
+                            if (colServidor.includes('CPF') && (colAcao.includes('INCLUIR') || colAcao.includes('EXCLUIR') || colAcao.includes('ALTERAR'))) {
+                                let partes = colServidor.split(/CPF\s*n[º°.]*/i);
+                                let nomeServ = partes[0].replace(/[-–]/g, '').trim();
+                                let cpfServ = partes[1] ? partes[1].trim() : '***.000.000-**';
+
+                                let servidor = appData.servidores.find(s => s.cpf.replace(/\D/g, '') === cpfServ.replace(/\D/g, '') || s.nome.toLowerCase() === nomeServ.toLowerCase());
+                                
+                                let servidorId;
+                                if (!servidor) {
+                                    servidorId = 'imp_s_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+                                    servidor = {
+                                        id: servidorId,
+                                        nome: nomeServ,
+                                        cpf: cpfServ,
+                                        cargo: colCargo || 'Servidor GOINFRA',
+                                        lotacao: colLotacao || 'GOINFRA',
+                                        fcpeAtual: 'NENHUMA',
+                                        areaAtual: 'FINALÍSTICA',
+                                        statusMinuta: `Publicada (Port. ${numeroPortaria}/${anoPortaria})`,
+                                        historico: []
+                                    };
+                                    appData.servidores.push(servidor);
+                                } else {
+                                    servidorId = servidor.id;
+                                    if (!servidor.historico) servidor.historico = [];
+                                    servidor.cargo = colCargo || servidor.cargo;
+                                    servidor.lotacao = colLotacao || servidor.lotacao;
+                                }
+
+                                let fcpeLimpo = colFcpe.replace(/\s+/g, '');
+                                if (colAcao.includes('INCLUIR') || colAcao.includes('ALTERAR')) {
+                                    servidor.fcpeAtual = fcpeLimpo;
+                                } else if (colAcao.includes('EXCLUIR')) {
+                                    servidor.fcpeAtual = 'NENHUMA';
+                                }
+                                servidor.statusMinuta = `Publicada (Port. ${numeroPortaria}/${anoPortaria})`;
+
+                                servidor.historico.push({
+                                    dataPub: dataPub,
+                                    portaria: `${numeroPortaria}/${anoPortaria}`,
+                                    processoSei: processoSei,
+                                    acao: colAcao,
+                                    fcpeEnvolvida: fcpeLimpo
+                                });
+
+                                lancamentosImportados.push({
+                                    id: 'l_imp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                                    servidorId: servidorId,
+                                    acao: colAcao,
+                                    fcpeId: null,
+                                    fcpeAnterior: ''
+                                });
+
+                                countAtualizados++;
+                            }
+                        }
+                    });
+
+                    if (countAtualizados > 0) {
+                        const novaPortariaPub = {
+                            id: 'pub_' + Date.now(),
+                            numero: numeroPortaria,
+                            ano: anoPortaria,
+                            dataPub: dataPub,
+                            processoSei: processoSei,
+                            lancamentos: lancamentosImportados
+                        };
+
+                        appData.portariasPublicadas.push(novaPortariaPub);
+                        appData.statusGlobalMinuta = `Publicada em ${dataPub} (Port. ${numeroPortaria}/${anoPortaria})`;
+                        salvarDados();
+                        alert(`Portaria nº ${numeroPortaria}/${anoPortaria} importada com sucesso! ${countAtualizados} servidores atualizados no sistema e histórico incorporado.`);
+                    } else {
+                        alert('Não foi possível extrair dados válidos da tabela desta portaria HTML.');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Erro ao processar o arquivo HTML da portaria.');
+                }
+            };
+        }
+
+        function verHistoricoServidor(id) {
+            const s = appData.servidores.find(item => item.id === id);
+            if (!s) return;
+            document.getElementById('modalHistoricoTitle').innerText = `Histórico de FCPE - ${s.nome}`;
+            const container = document.getElementById('modalHistoricoConteudo');
+            
+            if (!s.historico || s.historico.length === 0) {
+                container.innerHTML = `<p class="text-slate-500 italic text-center py-4">Nenhum histórico de gratificação publicado registrado para este servidor.</p>`;
+            } else {
+                let htmlList = `<div class="space-y-3">`;
+                s.historico.forEach(h => {
+                    let badgeColor = 'bg-blue-100 text-blue-800';
+                    if (h.acao === 'INCLUIR') badgeColor = 'bg-green-100 text-green-800';
+                    if (h.acao === 'EXCLUIR') badgeColor = 'bg-red-100 text-red-800';
+
+                    htmlList += `
+                        <div class="p-3 bg-slate-50 border border-slate-200 rounded text-xs space-y-1">
+                            <div class="flex justify-between items-center">
+                                <span class="font-bold text-slate-900">Portaria nº ${escapeHtml(h.portaria)}</span>
+                                <span class="text-slate-500"><i class="fa-solid fa-calendar mr-1"></i> ${escapeHtml(h.dataPub)}</span>
+                            </div>
+                            <div><strong>Processo SEI:</strong> ${escapeHtml(h.processoSei)}</div>
+                            <div class="flex items-center space-x-2 pt-1">
+                                <span class="px-2 py-0.5 rounded font-bold ${badgeColor}">${escapeHtml(h.acao)}</span>
+                                <span><strong>FCPE:</strong> ${escapeHtml(h.fcpeEnvolvida)}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                htmlList += `</div>`;
+                container.innerHTML = htmlList;
+            }
+            document.getElementById('modalHistoricoServidor').classList.remove('hidden');
+        }
+
+        function fecharModalHistorico() {
+            document.getElementById('modalHistoricoServidor').classList.add('hidden');
+        }
+
+        function atualizarBadgeStatus() {
+            const badge = document.getElementById('badgeStatusMinuta');
+            if (badge) {
+                const status = appData.statusGlobalMinuta || "Em elaboração";
+                badge.innerText = status;
+                badge.className = "px-3 py-1 rounded text-xs font-bold " + 
+                    (status.toLowerCase().includes("publicada") ? "bg-emerald-100 text-emerald-800" :
+                     status.toLowerCase().includes("cancelada") ? "bg-amber-100 text-amber-800" :
+                     status.toLowerCase().includes("revogada") ? "bg-red-100 text-red-800" : "bg-blue-100 text-blue-800");
+            }
+        }
+
+        function renderPortariasPublicadas() {
+            const filtro = document.getElementById('searchPortariasPub')?.value.toLowerCase() || '';
+            const tbody = document.getElementById('tabelaPortariasPubBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            const filtradas = appData.portariasPublicadas.filter(p => p.numero.toLowerCase().includes(filtro) || p.processoSei.toLowerCase().includes(filtro) || p.dataPub.toLowerCase().includes(filtro));
+            if (filtradas.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhuma portaria publicada registrada.</td></tr>`;
+                return;
+            }
+            filtradas.forEach(p => {
+                tbody.innerHTML += `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                        <td class="p-3 font-bold text-slate-900">Portaria nº ${escapeHtml(p.numero)}/${escapeHtml(p.ano)}</td>
+                        <td class="p-3 text-slate-600">${escapeHtml(p.dataPub)}</td>
+                        <td class="p-3 text-slate-600">${escapeHtml(p.processoSei)}</td>
+                        <td class="p-3 text-center font-bold text-indigo-600">${p.lancamentos.length} servidores</td>
+                        <td class="p-3 text-center">
+                            <button onclick="verDetalhesPortariaPub('${p.id}')" class="text-blue-600 hover:text-blue-800 font-semibold text-xs"><i class="fa-solid fa-eye mr-1"></i> Ver Alterações</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function verDetalhesPortariaPub(id) {
+            const p = appData.portariasPublicadas.find(item => item.id === id);
+            if (!p) return;
+            document.getElementById('modalPortariaTitle').innerText = `Portaria nº ${p.numero}/${p.ano} - SEI ${p.processoSei}`;
+            const container = document.getElementById('modalPortariaConteudo');
+            let htmlList = `<p class="mb-2"><strong>Data de Publicação:</strong> ${escapeHtml(p.dataPub)}</p>`;
+            htmlList += `<p class="mb-4"><strong>Servidores e Movimentações Vinculadas:</strong></p><div class="space-y-2">`;
+            p.lancamentos.forEach(l => {
+                const s = appData.servidores.find(item => item.id === l.servidorId);
+                const f = appData.fcpes.find(item => item.id === l.fcpeId);
+                const nomeServ = s ? s.nome : 'Desconhecido';
+                const nivelFcpe = f ? (l.acao === 'ALTERAR' ? `${l.fcpeAnterior} para ${f.nivel}` : f.nivel) : '';
+                htmlList += `<div class="p-3 bg-slate-50 border rounded text-xs space-y-1"><div><strong>Servidor:</strong> ${escapeHtml(nomeServ)}</div><div><strong>Ação:</strong> <span class="font-bold">${escapeHtml(l.acao)}</span> | <strong>FCPE:</strong> ${escapeHtml(nivelFcpe)}</div></div>`;
+            });
+            htmlList += `</div>`;
+            container.innerHTML = htmlList;
+            document.getElementById('modalPortariaPub').classList.remove('hidden');
+        }
+
+        function fecharModalPortaria() {
+            document.getElementById('modalPortariaPub').classList.add('hidden');
+        }
+
+        function salvarServidor(e) {
+            e.preventDefault();
+            const id = document.getElementById('servidorId').value;
+            const nome = document.getElementById('servNome').value.trim();
+            const cpf = document.getElementById('servCpf').value.trim();
+            const cargo = document.getElementById('servCargo').value.trim();
+            const lotacao = document.getElementById('servLotacao').value.trim();
+
+            if (id) {
+                const s = appData.servidores.find(item => item.id === id);
+                if (s) { s.nome = nome; s.cpf = cpf; s.cargo = cargo; s.lotacao = lotacao; }
+            } else {
+                appData.servidores.push({ id: 's_' + Date.now(), nome, cpf, cargo, lotacao, fcpeAtual: 'NENHUMA', areaAtual: 'FINALÍSTICA', statusMinuta: 'Em elaboração', historico: [] });
+            }
+            limparFormServidor();
+            salvarDados();
+        }
+
+        function editarServidor(id) {
+            const s = appData.servidores.find(item => item.id === id);
+            if (s) {
+                document.getElementById('servidorId').value = s.id;
+                document.getElementById('servNome').value = s.nome;
+                document.getElementById('servCpf').value = s.cpf;
+                document.getElementById('servCargo').value = s.cargo;
+                document.getElementById('servLotacao').value = s.lotacao;
+                document.getElementById('formServidorTitle').innerText = "Editar Servidor";
+            }
+        }
+
+        function excluirServidor(id) {
+            if (confirm('Deseja excluir este servidor?')) {
+                appData.servidores = appData.servidores.filter(s => s.id !== id);
+                salvarDados();
+            }
+        }
+
+        function limparFormServidor() {
+            document.getElementById('formServidor').reset();
+            document.getElementById('servidorId').value = '';
+            document.getElementById('formServidorTitle').innerText = "Cadastrar Novo Servidor";
+        }
+
+        function renderTabelaServidores() {
+            const filtro = document.getElementById('searchServidor')?.value.toLowerCase() || '';
+            const tbody = document.getElementById('tabelaServidoresBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            const filtrados = appData.servidores.filter(s => s.nome.toLowerCase().includes(filtro) || s.cpf.includes(filtro) || s.lotacao.toLowerCase().includes(filtro));
+            if (filtrados.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum servidor encontrado.</td></tr>`;
+                return;
+            }
+            filtrados.forEach(s => {
+                tbody.innerHTML += `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                        <td class="p-3 font-medium text-slate-900">${escapeHtml(s.nome)}</td>
+                        <td class="p-3 text-slate-600">${escapeHtml(s.cpf)}</td>
+                        <td class="p-3 text-slate-600">${escapeHtml(s.cargo)}</td>
+                        <td class="p-3 text-slate-600">${escapeHtml(s.lotacao)}</td>
+                        <td class="p-3 text-center space-x-2">
+                            <button onclick="verHistoricoServidor('${s.id}')" class="text-purple-600 hover:text-purple-800 text-xs font-semibold mr-1" title="Ver Histórico"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Histórico</button>
+                            <button onclick="editarServidor('${s.id}')" class="text-blue-600 hover:text-blue-800"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="excluirServidor('${s.id}')" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function salvarFcpe(e) {
+            e.preventDefault();
+            const id = document.getElementById('fcpeId').value;
+            const nivel = document.getElementById('fcpeNivel').value.trim();
+            const area = document.getElementById('fcpeArea').value.trim();
+            const unidade = document.getElementById('fcpeUnidade').value.trim();
+            const atribuicoes = document.getElementById('fcpeAtribuicoes').value.trim();
+
+            if (id) {
+                const f = appData.fcpes.find(item => item.id === id);
+                if (f) { f.nivel = nivel; f.area = area; f.unidade = unidade; f.atribuicoes = atribuicoes; }
+            } else {
+                appData.fcpes.push({ id: 'f_' + Date.now(), nivel, area, unidade, atribuicoes });
+            }
+            limparFormFcpe();
+            salvarDados();
+        }
+
+        function editarFcpe(id) {
+            const f = appData.fcpes.find(item => item.id === id);
+            if (f) {
+                document.getElementById('fcpeId').value = f.id;
+                document.getElementById('fcpeNivel').value = f.nivel;
+                document.getElementById('fcpeArea').value = f.area;
+                document.getElementById('fcpeUnidade').value = f.unidade || '';
+                document.getElementById('fcpeAtribuicoes').value = f.atribuicoes;
+                document.getElementById('formFcpeTitle').innerText = "Editar Ficha FCPE";
+            }
+        }
+
+        function excluirFcpe(id) {
+            if (confirm('Deseja excluir esta ficha?')) {
+                appData.fcpes = appData.fcpes.filter(f => f.id !== id);
+                salvarDados();
+            }
+        }
+
+        function limparFormFcpe() {
+            document.getElementById('formFcpe').reset();
+            document.getElementById('fcpeId').value = '';
+            document.getElementById('formFcpeTitle').innerText = "Cadastrar Ficha / Nível de FCPE";
+        }
+
+        function renderTabelaFcpes() {
+            const tbody = document.getElementById('tabelaFcpesBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            if (appData.fcpes.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">Nenhuma FCPE cadastrada.</td></tr>`;
+                return;
+            }
+            appData.fcpes.forEach(f => {
+                tbody.innerHTML += `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                        <td class="p-3 font-bold text-slate-900">${escapeHtml(f.nivel)}</td>
+                        <td class="p-3 text-slate-600">${escapeHtml(f.area)}</td>
+                        <td class="p-3 text-slate-600 text-xs">${escapeHtml(f.atribuicoes)}</td>
+                        <td class="p-3 text-center space-x-2">
+                            <button onclick="editarFcpe('${f.id}')" class="text-blue-600 hover:text-blue-800"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="excluirFcpe('${f.id}')" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderSelects() {
+            const selServ = document.getElementById('lancServidorId');
+            if (selServ) {
+                selServ.innerHTML = '<option value="">Selecione o servidor...</option>';
+                appData.servidores.forEach(s => { selServ.innerHTML += `<option value="${s.id}">${escapeHtml(s.nome)} (${s.cpf})</option>`; });
+            }
+
+            const selFcpe = document.getElementById('lancFcpeId');
+            if (selFcpe) {
+                selFcpe.innerHTML = '<option value="">Selecione a FCPE...</option>';
+                appData.fcpes.forEach(f => { selFcpe.innerHTML += `<option value="${f.id}">${escapeHtml(f.nivel)} - ${escapeHtml(f.area)}</option>`; });
+            }
+        }
+
+        function toggleCampofcpeAnterior() {
+            const acao = document.getElementById('lancAcao').value;
+            const div = document.getElementById('divFcpeAnterior');
+            if (acao === 'ALTERAR') div.classList.remove('hidden');
+            else div.classList.add('hidden');
+        }
+
+        function salvarLancamento(e) {
+            e.preventDefault();
+            const servidorId = document.getElementById('lancServidorId').value;
+            const acao = document.getElementById('lancAcao').value;
+            const fcpeId = document.getElementById('lancFcpeId').value;
+            const fcpeAnterior = document.getElementById('lancFcpeAnterior').value.trim();
+
+            appData.lancamentos.push({ id: 'l_' + Date.now(), servidorId, acao, fcpeId, fcpeAnterior: acao === 'ALTERAR' ? fcpeAnterior : '' });
+            document.getElementById('formLancamento').reset();
+            toggleCampofcpeAnterior();
+            salvarDados();
+        }
+
+        function removerLancamento(id) {
+            appData.lancamentos = appData.lancamentos.filter(l => l.id !== id);
+            salvarDados();
+        }
+
+        function limparLancamentosPendentes() {
+            if (confirm('Deseja limpar todos os lançamentos do lote atual?')) {
+                appData.lancamentos = [];
+                salvarDados();
+            }
+        }
+
+        function renderTabelalancamentos() {
+            const tbody = document.getElementById('tabelaLancamentosBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            if (appData.lancamentos.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum lançamento no lote da portaria.</td></tr>`;
+                return;
+            }
+            appData.lancamentos.forEach(l => {
+                const s = appData.servidores.find(item => item.id === l.servidorId);
+                const f = appData.fcpes.find(item => item.id === l.fcpeId);
+                const nomeServ = s ? s.nome : 'Desconhecido';
+                const cargoLot = s ? `${s.cargo} / ${s.lotacao}` : '';
+                const nivelFcpe = f ? (l.acao === 'ALTERAR' ? `${l.fcpeAnterior} para ${f.nivel}` : f.nivel) : '';
+
+                let badgeColor = 'bg-blue-100 text-blue-800';
+                if (l.acao === 'INCLUIR') badgeColor = 'bg-green-100 text-green-800';
+                if (l.acao === 'EXCLUIR') badgeColor = 'bg-red-100 text-red-800';
+
+                tbody.innerHTML += `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                        <td class="p-3 font-medium text-slate-900">${escapeHtml(nomeServ)}</td>
+                        <td class="p-3 text-slate-600 text-xs">${escapeHtml(cargoLot)}</td>
+                        <td class="p-3"><span class="px-2 py-0.5 rounded text-xs font-bold ${badgeColor}">${escapeHtml(l.acao)}</span></td>
+                        <td class="p-3 font-semibold text-slate-800">${escapeHtml(nivelFcpe)}</td>
+                        <td class="p-3 text-center"><button onclick="removerLancamento('${l.id}')" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function atualizarMinutaTextos() {
+            const numero = document.getElementById('minutaNumero')?.value || '135';
+            const ano = document.getElementById('minutaAno')?.value || '2026';
+            const data = document.getElementById('minutaData')?.value || '06 de agosto de 2026';
+            const proc = document.getElementById('minutaProcessoSei')?.value || '202600036013198';
+            const container = document.getElementById('minutaContainer');
+            if (!container) return;
+
+            let linhasTabelaHTML = '';
+            if (appData.lancamentos.length === 0) {
+                linhasTabelaHTML = `<tr><td colspan="7" style="padding: 8px; border: 1px solid #000; text-align: center; color: #64748b;">Nenhum lançamento adicionado para compor a portaria.</td></tr>`;
+            } else {
+                appData.lancamentos.forEach(l => {
+                    const s = appData.servidores.find(item => item.id === l.servidorId);
+                    const f = appData.fcpes.find(item => item.id === l.fcpeId);
+                    if (s && f) {
+                        let fcpeColuna = f.nivel;
+                        if (l.acao === 'ALTERAR') {
+                            fcpeColuna = l.fcpeAnterior ? `${l.fcpeAnterior} para ${f.nivel}` : f.nivel;
+                        }
+
+                        linhasTabelaHTML += `
+                            <tr style="border-bottom: 1px solid #000;">
+                                <td style="padding: 6px; border: 1px solid #000; text-align: center; vertical-align: middle;"><b>${escapeHtml(s.nome)}</b><br><span style="font-size: 11pt;">CPF n.º ${escapeHtml(s.cpf)}</span></td>
+                                <td style="padding: 6px; border: 1px solid #000; text-align: center; vertical-align: middle; font-size: 11pt;">${escapeHtml(s.cargo)}</td>
+                                <td style="padding: 6px; border: 1px solid #000; text-align: center; vertical-align: middle; font-size: 11pt;">${escapeHtml(s.lotacao)}</td>
+                                <td style="padding: 6px; border: 1px solid #000; text-align: center; vertical-align: middle; font-size: 11pt;">${escapeHtml(f.atribuicoes || '-')}</td>
+                                <td style="padding: 6px; border: 1px solid #000; text-align: center; vertical-align: middle; font-size: 11pt;">${escapeHtml(f.area.toUpperCase())}: 1<br>${escapeHtml(f.atribuicoes)}</td>
+                                <td style="padding: 6px; border: 1px solid #000; text-align: center; vertical-align: middle; font-size: 11pt;"><b>${escapeHtml(l.acao)}</b></td>
+                                <td style="padding: 6px; border: 1px solid #000; text-align: center; vertical-align: middle; font-size: 11pt;">${escapeHtml(fcpeColuna)}</td>
+                            </tr>
+                        `;
+                    }
+                });
+            }
+
+            container.innerHTML = `
+                <div style="text-align: center; font-family: Calibri, sans-serif; font-size: 12pt; margin-bottom: 15px;">
+                    <b>ESTADO DE GOIÁS</b><br>
+                    <b>AGÊNCIA GOIANA DE INFRAESTRUTURA E TRANSPORTES</b><br>
+                    <b>PORTARIA GOINFRA Nº ${escapeHtml(numero)}, DE ${escapeHtml(data)}</b>
+                </div>
+                <p style="text-align: justify; text-indent: 1.18in; font-family: Calibri, sans-serif; font-size: 12pt; margin: 6pt;">
+                    <strong>A PRESIDENTE DA AGÊNCIA GOIANA DE INFRAESTRUTURA E TRANSPORTES - GOINFRA</strong>, no uso de suas atribuições legais, em especial as que lhe conferem os artigos 76 da <a href="https://legisla.casacivil.go.gov.br/api/v2/pesquisa/legislacoes/106749/pdf" target="_blank">Lei Estadual nº 21.792, de 16/02/2023</a>, e o art. 77, I e IV, do <a href="https://legisla.casacivil.go.gov.br/pesquisa_legislacao/113502/decreto-10868" target="_blank">Decreto Estadual nº 10.868/2026</a> (Regulamento GOINFRA), as disposições do <a href="https://legisla.casacivil.go.gov.br/pesquisa_legislacao/72476/decreto-9566" target="_blank">Decreto Estadual nº 9.566, de 25 de novembro de 2019</a>, e da Portaria nº 1.581/2024 da Secretaria de Estado da Administração - SEAD/GO, publicada no Diário Oficial do Estado (Edição nº 24.338), que trata da revisão das Funções Comissionadas do Poder Executivo, e tendo em vista o que consta do Processo SEI nº ${escapeHtml(proc)}, em especial as informações e solicitação veiculadas no Despacho nº 1.577/2026-GI-GEDEP (SEI nº 93946871 e 93946847),
+                </p>
+                <p style="text-align: justify; text-indent: 1.18in; font-family: Calibri, sans-serif; font-size: 12pt; margin: 6pt; font-weight: bold;">RESOLVE:</p>
+                <p style="text-align: justify; text-indent: 1.18in; font-family: Calibri, sans-serif; font-size: 12pt; margin: 6pt;">
+                    Artigo 1º - <strong>ALTERAR, INCLUIR E EXCLUIR</strong> as Funções Comissionadas do Poder Executivo – FCPE desta Agência, para os servidores a seguir relacionados:
+                </p>
+                <div style="overflow-x: auto; margin: 15px 0;">
+                    <table style="width: 100%; border-collapse: collapse; font-family: Calibri, sans-serif; font-size: 11pt; border: 2px solid #000;">
+                        <thead>
+                            <tr style="background-color: #f1f5f9; border-bottom: 2px solid #000;">
+                                <th style="padding: 6px; border: 1px solid #000; text-align: center;"><b>SERVIDOR</b></th>
+                                <th style="padding: 6px; border: 1px solid #000; text-align: center;"><b>CARGO</b></th>
+                                <th style="padding: 6px; border: 1px solid #000; text-align: center;"><b>UNID. ADM. LOTAÇÃO</b></th>
+                                <th style="padding: 6px; border: 1px solid #000; text-align: center;"><b>ATRIBUIÇÕES</b></th>
+                                <th style="padding: 6px; border: 1px solid #000; text-align: center;"><b>ÁREA DE ATUAÇÃO</b></th>
+                                <th style="padding: 6px; border: 1px solid #000; text-align: center;"><b>ALTERAR/INCLUIR/EXCLUIR</b></th>
+                                <th style="padding: 6px; border: 1px solid #000; text-align: center;"><b>FCPE</b></th>
+                            </tr>
+                        </thead>
+                        <tbody>${linhasTabelaHTML}</tbody>
+                    </table>
+                </div>
+                <p style="text-align: justify; text-indent: 1.18in; font-family: Calibri, sans-serif; font-size: 12pt; margin: 6pt;">
+                    Artigo 2º - Permanecem os servidores beneficiários sujeitos à obrigatoriedade de participação nos cursos contidos no Programa Trilhas do Conhecimento do Plano de Capacitação GOINFRA, destinado ao aperfeiçoamento do pessoal desta Agência.
+                </p>
+                <p style="text-align: justify; text-indent: 1.18in; font-family: Calibri, sans-serif; font-size: 12pt; margin: 6pt;">
+                    Artigo 3º - A presente Portaria entra em vigor na data de sua assinatura, condicionada à apresentação de todas as certidões exigidas, em consonância com o parágrafo único do artigo 1º do <a href="https://legisla.casacivil.go.gov.br/api/v2/pesquisa/legislacoes/65454/pdf" target="_blank">Decreto Estadual n.º 7.587, de 30 de março de 2012</a>.
+                </p>
+                <div style="text-align: center; font-family: Calibri, sans-serif; font-size: 12pt; margin-top: 30px;">
+                    Gabinete da Presidente da Agência Goiana de Infraestrutura e Transportes - GOINFRA, aos 04 dias do mês de agosto de 2026.
+                </div>
+                <div style="text-align: center; font-family: Calibri, sans-serif; font-size: 12pt; margin-top: 40px; font-weight: bold;">
+                    ELIANE SIMONINI BALTAZAR<br>Presidente
+                </div>
+            `;
+        }
+
+        function copiarMinuta() {
+            const container = document.getElementById('minutaContainer');
+            const range = document.createRange();
+            range.selectNode(container);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+            try {
+                document.execCommand('copy');
+                alert('Minuta copiada com sucesso! Cole diretamente no editor do SEI ou no Word.');
+            } catch (err) {
+                alert('Erro ao copiar automaticamente.');
+            }
+            window.getSelection().removeAllRanges();
+        }
+
+        // Relatório Gerencial
+        function renderRelatorioGerencial() {
+            const filtro = document.getElementById('searchRelatorio')?.value.toLowerCase() || '';
+            const tbody = document.getElementById('tabelaRelatorioBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            const ativos = appData.servidores.filter(s => s.fcpeAtual && s.fcpeAtual !== 'NENHUMA');
+            const elOcupados = document.getElementById('gerTotalOcupados');
+            if (elOcupados) elOcupados.innerText = ativos.length;
+            const taxa = ((ativos.length / 145) * 100).toFixed(1);
+            const elTaxa = document.getElementById('gerTaxaOcupacao');
+            if (elTaxa) elTaxa.innerText = taxa + '%';
+
+            const tbodyCotas = document.getElementById('tabelaResumoCotasBody');
+            if (tbodyCotas) {
+                tbodyCotas.innerHTML = '';
+                cotasModelo.forEach(c => {
+                    const ocupadasNivel = ativos.filter(s => s.fcpeAtual.toUpperCase() === c.nivel.toUpperCase()).length;
+                    const livres = c.total - ocupadasNivel;
+                    tbodyCotas.innerHTML += `
+                        <tr class="border-b border-slate-100 hover:bg-slate-50">
+                            <td class="p-3 text-slate-700 font-medium">${escapeHtml(c.complexidade)}</td>
+                            <td class="p-3 font-bold text-slate-900">${escapeHtml(c.nivel)}</td>
+                            <td class="p-3 text-center text-slate-700">${c.total}</td>
+                            <td class="p-3 text-center font-bold text-blue-600">${ocupadasNivel}</td>
+                            <td class="p-3 text-center font-bold ${livres < 0 ? 'text-red-600' : 'text-emerald-600'}">${livres}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            const filtrados = appData.servidores.filter(s => s.nome.toLowerCase().includes(filtro) || s.lotacao.toLowerCase().includes(filtro) || s.cargo.toLowerCase().includes(filtro));
+            if (filtrados.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum registro encontrado.</td></tr>`;
+                return;
+            }
+
+            filtrados.forEach(s => {
+                const emEdicao = (editandoLinhaId === s.id);
+
+                if (emEdicao) {
+                    let fcpeOptions = `<option value="NENHUMA">NENHUMA</option>`;
+                    const niveisUnicos = Array.from(new Set([...cotasModelo.map(c => c.nivel), ...appData.fcpes.map(f => f.nivel)]));
+                    niveisUnicos.forEach(niv => {
+                        const sel = (s.fcpeAtual === niv) ? 'selected' : '';
+                        fcpeOptions += `<option value="${niv}" ${sel}>${niv}</option>`;
+                    });
+
+                    const statuses = ["Em elaboração", "Publicada", "Cancelada", "Revogada"];
+                    let statusOptions = "";
+                    statuses.forEach(st => {
+                        const match = (s.statusMinuta || "").toLowerCase().includes(st.toLowerCase());
+                        const sel = match ? 'selected' : '';
+                        statusOptions += `<option value="${st}" ${sel}>${st}</option>`;
+                    });
+
+                    tbody.innerHTML += `
+                        <tr class="border-b border-slate-200 bg-blue-50 text-xs">
+                            <td class="p-3 space-y-1">
+                                <input type="text" id="edit_nome_${s.id}" value="${escapeHtml(s.nome)}" class="border rounded px-2 py-1 font-bold text-slate-900 w-full" />
+                                <input type="text" id="edit_cpf_${s.id}" value="${escapeHtml(s.cpf)}" class="border rounded px-2 py-1 text-slate-500 w-full text-[11px]" />
+                            </td>
+                            <td class="p-3 space-y-1">
+                                <input type="text" id="edit_cargo_${s.id}" value="${escapeHtml(s.cargo)}" class="border rounded px-2 py-1 text-slate-700 w-full" />
+                                <input type="text" id="edit_lotacao_${s.id}" value="${escapeHtml(s.lotacao)}" class="border rounded px-2 py-1 text-slate-600 w-full text-[11px]" />
+                            </td>
+                            <td class="p-3">
+                                <select id="edit_fcpe_${s.id}" class="border rounded px-2 py-1 font-bold text-green-700 bg-white w-full">
+                                    ${fcpeOptions}
+                                </select>
+                            </td>
+                            <td class="p-3">
+                                <select id="edit_status_${s.id}" class="border rounded px-2 py-1 font-semibold text-blue-700 bg-white w-full">
+                                    ${statusOptions}
+                                </select>
+                            </td>
+                            <td class="p-3 text-center space-x-1">
+                                <button onclick="salvarEdicaoLinha('${s.id}')" class="bg-emerald-600 text-white px-2.5 py-1 rounded shadow text-xs font-bold" title="Salvar"><i class="fa-solid fa-check"></i></button>
+                                <button onclick="cancelarEdicaoLinha()" class="bg-slate-400 text-white px-2.5 py-1 rounded shadow text-xs font-bold" title="Cancelar"><i class="fa-solid fa-xmark"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    tbody.innerHTML += `
+                        <tr class="border-b border-slate-100 hover:bg-slate-50 text-sm">
+                            <td class="p-3">
+                                <div class="font-bold text-slate-900">${escapeHtml(s.nome)}</div>
+                                <div class="text-xs text-slate-500">${escapeHtml(s.cpf)}</div>
+                            </td>
+                            <td class="p-3">
+                                <div class="text-slate-800">${escapeHtml(s.cargo)}</div>
+                                <div class="text-xs text-slate-500">${escapeHtml(s.lotacao)}</div>
+                            </td>
+                            <td class="p-3 font-bold text-green-700">${escapeHtml(s.fcpeAtual || 'NENHUMA')}</td>
+                            <td class="p-3 font-semibold text-slate-700">${escapeHtml(s.statusMinuta || appData.statusGlobalMinuta || 'Em elaboração')}</td>
+                            <td class="p-3 text-center space-x-1">
+                                <button onclick="verHistoricoServidor('${s.id}')" class="bg-purple-50 text-purple-700 hover:bg-purple-100 px-2.5 py-1.5 rounded text-xs font-semibold border border-purple-200 transition" title="Histórico"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Histórico</button>
+                                <button onclick="ativarEdicaoLinha('${s.id}')" class="bg-blue-50 text-blue-600 hover:bg-blue-100 px-2.5 py-1.5 rounded text-xs font-semibold border border-blue-200 transition" title="Editar linha"><i class="fa-solid fa-pen-to-square mr-1"></i> Editar</button>
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+        }
+
+        function ativarEdicaoLinha(id) {
+            editandoLinhaId = id;
+            renderRelatorioGerencial();
+        }
+
+        function cancelarEdicaoLinha() {
+            editandoLinhaId = null;
+            renderRelatorioGerencial();
+        }
+
+        function salvarEdicaoLinha(id) {
+            const s = appData.servidores.find(item => item.id === id);
+            if (s) {
+                s.nome = document.getElementById(`edit_nome_${id}`).value.trim();
+                s.cpf = document.getElementById(`edit_cpf_${id}`).value.trim();
+                s.cargo = document.getElementById(`edit_cargo_${id}`).value.trim();
+                s.lotacao = document.getElementById(`edit_lotacao_${id}`).value.trim();
+                s.fcpeAtual = document.getElementById(`edit_fcpe_${id}`).value;
+                s.statusMinuta = document.getElementById(`edit_status_${id}`).value;
+            }
+            editandoLinhaId = null;
+            salvarDados();
+        }
+
+        // Funções de Exportação para Excel (.xlsx)
+        function exportarCotasExcel() {
+            const ativos = appData.servidores.filter(s => s.fcpeAtual && s.fcpeAtual !== 'NENHUMA');
+            const dados = cotasModelo.map(c => {
+                const ocupadasNivel = ativos.filter(s => s.fcpeAtual.toUpperCase() === c.nivel.toUpperCase()).length;
+                const livres = c.total - ocupadasNivel;
+                return {
+                    "Complexidade": c.complexidade,
+                    "Nível FCPE": c.nivel,
+                    "Total Autorizadas": c.total,
+                    "Ocupadas": ocupadasNivel,
+                    "Livres (Saldo)": livres
+                };
+            });
+            const ws = XLSX.utils.json_to_sheet(dados);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Balanço de Cotas");
+            XLSX.writeFile(wb, "relatorio_balanco_cotas_fcpe.xlsx");
+        }
+
+        function exportarServidoresExcel() {
+            const dados = appData.servidores.map(s => ({
+                "Nome": s.nome,
+                "CPF": s.cpf,
+                "Cargo": s.cargo,
+                "Lotação": s.lotacao,
+                "FCPE Atual": s.fcpeAtual,
+                "Status Minuta": s.statusMinuta || "Em elaboração",
+                "Qtd. Movimentações Históricas": s.historico ? s.historico.length : 0
+            }));
+            const ws = XLSX.utils.json_to_sheet(dados);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Servidores e FCPE");
+            XLSX.writeFile(wb, "relatorio_servidores_fcpe.xlsx");
+        }
+
+        function exportarPDF() {
+            window.print();
+        }
+
+        function importarPlanilhaModeloCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.readAsText(file, 'ISO-8859-1');
+            reader.onload = function(e) {
+                try {
+                    const text = e.target.result;
+                    const lines = text.split(/\r\n|\n/);
+                    let novosServidores = [];
+                    lines.forEach(line => {
+                        const cols = line.split(';');
+                        if (cols.length >= 8) {
+                            const col0 = cols[0] ? cols[0].trim() : '';
+                            const colNome = cols[2] ? cols[2].trim() : '';
+                            const colCargo = cols[4] ? cols[4].trim() : '';
+                            const colLotacao = cols[7] ? cols[7].trim() : '';
+                            if (col0 && !isNaN(col0) && parseInt(col0) > 0 && parseInt(col0) <= 150) {
+                                if (colNome && colNome !== 'Nome Servidor') {
+                                    novosServidores.push({
+                                        id: 'imp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                                        nome: colNome,
+                                        cpf: '***.000.000-**',
+                                        cargo: colCargo || 'Servidor GOINFRA',
+                                        lotacao: colLotacao || 'Diretoria de Obras',
+                                        fcpeAtual: 'FCPE-1',
+                                        areaAtual: 'FINALÍSTICA',
+                                        statusMinuta: 'Em elaboração',
+                                        historico: []
+                                    });
+                                }
+                            }
+                        }
+                    });
+                    if (novosServidores.length > 0) {
+                        if (confirm(`Encontrados ${novosServidores.length} registros. Deseja incorporá-los?`)) {
+                            appData.servidores = novosServidores;
+                            salvarDados();
+                            alert('Planilha importada com sucesso!');
+                        }
+                    } else {
+                        alert('Nenhum registro válido encontrado.');
+                    }
+                } catch (err) {
+                    alert('Erro ao processar CSV.');
+                }
+            };
+        }
+
+        function exportarBackupJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `gedep_fcpe_backup_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importarBackupJSON(event) {
+            const fileReader = new FileReader();
+            if (event.target.files[0]) {
+                fileReader.readAsText(event.target.files[0], "UTF-8");
+                fileReader.onload = function (e) {
+                    try {
+                        const parsed = JSON.parse(e.target.result);
+                        if (parsed.servidores && parsed.fcpes) {
+                            appData = parsed;
+                            salvarDados();
+                            alert('Backup restaurado com sucesso!');
+                        } else {
+                            alert('Arquivo de backup inválido.');
+                        }
+                    } catch (err) {
+                        alert('Erro ao processar JSON.');
+                    }
+                };
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        window.onload = function() {
+            carregarDados();
+        };
+    </script>
+</body>
+</html>
