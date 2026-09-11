@@ -496,7 +496,7 @@
         const GEDEP_PILOTO = {
             clientId: '747581420442-rkcu9ohb5llcd9g8uirqdnssgisund0u.apps.googleusercontent.com',
             spreadsheetId: '1N-v2Cd-V0TEnfq0GwtYhW_m5N8_QMNbn6nr4u0iH4_E',
-            scope: 'openid email profile https://www.googleapis.com/auth/spreadsheets.readonly',
+            scope: 'openid email profile https://www.googleapis.com/auth/spreadsheets',
             range: 'servidores!A:Z'
         };
         let gedepPilotoTokenClient = null;
@@ -564,6 +564,45 @@
                     atualizarTudo();
                     gedepPilotoStatus('Sincronizado: ' + remote.length + ' servidores.');
                 }).catch(function(err) { console.error(err); const detalhe = err && err.result && err.result.error ? (err.result.error.message || ('HTTP ' + err.result.error.code)) : (err.message || String(err)); gedepPilotoStatus('Sheets: ' + detalhe, true); console.error('Erro detalhado do Google Sheets:', err); });
+        }
+
+        function salvarServidorOnline(id) {
+            if (!gedepPilotoAccessToken) { gedepPilotoStatus('Faça login antes de gravar.', true); return; }
+            const servidor = appData.servidores.find(function(item) { return item.id === id; });
+            if (!servidor) { gedepPilotoStatus('Servidor não encontrado localmente.', true); return; }
+            if (!confirm('Gravar somente o servidor "' + servidor.nome + '" na planilha?')) return;
+            gedepPilotoStatus('Gravando servidor online...');
+            const headersPromise = gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: GEDEP_PILOTO.spreadsheetId, range: GEDEP_PILOTO.range });
+            headersPromise.then(function(response) {
+                const values = response.result.values || [];
+                if (!values.length) throw new Error('A aba servidores não possui cabeçalho.');
+                const headers = values[0];
+                const rowValues = {
+                    id: servidor.id, nome: servidor.nome, cpf: servidor.cpf, cargo: servidor.cargo,
+                    lotacao: servidor.lotacao, fcpeAtual: servidor.fcpeAtual || 'NENHUMA', areaAtual: servidor.areaAtual || '',
+                    statusMinuta: servidor.statusMinuta || 'Em elaboração', fotoFileId: servidor.fotoFileId || '', fotoUrl: servidor.fotoUrl || '',
+                    whatsappNumero: servidor.whatsappNumero || '', atualizadoEm: new Date().toISOString(), atualizadoPor: gedepPilotoEmail
+                };
+                const linha = headers.map(function(h) { return rowValues[h] === undefined ? '' : rowValues[h]; });
+                const idCol = headers.indexOf('id');
+                const index = idCol >= 0 ? values.slice(1).findIndex(function(row) { return row[idCol] === id; }) : -1;
+                if (index >= 0) {
+                    const rowNumber = index + 2;
+                    return gapi.client.sheets.spreadsheets.values.update({
+                        spreadsheetId: GEDEP_PILOTO.spreadsheetId, range: 'servidores!A' + rowNumber + ':Z' + rowNumber,
+                        valueInputOption: 'USER_ENTERED', resource: { values: [linha] }
+                    });
+                }
+                return gapi.client.sheets.spreadsheets.values.append({
+                    spreadsheetId: GEDEP_PILOTO.spreadsheetId, range: 'servidores!A:Z',
+                    valueInputOption: 'USER_ENTERED', insertDataOption: 'INSERT_ROWS', resource: { values: [linha] }
+                });
+            }).then(function() {
+                gedepPilotoStatus('Servidor gravado na planilha.');
+            }).catch(function(err) {
+                const detalhe = err && err.result && err.result.error ? (err.result.error.message || ('HTTP ' + err.result.error.code)) : (err.message || String(err));
+                gedepPilotoStatus('Sheets: ' + detalhe, true); console.error('Erro ao gravar no Google Sheets:', err);
+            });
         }
 
         function gedepPilotoLogout() {
@@ -1372,6 +1411,7 @@
                             <td class="p-3 text-center space-x-1">
                                 <button onclick="verHistoricoServidor('${s.id}')" class="bg-purple-50 text-purple-700 hover:bg-purple-100 px-2.5 py-1.5 rounded text-xs font-semibold border border-purple-200 transition" title="Histórico"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Histórico</button>
                                 <button onclick="ativarEdicaoLinha('${s.id}')" class="bg-blue-50 text-blue-600 hover:bg-blue-100 px-2.5 py-1.5 rounded text-xs font-semibold border border-blue-200 transition" title="Editar linha"><i class="fa-solid fa-pen-to-square mr-1"></i> Editar</button>
+                                <button onclick="salvarServidorOnline('${s.id}')" class="bg-cyan-50 text-cyan-700 hover:bg-cyan-100 px-2.5 py-1.5 rounded text-xs font-semibold border border-cyan-200 transition" title="Gravar este servidor na planilha"><i class="fa-solid fa-cloud-arrow-up mr-1"></i> Online</button>
                             </td>
                         </tr>
                     `;
@@ -1538,5 +1578,4 @@
         };
     </script>
 </body>
-    13.32
 </html>
