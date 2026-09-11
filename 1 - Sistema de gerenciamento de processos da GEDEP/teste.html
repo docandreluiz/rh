@@ -1374,6 +1374,8 @@
                             <td class="p-3 space-y-1">
                                 <input type="text" id="edit_nome_${s.id}" value="${escapeHtml(s.nome)}" class="border rounded px-2 py-1 font-bold text-slate-900 w-full" />
                                 <input type="text" id="edit_cpf_${s.id}" value="${escapeHtml(s.cpf)}" class="border rounded px-2 py-1 text-slate-500 w-full text-[11px]" />
+                                <input type="url" id="edit_fotoUrl_${s.id}" value="${escapeHtml(s.fotoUrl || '')}" placeholder="URL HTTPS da foto no Drive" class="border rounded px-2 py-1 text-slate-500 w-full text-[11px]" />
+                                <input type="text" id="edit_whatsappNumero_${s.id}" value="${escapeHtml(s.whatsappNumero || '')}" placeholder="WhatsApp: 5562999999999" inputmode="numeric" class="border rounded px-2 py-1 text-slate-500 w-full text-[11px]" />
                             </td>
                             <td class="p-3 space-y-1">
                                 <input type="text" id="edit_cargo_${s.id}" value="${escapeHtml(s.cargo)}" class="border rounded px-2 py-1 text-slate-700 w-full" />
@@ -1401,6 +1403,10 @@
                             <td class="p-3">
                                 <div class="font-bold text-slate-900">${escapeHtml(s.nome)}</div>
                                 <div class="text-xs text-slate-500">${escapeHtml(s.cpf)}</div>
+                                <div class="flex gap-2 mt-1">
+                                    ${s.fotoUrl ? `<a href="${escapeHtml(s.fotoUrl)}" target="_blank" rel="noopener noreferrer" class="text-xs text-indigo-600 hover:underline" title="Abrir foto"><i class="fa-solid fa-image"></i> Foto</a>` : ''}
+                                    ${s.whatsappNumero ? `<a href="https://wa.me/${escapeHtml(String(s.whatsappNumero).replace(/\D/g, ''))}" target="_blank" rel="noopener noreferrer" class="text-xs text-green-700 hover:underline" title="Abrir WhatsApp"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>` : ''}
+                                </div>
                             </td>
                             <td class="p-3">
                                 <div class="text-slate-800">${escapeHtml(s.cargo)}</div>
@@ -1434,6 +1440,9 @@
             if (s) {
                 s.nome = document.getElementById(`edit_nome_${id}`).value.trim();
                 s.cpf = document.getElementById(`edit_cpf_${id}`).value.trim();
+                s.fotoUrl = document.getElementById(`edit_fotoUrl_${id}`).value.trim();
+                s.whatsappNumero = document.getElementById(`edit_whatsappNumero_${id}`).value.replace(/\D/g, '').slice(0, 15);
+                if (s.fotoUrl && !/^https:\/\//i.test(s.fotoUrl)) { alert('A URL da foto deve começar com https://'); return; }
                 s.cargo = document.getElementById(`edit_cargo_${id}`).value.trim();
                 s.lotacao = document.getElementById(`edit_lotacao_${id}`).value.trim();
                 s.fcpeAtual = document.getElementById(`edit_fcpe_${id}`).value;
@@ -1577,5 +1586,6 @@
             carregarDados();
         };
     </script>
+    14.32
 </body>
 </html>
