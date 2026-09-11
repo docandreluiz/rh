@@ -563,7 +563,7 @@
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
                     atualizarTudo();
                     gedepPilotoStatus('Sincronizado: ' + remote.length + ' servidores.');
-                }).catch(function(err) { console.error(err); gedepPilotoStatus('Não foi possível ler a planilha. Verifique o compartilhamento.', true); });
+                }).catch(function(err) { console.error(err); const detalhe = err && err.result && err.result.error ? (err.result.error.message || ('HTTP ' + err.result.error.code)) : (err.message || String(err)); gedepPilotoStatus('Sheets: ' + detalhe, true); console.error('Erro detalhado do Google Sheets:', err); });
         }
 
         function gedepPilotoLogout() {
@@ -1538,4 +1538,5 @@
         };
     </script>
 </body>
+    13.32
 </html>
