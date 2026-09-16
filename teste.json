@@ -1,0 +1,87 @@
+{
+  "app": "GEDEP",
+  "generatedAt": "2026-09-16T18:18:21.041Z",
+  "page": "https://docandreluiz.github.io/rh2/?versao=20260916-1#/importacoes",
+  "route": "#/importacoes",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+  "errors": [],
+  "samples": [
+    {
+      "route": "",
+      "action": "google-libraries",
+      "status": "success",
+      "message": "GIS e GAPI disponíveis",
+      "at": "2026-09-16T18:14:32.612Z"
+    },
+    {
+      "route": "#/importacoes",
+      "action": "stage-local-import",
+      "status": "success",
+      "message": "732 registros preparados localmente",
+      "details": {
+        "target": "servidores",
+        "fileName": "ARQUIVO_COMPLETO_496_092026.txt"
+      },
+      "at": "2026-09-16T18:14:51.218Z"
+    },
+    {
+      "route": "#/importacoes",
+      "action": "stage-local-import",
+      "status": "success",
+      "message": "1331 registros preparados localmente",
+      "details": {
+        "target": "processos",
+        "fileName": "Controle GEDEP(PROCESSOS SEI).csv"
+      },
+      "at": "2026-09-16T18:15:24.963Z"
+    },
+    {
+      "route": "#/importacoes",
+      "action": "stage-local-import",
+      "status": "success",
+      "message": "1066 registros preparados localmente",
+      "details": {
+        "target": "ramais",
+        "fileName": "ramais.xlsx"
+      },
+      "at": "2026-09-16T18:15:51.300Z"
+    },
+    {
+      "route": "#/ramais",
+      "action": "render-ramais",
+      "status": "success",
+      "message": "Tela de ramais renderizada",
+      "details": {
+        "totalRamais": "0",
+        "visiveis": "0",
+        "totalServidores": "0",
+        "query": "",
+        "status": "all",
+        "primeiroRamal": "nenhum"
+      },
+      "at": "2026-09-16T18:16:14.955Z"
+    },
+    {
+      "route": "#/importacoes",
+      "action": "stage-local-import",
+      "status": "success",
+      "message": "732 registros preparados localmente",
+      "details": {
+        "target": "servidores",
+        "fileName": "ARQUIVO_COMPLETO_496_092026.txt"
+      },
+      "at": "2026-09-16T18:17:14.596Z"
+    },
+    {
+      "route": "#/importacoes",
+      "action": "stage-local-import",
+      "status": "success",
+      "message": "1331 registros preparados localmente",
+      "details": {
+        "target": "processos",
+        "fileName": "Controle GEDEP(PROCESSOS SEI).csv"
+      },
+      "at": "2026-09-16T18:18:21.035Z"
+    }
+  ]
+}
