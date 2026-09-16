@@ -13,10 +13,10 @@
   <script>
     var key="gedep.diagnostics.errors";
     function get(){try{return JSON.parse(sessionStorage.getItem(key)||"[]")}catch(e){return[]}}
-    function report(){return{app:"GEDEP",generatedAt:new Date().toISOString(),page:location.href,userAgent:navigator.userAgent,errors:get()}}
+    function report(){var samples=[];try{samples=JSON.parse(sessionStorage.getItem("gedep.diagnostics.samples")||"[]")}catch(e){}return{app:"GEDEP",generatedAt:new Date().toISOString(),page:location.href,route:location.hash,userAgent:navigator.userAgent,errors:get(),samples:samples}}
     function render(){var r=report();document.getElementById("count").textContent=r.errors.length+" registro(s) encontrado(s)";document.getElementById("output").textContent=JSON.stringify(r,null,2)}
     document.getElementById("download").onclick=function(){var b=new Blob([JSON.stringify(report(),null,2)],{type:"application/json"}),u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download="gedep-diagnostico.json";a.click();URL.revokeObjectURL(u)};
-    document.getElementById("clear").onclick=function(){sessionStorage.removeItem(key);render()};render();
+    document.getElementById("clear").onclick=function(){sessionStorage.removeItem(key);sessionStorage.removeItem("gedep.diagnostics.samples");render()};render();
   </script>
 </body>
 </html>
