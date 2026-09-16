@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Diagnóstico GEDEP</title>
+  <style>body{font:16px system-ui,sans-serif;max-width:900px;margin:40px auto;padding:0 20px;color:#17343d}button{background:#0e6c78;color:#fff;border:0;border-radius:8px;padding:12px 16px;font-weight:700;cursor:pointer;margin-right:8px}pre{white-space:pre-wrap;background:#f3f7f7;padding:16px;border-radius:10px;overflow:auto}p{line-height:1.5;color:#5d7479}</style>
+</head>
+<body>
+  <h1>Diagnóstico GEDEP</h1>
+  <p>Esta página lê os erros registrados pelo navegador nesta sessão. Baixe o arquivo JSON e envie-o junto com a descrição do problema.</p>
+  <button id="download">Baixar diagnóstico</button><button id="clear">Limpar registros</button>
+  <h2 id="count"></h2><pre id="output"></pre>
+  <script>
+    var key="gedep.diagnostics.errors";
+    function get(){try{return JSON.parse(sessionStorage.getItem(key)||"[]")}catch(e){return[]}}
+    function report(){return{app:"GEDEP",generatedAt:new Date().toISOString(),page:location.href,userAgent:navigator.userAgent,errors:get()}}
+    function render(){var r=report();document.getElementById("count").textContent=r.errors.length+" registro(s) encontrado(s)";document.getElementById("output").textContent=JSON.stringify(r,null,2)}
+    document.getElementById("download").onclick=function(){var b=new Blob([JSON.stringify(report(),null,2)],{type:"application/json"}),u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download="gedep-diagnostico.json";a.click();URL.revokeObjectURL(u)};
+    document.getElementById("clear").onclick=function(){sessionStorage.removeItem(key);render()};render();
+  </script>
+</body>
+</html>
