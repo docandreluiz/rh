@@ -1,2 +1,3 @@
-GEDEP atualizado: menu Agenda Google (Prazos SEI), eventos de dia inteiro e com horário, planta GitHub/Drive normalizada.
-Extraia diretamente na raiz do repositório GitHub Pages.
+GEDEP versão estável final.
+Inclui: redirecionamento pós-login para a página principal, limpeza de estado temporário, mapa de salas com navegação gráfica e dados ampliados para a planilha.
+Extraia o conteúdo diretamente na raiz do repositório GitHub Pages.
