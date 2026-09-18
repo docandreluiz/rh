@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extrator de Nomes Personalizado</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 30px; background-color: #f5f6f8; color: #333; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h2 { color: #1f4e79; margin-top: 0; border-bottom: 2px solid #e1e4e8; padding-bottom: 10px; }
+        .box { display: flex; flex-direction: column; margin-bottom: 20px; }
+        label { font-weight: bold; margin-bottom: 8px; color: #555; }
+        textarea { height: 150px; padding: 12px; border: 1px solid #ccd1d9; border-radius: 6px; resize: vertical; font-size: 14px; line-height: 1.5; }
+        textarea:focus { border-color: #1f4e79; outline: none; box-shadow: 0 0 5px rgba(31,78,121,0.2); }
+        .file-input { background: #fafbfc; border: 2px dashed #ccd1d9; padding: 20px; text-align: center; border-radius: 6px; cursor: pointer; margin-bottom: 20px; transition: border-color 0.2s; }
+        .file-input:hover { border-color: #1f4e79; }
+        input[type="file"] { display: none; }
+        button { background-color: #1f4e79; color: white; border: none; padding: 14px 28px; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: background 0.2s; width: 100%; margin-bottom: 20px; }
+        button:hover { background-color: #163857; }
+        button:disabled { background-color: #cccccc; cursor: not-allowed; }
+        .alert { padding: 12px; border-radius: 6px; font-weight: bold; text-align: center; display: none; margin-bottom: 20px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info-file { margin-top: 8px; font-size: 14px; color: #28a745; font-weight: bold; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>⚡ Extrator de Nomes (Formato Nome Próprio)</h2>
+    <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Esta versão extrai o nome completo válido e converte automaticamente o texto para minúsculo, mantendo apenas a primeira letra maiúscula (ex: MICHELE vira Michele).</p>
+    
+    <div class="box">
+        <label for="txtProibidos">1. Cole seus Termos Proibidos (Um por linha)</label>
+        <textarea id="txtProibidos" placeholder="Cole aqui seus 2.383 termos proibidos (ex: Levantamento, Projeto...)"></textarea>
+    </div>
+
+    <div class="box">
+        <label>2. Selecione o seu Arquivo CSV UTF-8</label>
+        <div class="file-input" onclick="document.getElementById('csvFile').click()">
+            <span id="fileLabel">Clique aqui para carregar o arquivo CSV</span>
+            <input type="file" id="csvFile" accept=".csv" onchange="mostrarArquivoCarregado()">
+            <div id="infoFile" class="info-file">✓ Arquivo carregado com sucesso!</div>
+        </div>
+    </div>
+
+    <button id="btnProcessar" onclick="processarCSV()">🚀 Processar CSV e Baixar Resultado</button>
+
+    <div id="msgAlerta" class="alert"></div>
+</div>
+
+<script>
+function mostrarArquivoCarregado() {
+    const fileInput = document.getElementById('csvFile');
+    if (fileInput.files.length > 0) {
+        document.getElementById('fileLabel').innerText = "Arquivo selecionado: " + fileInput.files.name;
+        document.getElementById('infoFile').style.display = 'block';
+    }
+}
+
+function processarCSV() {
+    const fileInput = document.getElementById('csvFile');
+    const msgAlerta = document.getElementById('msgAlerta');
+    
+    if (fileInput.files.length === 0) {
+        msgAlerta.className = "alert error";
+        msgAlerta.innerText = "Por favor, selecione um arquivo CSV primeiro!";
+        msgAlerta.style.display = "block";
+        return;
+    }
+
+    const tempoInicio = performance.now();
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    const proibidosInput = document.getElementById('txtProibidos').value;
+    const proibidos = new Set(
+        proibidosInput.split('\n')
+            .map(t => t.trim().toLowerCase())
+            .filter(t => t.length > 0)
+    );
+
+    reader.onload = function(e) {
+        const text = e.target.result;
+        const lines = text.split(/\r?\n/);
+        
+        let indexAssunto = -1;
+        let cabecalhoEncontrado = false;
+        let linhasProcessadas = [];
+        
+        for (let i = 0; i < lines.length; i++) {
+            let linhaOriginal = lines[i];
+            
+            if (linhaOriginal.trim() === "" && i === lines.length - 1) continue;
+
+            let colunas = linhaOriginal.split(';');
+
+            if (!cabecalhoEncontrado) {
+                let pos = colunas.findIndex(col => col.trim().toUpperCase() === "ASSUNTO");
+                if (pos !== -1) {
+                    indexAssunto = pos;
+                    cabecalhoEncontrado = true;
+                    colunas.push("Nomes_Extraidos");
+                    linhasProcessadas.push(colunas.join(';'));
+                } else {
+                    colunas.push("");
+                    linhasProcessadas.push(colunas.join(';'));
+                }
+                continue;
+            }
+
+            let textoAssunto = colunas[indexAssunto] ? colunas[indexAssunto].trim() : "";
+            let nomesFormatados = "";
+
+            if (textoAssunto !== "") {
+                let palavras = textoAssunto.split(/\s+/);
+                let palavrasFiltradas = [];
+
+                for (let j = 0; j < palavras.length; j++) {
+                    let palavraOriginal = palavras[j];
+
+                    let palavraLimpa = palavraOriginal.replace(/[.,:;()\[\]{}*§\/\\?!"]/g, "").trim();
+                    let palavraMinusc = palavraLimpa.toLowerCase();
+
+                    if (palavraLimpa === "") continue;
+
+                    if (!proibidos.has(palavraMinusc)) {
+                        let primeiraLetra = palavraLimpa.charAt(0);
+                        if (primeiraLetra === primeiraLetra.toUpperCase() && primeiraLetra !== primeiraLetra.toLowerCase()) {
+                            // Converte para Nome Próprio: Primeira letra Maiúscula + restante em minúsculo
+                            let palavraNomeProprio = primeiraLetra.toUpperCase() + palavraLimpa.slice(1).toLowerCase();
+                            palavrasFiltradas.push(palavraNomeProprio);
+                        }
+                    }
+                }
+                nomesFormatados = palavrasFiltradas.join(" ");
+            }
+
+            colunas.push(nomesFormatados);
+            linhasProcessadas.push(colunas.join(';'));
+        }
+
+        const resultadoFinal = linhasProcessadas.join('\r\n');
+        const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), resultadoFinal], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", "resultado_nomes_limpos.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        const tempoFim = performance.now();
+        const tempoTotal = ((tempoFim - tempoInicio) / 1000).toFixed(3);
+
+        msgAlerta.className = "alert success";
+        msgAlerta.innerText = `Processado com sucesso! Arquivo gerado em ${tempoTotal} segundos.`;
+        msgAlerta.style.display = "block";
+    };
+
+    reader.readAsText(file, "UTF-8");
+}
+</script>
+
+</body>
+</html>
