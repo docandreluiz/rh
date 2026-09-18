@@ -1,3 +1,2 @@
-GEDEP atualizado: Agenda Google para prazos SEI e planta de salas.
+GEDEP atualizado: menu Agenda Google (Prazos SEI), eventos de dia inteiro e com horário, planta GitHub/Drive normalizada.
 Extraia diretamente na raiz do repositório GitHub Pages.
-URL da planta GitHub aceita: https://github.com/docandreluiz/rh2/blob/rh/planta%%20baixa%%20da%%20goinfra.jpg
