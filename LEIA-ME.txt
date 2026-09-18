@@ -1,0 +1,3 @@
+Pacote estático GEDEP para GitHub Pages.
+Extraia todos os arquivos diretamente na raiz do repositório.
+O build usa a base /rh2/ configurada para o repositório de referência.
