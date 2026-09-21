@@ -1,3 +1,3 @@
-GEDEP código estável com controle de acesso.
-Inclui cadastro de usuários, perfis, layout automático de acessos, linguagem neutra e fluxo carregar/atualizar/salvar.
+GEDEP pacote para upload.
+Inclui controle de acesso: somente usuários aprovados e ativos acessam os dados.
 Extraia diretamente na raiz do repositório GitHub Pages.
