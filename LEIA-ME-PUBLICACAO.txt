@@ -1,9 +1,0 @@
-GEDEP — Fase 85 — Arquivos estáticos de publicação
-
-Conteúdo gerado por `pnpm build` para publicação no GitHub Pages.
-
-Publique o conteúdo desta pasta no diretório raiz do branch/pasta usado pelo GitHub Pages.
-Não publique a pasta pai `gedep-publicacao-fase85`; publique os arquivos que estão dentro dela.
-
-A aplicação foi construída com base `/rh2/`.
-Rota de validação: /rh2/?v=85#/processos-especiais
