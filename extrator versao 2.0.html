@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Extrator TSV em Lote - Histórico Acumulado</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.5; }
+        textarea { width: 100%; max-width: 700px; }
+        .botoes-acao { margin-top: 10px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+    <h2>Extrator de Dados em Lote (SEI)</h2>
+
+    <!-- Campo onde o usuário digita o nome do responsável -->
+    <label>Responsável:</label><br>
+    <input type="text" id="ext-responsavel" placeholder="Nome do responsável" style="width: 300px;"><br><br>
+
+    <!-- Caixa de texto onde você cola o relatório bruto do sistema -->
+    <label>Cole o texto do lote atual aqui:</label><br>
+    <textarea id="ext-input" rows="6" placeholder="Cole os dados com === CONTEÚDO..."></textarea><br><br>
+
+    <!-- Botão que aciona a função principal -->
+    <button onclick="ext_processar()">Processar e Acumular no Histórico</button><br><br>
+
+    <!-- Caixa de histórico acumulado -->
+    <label><b>Histórico Acumulado (Pronto para copiar e colar no Excel):</b></label><br>
+    <textarea id="ext-output" rows="12" placeholder="Os dados acumulados de todos os lotes processados aparecerão aqui..."></textarea>
+    
+    <div class="botoes-acao">
+        <button onclick="limparHistorico()" style="background-color: #ffcccc; border: 1px solid #cc0000; cursor: pointer;">Limpar Histórico</button>
+    </div>
+
+    <script>
+        // ============================================================
+        // FUNÇÕES AUXILIARES E INTELIGENTES
+        // ============================================================
+
+        function getDataAtualFormatada() {
+            const hoje = new Date();
+            return hoje.toLocaleDateString('pt-BR');
+        }
+
+        function somarDiasData(dataStr, dias) {
+            let partes = dataStr.split('/');
+            let dataObj = new Date(partes[2], partes[1] - 1, partes[0]);
+            dataObj.setDate(dataObj.getDate() + dias);
+            return dataObj.toLocaleDateString('pt-BR');
+        }
+
+        // Extrai a data que vem após "Goiânia," e converte para abreviada (DD/MM/AAAA)
+        function extrairDataGoinia(doc) {
+            const match = doc.match(/Goiânia,\s*([^\n\r.]+)/i);
+            if (!match) return getDataAtualFormatada();
+            
+            let textoData = match[1].trim();
+            
+            if (/^\d{2}\/\d{2}\/\d{4}$/.test(textoData)) {
+                return textoData;
+            }
+            
+            const meses = {
+                'janeiro': '01', 'fevereiro': '02', 'março': '03', 'abril': '04',
+                'maio': '05', 'junho': '06', 'julho': '07', 'agosto': '08',
+                'setembro': '09', 'outubro': '10', 'novembro': '11', 'dezembro': '12'
+            };
+            
+            const regexExtenso = /(\d{1,2})\s+de\s+([a-zá-ú]+)\s+de\s+(\d{4})/i;
+            const resExtenso = textoData.match(regexExtenso);
+            
+            if (resExtenso) {
+                let dia = resExtenso[1].padStart(2, '0');
+                let nomeMes = resExtenso[2].toLowerCase();
+                let ano = resExtenso[3];
+                let mes = meses[nomeMes] || '01';
+                
+                return `${dia}/${mes}/${ano}`;
+            }
+            
+            return textoData;
+        }
+
+        // Função para extrair a procedência com base em "Trata-se", "Tratam-se" ou "Os autos"
+        function extrairProcedencia(doc) {
+            const linhas = doc.split(/\r?\n/);
+            for (let i = 0; i < linhas.length; i++) {
+                let linha = linhas[i].trim();
+                if (/^(trata-se|tratam-se|os\s+autos)/i.test(linha)) {
+                    const matchSetor = linha.match(/(?:da|do|de|à|ao|pela|pelo)\s+([A-ZÀ-Ú][a-zA-ZÀ-Ú0-9\s\-]+?)(?=\s+em|\s+para|,|\.|$)/i);
+                    if (matchSetor) {
+                        return matchSetor[1].trim();
+                    }
+                }
+            }
+            return ''; 
+        }
+
+        // Função infalível para o Destino
+        function extrairDestino(doc) {
+            const linhas = doc.split(/\r?\n/);
+            for (let i = 0; i < linhas.length; i++) {
+                let linha = linhas[i].trim();
+                if (linha.toLowerCase().includes("encaminh")) {
+                    const matchPreposicao = linha.match(/(?:às?|aos?)\s+([^,]+?)(?=\s+para|,|\.|$)/i);
+                    if (matchPreposicao) {
+                        return matchPreposicao[1].trim();
+                    }
+                }
+            }
+            const matchTradicional = doc.match(/Destino:\s*(.*)/i);
+            return matchTradicional ? matchTradicional[1].trim() : '';
+        }
+
+        // ============================================================
+        // EXTRATOR TSV EM LOTE + HISTÓRICO ACUMULADO
+        // ============================================================
+        function ext_processar() {
+            const tEl = document.getElementById('ext-input');
+            const respEl = document.getElementById('ext-responsavel');
+            const outEl = document.getElementById('ext-output');
+            
+            if (!tEl || !outEl) return;
+
+            const t = tEl.value;
+            const resp = respEl ? respEl.value : 'Não informado';
+            const docs = t.split(/=== CONTEÚDO/);
+            let rows = [];
+
+            docs.forEach(doc => {
+                if (!doc.trim()) return;
+
+                const procMatch = doc.match(/Referência:\s*Processo\s*n[º°]?\s*([\d.\/\-]+)/i); 
+                const dataEnvMatch = doc.match(/Data\s*Envio:\s*(\d{2}\/\d{4})/i);
+                const statusMatch = doc.match(/Status:\s*(.*)/i);
+                const assuntoMatch = doc.match(/Assunto:\s*(.*)/i);
+                const interessadoMatch = doc.match(/Interessado\(a\):\s*(.*)/i);
+
+                const dataRecebimento = extrairDataGoinia(doc); 
+                const prazoLimite = somarDiasData(dataRecebimento, 10); 
+
+                const atribuicao = resp;
+                const dataEnvio = dataEnvMatch ? dataEnvMatch[1] : '';
+                const status = statusMatch ? statusMatch[1].trim() : 'em andamento';
+                
+                const procedencia = extrairProcedencia(doc);
+                const destino = extrairDestino(doc);
+                
+                const processoSei = procMatch ? procMatch[1].trim() : '';
+                const assunto = assuntoMatch ? assuntoMatch[1].trim() : '';
+                const linhaRef = ''; 
+                const interessados = interessadoMatch ? interessadoMatch[1].trim() : '';
+
+                rows.push([
+                    atribuicao,
+                    dataRecebimento,
+                    dataEnvio,
+                    prazoLimite,
+                    status,
+                    procedencia,
+                    destino,
+                    processoSei,
+                    assunto,
+                    linhaRef,
+                    interessados
+                ].join('\t'));
+            });
+
+            if (rows.length === 0) return;
+
+            const novoTextoLote = rows.join('\n');
+
+            // Se a caixa de saída já tiver conteúdo, adiciona uma quebra de linha e os novos dados embaixo
+            if (outEl.value.trim() !== '') {
+                outEl.value += '\n' + novoTextoLote;
+            } else {
+                outEl.value = novoTextoLote;
+            }
+
+            // Limpa o campo de entrada para o próximo lote, mas mantém o responsável
+            tEl.value = '';
+        }
+
+        // Função para limpar o histórico acumulado quando quiser começar do zero
+        function limparHistorico() {
+            if (confirm("Deseja limpar todo o histórico acumulado?")) {
+                document.getElementById('ext-output').value = '';
+            }
+        }
+    </script>
+</body>
+</html>
