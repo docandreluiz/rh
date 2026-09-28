@@ -1,0 +1,1669 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca Digital GEDEP — GOINFRA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #059669;
+            --primary-dark: #065f46;
+            --accent: #10b981;
+            --bg-body: #f8fafc;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
+        .hidden { display: none !important; }
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: var(--bg-body);
+            color: var(--text-main);
+        }
+        h1, h2, h3, .font-outfit { font-family: 'Outfit', sans-serif; }
+        
+        /* Modern Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+
+        /* Card Styles */
+        .card-doc { 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            background: white;
+        }
+        .card-doc:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+            border-color: var(--accent);
+        }
+        
+        /* Chips & Filters */
+        .section-chip { 
+            cursor: pointer; 
+            user-select: none; 
+            transition: all 0.2s ease;
+            border: 1px solid #e2e8f0;
+        }
+        .section-chip:hover { 
+            border-color: var(--accent);
+            background-color: #f0fdf4;
+            color: var(--primary);
+        }
+        .section-chip.active { 
+            background-color: var(--primary); 
+            color: white; 
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);
+        }
+        
+        /* Animations */
+        @keyframes card-in { 
+            from { opacity: 0; transform: translateY(15px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        .card-in { animation: card-in 0.4s ease both; }
+        
+        /* Header Gradient Overlay */
+        .header-bg {
+            background: linear-gradient(135deg, #065f46 0%, #059669 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        .header-bg::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+        }
+        
+        .glass-input {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            transition: all 0.2s;
+        }
+        .glass-input:focus {
+            background: white;
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Header Section -->
+    <header class="header-bg text-white pb-20 pt-10 px-4">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div class="flex items-center gap-4">
+                <div class="w-14 h-14 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center text-2xl shadow-inner border border-white/20">
+                    📖
+                </div>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold tracking-tight">Biblioteca Digital GEDEP</h1>
+                    <p class="text-emerald-100/80 text-sm font-medium">Gerência de Gestão e Desenvolvimento de Pessoas · GOINFRA</p>
+                </div>
+            </div>
+            <div class="hidden lg:block text-right">
+                <span class="inline-flex items-center px-3 py-1 rounded-full bg-white/10 border border-white/20 text-[10px] font-bold uppercase tracking-widest">
+                    Versão Institucional
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 -mt-12 mb-12">
+        <!-- Search Bar -->
+        <div class="glass-input rounded-2xl border border-gray-200 p-2 shadow-xl mb-8">
+            <div class="flex items-center gap-3 px-4 py-2">
+                <span class="text-emerald-600 text-lg">🔍</span>
+                <input type="text" id="search-input" placeholder="Pesquisar por palavras-chave, título, ementa ou assunto..." 
+                    class="w-full bg-transparent border-0 text-base font-medium placeholder:text-gray-400 focus:outline-none focus:ring-0" oninput="applyFilters()">
+                <div class="hidden sm:flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-tighter bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
+                    <i class="fa-solid fa-bolt text-amber-500"></i> Busca Inteligente
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <!-- Sidebar Filters -->
+            <aside class="lg:col-span-1 space-y-8">
+                <!-- Seções -->
+                <section>
+                    <h4 class="text-[11px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-layer-group text-emerald-600"></i> Seções Temáticas
+                    </h4>
+                    <div class="flex flex-col gap-2">
+                        <button onclick="filterBy('Todos')" class="section-chip text-left px-4 py-2.5 rounded-xl text-xs font-semibold bg-white text-gray-700 active" id="chip-Todos">
+                            <i class="fa-solid fa-circle-nodes mr-2 opacity-50"></i> Todos os Documentos
+                        </button>
+                        <button onclick="filterBy('1. Governança e Estrutura')" class="section-chip text-left px-4 py-2.5 rounded-xl text-xs font-semibold bg-white text-gray-700" id="chip-1__Governan_a_e_Estrutura">
+                                1. Governança e Estrutura <span class="float-right opacity-40 font-normal">26</span>
+                            </button><button onclick="filterBy('2. Estrutura Organizacional')" class="section-chip text-left px-4 py-2.5 rounded-xl text-xs font-semibold bg-white text-gray-700" id="chip-2__Estrutura_Organizacional">
+                                2. Estrutura Organizacional <span class="float-right opacity-40 font-normal">2</span>
+                            </button><button onclick="filterBy('2. Tecnologia da Informação e SEI')" class="section-chip text-left px-4 py-2.5 rounded-xl text-xs font-semibold bg-white text-gray-700" id="chip-2__Tecnologia_da_Informa__o_e_SEI">
+                                2. Tecnologia da Informação e SEI <span class="float-right opacity-40 font-normal">2</span>
+                            </button><button onclick="filterBy('3. Gestão de Pessoas')" class="section-chip text-left px-4 py-2.5 rounded-xl text-xs font-semibold bg-white text-gray-700" id="chip-3__Gest_o_de_Pessoas">
+                                3. Gestão de Pessoas <span class="float-right opacity-40 font-normal">2</span>
+                            </button><button onclick="filterBy('3. Remuneração')" class="section-chip text-left px-4 py-2.5 rounded-xl text-xs font-semibold bg-white text-gray-700" id="chip-3__Remunera__o">
+                                3. Remuneração <span class="float-right opacity-40 font-normal">7</span>
+                            </button><button onclick="filterBy('4. Quadro de Pessoal')" class="section-chip text-left px-4 py-2.5 rounded-xl text-xs font-semibold bg-white text-gray-700" id="chip-4__Quadro_de_Pessoal">
+                                4. Quadro de Pessoal <span class="float-right opacity-40 font-normal">2</span>
+                            </button><button onclick="filterBy('5. Carreira e Servidor')" class="section-chip text-left px-4 py-2.5 rounded-xl text-xs font-semibold bg-white text-gray-700" id="chip-5__Carreira_e_Servidor">
+                                5. Carreira e Servidor <span class="float-right opacity-40 font-normal">3</span>
+                            </button><button onclick="filterBy('6. Saúde e Segurança')" class="section-chip text-left px-4 py-2.5 rounded-xl text-xs font-semibold bg-white text-gray-700" id="chip-6__Sa_de_e_Seguran_a">
+                                6. Saúde e Segurança <span class="float-right opacity-40 font-normal">1</span>
+                            </button>
+                    </div>
+                </section>
+
+                <!-- Status & Tipo -->
+                <section class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-6">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Tipo Normativo</label>
+                        <select onchange="filterType(this.value)" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:border-emerald-500 transition cursor-pointer">
+                            <option value="Todos">Todos os tipos</option>
+                            <option value="Artigo / Palestra">Artigo / Palestra</option><option value="Decreto">Decreto</option><option value="Despacho">Despacho</option><option value="Instrução Normativa">Instrução Normativa</option><option value="Lei Estadual">Lei Estadual</option><option value="Lei Ordinária">Lei Ordinária</option><option value="Norma Interna">Norma Interna</option><option value="Pauta">Pauta</option><option value="Portaria">Portaria</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Situação Atual</label>
+                        <div class="grid grid-cols-1 gap-2">
+                            <label class="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition">
+                                <input type="radio" name="status" value="Todos" checked onchange="filterStatus(this.value)" class="w-4 h-4 text-emerald-600 border-gray-300 focus:ring-emerald-500">
+                                <span class="text-xs font-medium text-gray-600">Qualquer Status</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition">
+                                <input type="radio" name="status" value="Vigente" onchange="filterStatus(this.value)" class="w-4 h-4 text-emerald-600 border-gray-300 focus:ring-emerald-500">
+                                <span class="text-xs font-medium text-gray-600">Apenas Vigentes</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition">
+                                <input type="radio" name="status" value="Alterado" onchange="filterStatus(this.value)" class="w-4 h-4 text-emerald-600 border-gray-300 focus:ring-emerald-500">
+                                <span class="text-xs font-medium text-gray-600">Alterados</span>
+                            </label>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Aviso Legal -->
+                <div class="p-5 bg-emerald-900 text-emerald-100 rounded-2xl shadow-lg relative overflow-hidden">
+                    <div class="relative z-10">
+                        <h5 class="text-xs font-bold mb-2 flex items-center gap-2"><i class="fa-solid fa-circle-exclamation"></i> Aviso Legal</h5>
+                        <p class="text-[10px] leading-relaxed opacity-80">
+                            Esta biblioteca tem finalidade meramente informativa. Em caso de divergência, prevalece o texto oficial do DO/GO.
+                        </p>
+                    </div>
+                    <i class="fa-solid fa-scale-balanced absolute -bottom-4 -right-4 text-6xl opacity-10"></i>
+                </div>
+            </aside>
+
+            <!-- Main Content Area -->
+            <div class="lg:col-span-3">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        Acervo Documental 
+                        <span id="result-count" class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">45 ITENS</span>
+                    </h2>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold text-gray-400 uppercase">Ordenar por:</span>
+                        <select class="bg-transparent border-0 text-[10px] font-bold text-emerald-600 uppercase tracking-wider focus:ring-0 cursor-pointer">
+                            <option>Recentes</option>
+                            <option>Título</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="cards-container">
+                    
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="4. Quadro de Pessoal" data-tipo="Lei Estadual" data-status="Vigente" data-id="GEDEP-039">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Lei nº 18.276/2013</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Lei Estadual</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>17/08/2026</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>4. Quadro de Pessoal</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Reestrutura o Plano de Cargos e Remuneração (PCR) do pessoal ativo da Agência Goiana de Transportes e Obras, definir os Grupos Ocupacionais dos Quadros Permanente e Transitório e os seus padrões de vencimentos e salários.</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://legisla.casacivil.go.gov.br/pesquisa_legislacao/90412/lei-18276" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="3. Remuneração" data-tipo="Portaria" data-status="Vigente" data-id="GEDEP-069">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Portaria nº 240/2026 - SGG</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Portaria</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>31/07/2026</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>3. Remuneração</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Regulamenta o Ciclo de Gestão das Concessões, estabelece a sistemática de acompanhamento dos saldos de Graticações do Sistema Estruturador das Redes de Gestão (GRGs) e Funções Comissionadas do Sistema Estruturador das Redes de Gestão (FCRGs) da área de Projetos do Poder Executivo estadual, e dá outras providências. (DIÁRIO OFICIAL/GO N° 24.833)</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="http://diariooficial.abc.go.gov.br/" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="3. Remuneração" data-tipo="Artigo / Palestra" data-status="Vigente" data-id="GEDEP-070">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Instrução Normativa SGG Nº 6</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Artigo / Palestra</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>31/07/2026</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>3. Remuneração</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Dispõe sobre o Ciclo de Gestão das Concessões e Avaliações das Funções Comissionadas e Graticações das Redes de Governança - FCRG e GRG, no âmbito da Rede de Gestão de Projetos do Poder Executivo estadual.</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="http://diariooficial.abc.go.gov.br/" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="1. Governança e Estrutura" data-tipo="Norma Interna" data-status="Vigente" data-id="GEDEP-087">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Portaria nº 79/2026 - GOINFRA</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Norma Interna</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>07/05/2026</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>1. Governança e Estrutura</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Dispõe sobre os procedimentos obrigatórios de revogação de acessos institucionais, internos e externos, incluindo o Sistema Eletrônico de Informações – SEI, no âmbito da Agência Goiana de Infraestrutura e Transportes – GOINFRA, em decorrência de desligamento de colaboradores, terceirizados e contratados de gerenciadoras.  (SEI nº 90066859).</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://sei.go.gov.br/sei" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="1. Governança e Estrutura" data-tipo="Norma Interna" data-status="Vigente" data-id="GEDEP-084">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Portaria nº 66/2026 - GOINFRA</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Norma Interna</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>27/04/2026</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>1. Governança e Estrutura</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Delega ao titular da Diretoria de Gestão Integrada as competências que especifica.  (SEI nº 89580420).</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://sei.go.gov.br" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="1. Governança e Estrutura" data-tipo="Norma Interna" data-status="Vigente" data-id="GEDEP-085">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Portariaº 55/2026 - GOINFRA</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Norma Interna</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>10/04/2026</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>1. Governança e Estrutura</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Dispõe sobre mecanismos de controle, monitoramento e inclusão de beneficiários de pensões decorrentes de decisões judiciais na folha de pagamento da Agência Goiana de Infraestrutura e Transportes – GOINFRA.  (SEI nº 88824150).</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://sei.go.gov.br/sei" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="1. Governança e Estrutura" data-tipo="Norma Interna" data-status="Vigente" data-id="GEDEP-086">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Portaria nº 49/2026 - GOINFRA</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Norma Interna</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>06/04/2026</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>1. Governança e Estrutura</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Delega aos Diretores Setoriais a competência para firmar os instrumentos que específica.  (SEI nº 88543483).</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://sei.go.gov.br/sei" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="1. Governança e Estrutura" data-tipo="Norma Interna" data-status="Vigente" data-id="GEDEP-043">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Portaria nº 51/2026</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Norma Interna</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>01/04/2026</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>1. Governança e Estrutura</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Instituiu o Escritório de Compliance da Agência Goiana de Infraestrutura e Transportes.</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://drive.google.com/file/d/1Tg-mZ5e_IyiFkXYJ_sVJyu_-JHUpmcJ9/view?usp=sharing" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="1. Governança e Estrutura" data-tipo="Lei Estadual" data-status="Vigente" data-id="GEDEP-038">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Lei nº 24.188/2026</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Lei Estadual</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>30/03/2026</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>1. Governança e Estrutura</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Altera a Lei nº 14.226, de 8 de julho de 2002, que reajusta os valores das pensões especiais que especifica, dispõe sobre a concessão de pensões especiais às pessoas irradiadas ou contaminadas que trabalharam na descontaminação da área acidentada com o Césio 137, na vigilância do Depósito Provisório em Abadia de Goiás e no atendimento de saúde às vítimas diretas do acidente e dá outras providências, também revoga as leis indicadas.</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://legisla.casacivil.go.gov.br/pesquisa_legislacao/113694/lei-24188" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="3. Remuneração" data-tipo="Lei Ordinária" data-status="Vigente" data-id="GEDEP-037">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Lei nº 24.159/2026</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Lei Ordinária</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>18/03/2026</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>3. Remuneração</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Cria o Adicional de Responsabilidade Técnica para as atividades de Arquitetura e de Engenharia no âmbito do Poder Executivo do Estado de Goiás</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://legisla.casacivil.go.gov.br/pesquisa_legislacao/113605/lei-24159" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="1. Governança e Estrutura" data-tipo="Decreto" data-status="Vigente" data-id="GEDEP-083">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Decreto nº 10.868/2026</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Decreto</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>03/03/2026</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>1. Governança e Estrutura</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Regulamento da Agência Goiana de Infraestrutura e Transportes – GOINFRA</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://legisla.casacivil.go.gov.br/pesquisa_legislacao/113502/decreto-10868" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="1. Governança e Estrutura" data-tipo="Instrução Normativa" data-status="Vigente" data-id="GEDEP-082">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Instrução Normativa nº 01/2026</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Instrução Normativa</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>20/02/2026</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>1. Governança e Estrutura</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Regulamenta o acesso, a organização e o uso do estacionamento institucional no âmbito da GOINFRA. Estabelece regras sobre vagas (comuns, reservadas, visitantes, funcionais), deveres dos usuários, vedações, mediação de conflitos, penalidades e fiscalização.  (SEI nº 86618297).</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://sei.go.gov.br" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="1. Governança e Estrutura" data-tipo="Norma Interna" data-status="Vigente" data-id="GEDEP-064">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Portaria nº 13/2026</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Norma Interna</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>28/01/2026</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>1. Governança e Estrutura</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Altera a Portaria no 236/2025- GOINFRA, que Homologa o Resultado de Processo Eleitoral da CIPA (2026/2027) GOINFRA, e designa membros representantes da Agência na referida Comissão.</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://drive.google.com/file/d/1Zrx6rEsSPixX4JnzxDVWSz_bllyMhloG/view" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="1. Governança e Estrutura" data-tipo="Norma Interna" data-status="Vigente" data-id="GEDEP-065">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Portaria nº 16/2026</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Norma Interna</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>28/01/2026</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>1. Governança e Estrutura</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Designa servidor(es)  responsável(is) pela promoção interna  ações  de combate ao mosquito Aedes Aegypti.</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="http://portaldoservidor.goinfra.go.gov.br/wp-content/uploads/2026/08/2026-SEI_85587187_Portaria_16.pdf" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="3. Gestão de Pessoas" data-tipo="Norma Interna" data-status="Vigente" data-id="GEDEP-088">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Portaria nº 30, de 19 de fevereiro de 2026</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Norma Interna</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>19/01/2026</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>3. Gestão de Pessoas</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Institui e regulamenta o Banco de Horas para registro, controle e compensação de jornada no âmbito da Agência Goiana de Infraestrutura e Transportes – GOINFRA.  (SEI nº  86559953)</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://sei.go.gov.br/sei/controlador_externo.php?acao=documento_conferir&id_orgao_acesso_externo=1&cv=86559953&crc=1077692C" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="1. Governança e Estrutura" data-tipo="Portaria" data-status="Vigente" data-id="GEDEP-036">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Portaria nº 179/2025</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Portaria</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>12/09/2025</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>1. Governança e Estrutura</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Altera o quadro de membros integrantes da Comissão Permanente de Mediação no âmbito da Agência Goiana de Infraestrutura e Transportes.</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://drive.google.com/file/d/17oaVlPn2VJbfGfIbynWYGo6twgZsv7kp/view?usp=sharing" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="1. Governança e Estrutura" data-tipo="Norma Interna" data-status="Vigente" data-id="GEDEP-067">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Portaria nº 99/2025</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Norma Interna</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>29/05/2025</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>1. Governança e Estrutura</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Institui os Comitês Permanentes para Questões da Mulher e da Diversidade, no âmbito da Goinfra.</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://drive.google.com/file/d/1gTiXk4JFeCct528V74_3W3XsHvOXpLjg/view?usp=sharing" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="3. Gestão de Pessoas" data-tipo="Norma Interna" data-status="Vigente" data-id="GEDEP-079">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Portaria nº 69/2025 - GOINFRA</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Norma Interna</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>10/04/2025</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>3. Gestão de Pessoas</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Atribui ao titular da Diretoria de Gestão Integrada a responsabilidade/competência para efetivação dos atos de comunicação externa para encaminhamento de solicitações, resoluções e demandas relacionadas ao processamento, análise, conferência e pagamento de Diferenças Salariais, Devolução ao erário, TRCT, Encargos sociais, Parametrização do RHNet, e outros correlatos. Revoga a Portaria nº 60, de 17/03/2025.  (SEI nº 73164898).</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://sei.go.gov.br" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="1. Governança e Estrutura" data-tipo="Despacho" data-status="Vigente" data-id="GEDEP-077">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Despacho nº 1.932/2024/GAB</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Despacho</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>06/01/2025</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>1. Governança e Estrutura</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">EMENTA: DIREITO ADMINISTRATIVO. SERVIDOR PÚBLICO. CONTAGEM DE PERÍODO CELETISTA COMO PERÍODO AQUISITIVO DE LICENÇA-PRÊMIO. SUPERAÇÃO DO ENTENDIMENTO DESTA PROCURADORIA-GERAL. ALINHAMENTO À POSIÇÃO DO SUPERIOR TRIBUNAL DE JUSTIÇA E DO TRIBUNAL DE JUSTIÇA DO ESTADO DE GOIÁS. INVIABILIDADE DE INTERPOSIÇÃO DE RECURSO EXTRAORDINÁRIO. ADEQUAÇÃO DA CONDUTA ADMINISTRATIVA E REDUÇÃO DA LITIGIOSIDADE E DOS ÔNUS SUCUMBENCIAIS. DESPACHO REFERENCIAL. PORTARIA Nº 170-GAB/2020-PGE. MATÉRIA ORIENTADA.  (SEI nº 69047773)</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://sei.go.gov.br/" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                                    <div class="group relative">
+                                        <i class="fa-solid fa-circle-info text-gray-300 hover:text-amber-500 transition cursor-help"></i>
+                                        <div class="absolute bottom-full right-0 mb-2 w-48 p-2 bg-slate-800 text-white text-[9px] rounded-lg opacity-0 group-hover:opacity-100 transition pointer-events-none shadow-xl">
+                                            Documento para caso específico. A aplicação em outros contextos requer análise.
+                                        </div>
+                                    </div>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="1. Governança e Estrutura" data-tipo="Decreto" data-status="Vigente" data-id="GEDEP-047">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Decreto nº 10.499/2024</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Decreto</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>08/06/2024</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>1. Governança e Estrutura</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Dispõe sobre a celebração dos contratos temporários da administração estadual direta, autárquica e fundacional do Poder Executivo do Estado de Goiás.</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://legisla.casacivil.go.gov.br/pesquisa_legislacao/109177/decreto-10499" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="6. Saúde e Segurança" data-tipo="Decreto" data-status="Vigente" data-id="GEDEP-060">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Decreto nº 10.307/2023</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Decreto</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>24/08/2023</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>6. Saúde e Segurança</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Dispõe sobre o Sistema Estruturador das Redes de Gestão – SIGES, criado pela Lei estadual nº 21.792, de 16 de fevereiro de 2023, na área de gestão de compras e contratos e designa essa área como Rede de Contratações – REDECON no Poder Executivo estadual.</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://legisla.casacivil.go.gov.br/pesquisa_legislacao/107672/decreto-10307" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="1. Governança e Estrutura" data-tipo="Decreto" data-status="Vigente" data-id="GEDEP-050">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Decreto nº 10.289/2023</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Decreto</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>12/07/2023</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>1. Governança e Estrutura</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Institui o Sistema Estruturador Integrado de Planejamento, Orçamento e Finanças Estadual – SIPOFE, no Poder Executivo estadual.</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://legisla.casacivil.go.gov.br/pesquisa_legislacao/107469/decreto-10289" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="1. Governança e Estrutura" data-tipo="Decreto" data-status="Vigente" data-id="GEDEP-049">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Decreto nº 10.287/2023</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Decreto</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>10/07/2023</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>1. Governança e Estrutura</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Dispõe sobre o Sistema Estruturador das Redes de Gestão – SIGES, criado pela Lei nº 21.792, de 16 de fevereiro de 2023, na área de inovação da gestão e dos serviços públicos, designa essa área como Rede TransformaGOV e institui o Observatório de Inovação em Políticas Públicas de Goiás e o Hub Goiás.</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://legisla.casacivil.go.gov.br/pesquisa_legislacao/107467/decreto-10287" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="1. Governança e Estrutura" data-tipo="Decreto" data-status="Vigente" data-id="GEDEP-058">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Decreto nº 10.275/2023</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Decreto</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>22/06/2023</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>1. Governança e Estrutura</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Integra a Rede de Gestão de Pessoas ao Sistema Estruturador das Redes de Gestão – SIGES, regulamenta a designação para o exercício das atribuições e das responsabilidades diferenciadas e a concessão da Gratificação das Redes de Gestão de Pessoas, instituídas pela Lei estadual nº 21.792, de 16 de fevereiro de 2023, revigora o Programa MOVE Goiás na administração direta, autárquica e fundacional do Poder Executivo e revoga o Decreto estadual nº 9.462, de 11 de julho de 2019.</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://legisla.casacivil.go.gov.br/pesquisa_legislacao/107267/decreto-10275" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="1. Governança e Estrutura" data-tipo="Decreto" data-status="Vigente" data-id="GEDEP-055">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Decreto nº 10.218/2023</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Decreto</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>16/02/2023</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>1. Governança e Estrutura</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Estabelece a composição da estrutura dos órgãos e das entidades da administração direta, autárquica e fundacional, bem como os cargos de provimento em comissão do Poder Executivo do Estado de Goiás.</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://legisla.casacivil.go.gov.br/api/v2/pesquisa/legislacoes/106750/pdf" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="3. Remuneração" data-tipo="Pauta" data-status="Vigente" data-id="GEDEP-035">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Ata de Reunião</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Pauta</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>19/10/2022</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>3. Remuneração</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Especificação da forma de inclusão das diárias no inclusão das diárias no Sistema de Recursos Humanos (RHNet)</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://drive.google.com/file/d/1SDsVVWTHfYCVxp9-MGBrqTvC-zRwPtM3/view?usp=sharing" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="1. Governança e Estrutura" data-tipo="Portaria" data-status="Vigente" data-id="GEDEP-045">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Portaria nº 233/2022</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Portaria</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>04/08/2022</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>1. Governança e Estrutura</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Altera a Portaria no 123/2020-GOINFRA, para acrescer nova jornada de trabalho para os servidores em exercício nesta Agência.</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://drive.google.com/file/d/1wjHuK-u8XwBTUit4r2JdJ7bri1TM2M3y/view" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="1. Governança e Estrutura" data-tipo="Lei Estadual" data-status="Vigente" data-id="GEDEP-053">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Lei nº 21.309/2022</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Lei Estadual</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>13/04/2022</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>1. Governança e Estrutura</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Institui, na Agência Goiana de Infraestrutura e Transportes – GOINFRA, o Programa de Auxílio-Alimentação.</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://legisla.casacivil.go.gov.br/pesquisa_legislacao/105401/lei-21309" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="1. Governança e Estrutura" data-tipo="Decreto" data-status="Vigente" data-id="GEDEP-034">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Código de Ética e Conduta Profissional do Servidor e da Alta Administração da administração pública direta, autárquica e fundacional do Poder Executivo estadual</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Decreto</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>23/03/2021</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>1. Governança e Estrutura</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Documento arquivístico oficial vinculado à seção &#39;3. Remuneração&#39;, versando sobre Manual Operacional: Vale-Transporte, com diretrizes aplicáveis à GOINFRA e conformidade com a legislação estadual vigente. (Manual da Rede de Gestão de Pessoas)</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://www.goinfra.go.gov.br/arquivos/arquivos/Acesso%20%C3%A0%20informa%C3%A7%C3%A3o/Codigo_de_Etica_e_Conduta_Profissional_2025.pdf" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="5. Carreira e Servidor" data-tipo="Lei Estadual" data-status="Vigente" data-id="GEDEP-054">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Lei Complementar nº 161/2020</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Lei Estadual</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>13/12/2020</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>5. Carreira e Servidor</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Dispõe sobre o Regime Próprio de Previdência Social do Estado de Goiás – RPPS/GO e dá outras providências.</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://legisla.casacivil.go.gov.br/pesquisa_legislacao/103671/lei-complementar-161" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="2. Tecnologia da Informação e SEI" data-tipo="Portaria" data-status="Vigente" data-id="GEDEP-073">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Portaria nº 164/2020</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Portaria</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>31/08/2020</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>2. Tecnologia da Informação e SEI</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Torna obrigatórios os procedimentos para inclusão e exclusão de usuários com acesso ao SEI, sempre que houver movimentação de pessoal (remanejamento, afastamento temporário ou desligamento). (SEI nº 000014897844)</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://sei.go.gov.br" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="2. Tecnologia da Informação e SEI" data-tipo="Portaria" data-status="Vigente" data-id="GEDEP-074">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Portaria nº 332/2020</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Portaria</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>31/08/2020</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>2. Tecnologia da Informação e SEI</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Dispõe sobre orientações e procedimentos para concessão de acesso externo para consulta a processos públicos do SEI de origem da GOINFRA, mediante requerimento formal.</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://sei.go.gov.br" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="5. Carreira e Servidor" data-tipo="Lei Ordinária" data-status="Vigente" data-id="GEDEP-063">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Lei nº 20.756/2020</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Lei Ordinária</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>28/01/2020</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>5. Carreira e Servidor</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Dispõe sobre o regime jurídico dos servidores públicos civis do Estado de Goiás, das autarquias e fundações públicas estaduais, e dá outras providências.</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://legisla.casacivil.go.gov.br/pesquisa_legislacao/100979/lei-20756" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="3. Remuneração" data-tipo="Decreto" data-status="Vigente" data-id="GEDEP-062">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Decreto nº 9.566/2019</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Decreto</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>25/11/2019</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>3. Remuneração</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Regulamenta a gestão das Funções Comissionadas no âmbito do Poder Executivo estadual.</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://legisla.casacivil.go.gov.br/pesquisa_legislacao/72476/decreto-9566" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="1. Governança e Estrutura" data-tipo="Norma Interna" data-status="Vigente" data-id="GEDEP-033">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Código de Ética e Conduta da GOINFRA</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Norma Interna</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>02/01/2019</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>1. Governança e Estrutura</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">O Código de Conduta desta Agência foi elaborado com o propósito de consolidar no âmbito da GOINFRA as diretrizes éticas e de integridade.</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://www.goinfra.go.gov.br/arquivos/arquivos/Acesso%20%C3%A0%20informa%C3%A7%C3%A3o/Codigo_de_Etica_GOINFRA_2025.pdf" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="1. Governança e Estrutura" data-tipo="Lei Ordinária" data-status="Vigente" data-id="GEDEP-057">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Lei Estadual nº 20.918/2020</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Lei Ordinária</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>20/12/2013</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>1. Governança e Estrutura</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Dispõe sobre a contratação por tempo determinado para atender a necessidade temporária de excepcional interesse público, nos termos do art. 92, inciso X, da Constituição do Estado de Goiás, e dá outras providências.</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://legisla.casacivil.go.gov.br/pesquisa_legislacao/103634/lei-20918" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="1. Governança e Estrutura" data-tipo="Lei Ordinária" data-status="Vigente" data-id="GEDEP-068">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Lei nº 17.537/2011</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Lei Ordinária</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>29/12/2011</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>1. Governança e Estrutura</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Institui, no âmbito da Agência Goiana de Transportes e Obras, a gratificação e o adicional que especifica.</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="http://legisla.casacivil.go.gov.br/pesquisa_legislacao/89531/lei-17537" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="3. Remuneração" data-tipo="Lei Estadual" data-status="Vigente" data-id="GEDEP-059">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Lei nº 15.665/2006</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Lei Estadual</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>23/05/2006</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>3. Remuneração</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Dispõe sobre o Quadro Permanente de Pessoal e o Plano de Cargos e Remuneração, dos servidores da Agência Goiana de Transportes e Obras, e dá outras providências.</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://legisla.casacivil.go.gov.br/pesquisa_legislacao/79709/lei-15665" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="2. Estrutura Organizacional" data-tipo="Lei Ordinária" data-status="Vigente" data-id="GEDEP-046">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Lei nº 14.653/2004</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Lei Ordinária</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>08/01/2004</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>2. Estrutura Organizacional</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Institui a Junta Administrativa de Recursos de Infrações - JARI e dá outras providências.</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://legisla.casacivil.go.gov.br/pesquisa_legislacao/80599/lei-14653" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="1. Governança e Estrutura" data-tipo="Lei Ordinária" data-status="Vigente" data-id="GEDEP-048">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Lei nº 14.226/2002</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Lei Ordinária</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>08/07/2002</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>1. Governança e Estrutura</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Reajusta os valores das pensões especiais que especifica, dispõe sobre a concessão de pensões especiais às pessoas irradiadas ou contaminadas que trabalharam na descontaminação da área acidentada com o Césio 137, na vigilância do Depósito Provisório em Abadia de Goiás e no atendimento de saúde às vítimas diretas do acidente e dá outras providências.</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://drive.google.com/file/d/1u-E2TdLohbFXGn3viU00k4nvo2qxHVDR/view?usp=sharing" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="5. Carreira e Servidor" data-tipo="Portaria" data-status="Vigente" data-id="GEDEP-052">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Portaria nº 576/2001</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Portaria</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>12/12/2001</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>5. Carreira e Servidor</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Remanejamento dos servidores relacionados do Consórcio Rodoviário Intermunicipal S/A (CRISA), em liquidação, para a Agência Goiana de Transportes e 0bras, em cumprimento à Lei nº 13,994, de 12de dezembro de 2001.</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://drive.google.com/file/d/1Vmo3sWahVMgFre2ZhdhYggNMB3jcmpgX/view?usp=sharing" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="3. Remuneração" data-tipo="Lei Ordinária" data-status="Vigente" data-id="GEDEP-066">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Lei nº 12.831/1995</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Lei Ordinária</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>28/12/1995</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>3. Remuneração</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Altera o percentual da vantagem que especifica e dá outras providências (gratificação adicional por tempo de serviço)</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://legisla.casacivil.go.gov.br/pesquisa_legislacao/82170/lei-12831" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="2. Estrutura Organizacional" data-tipo="Decreto" data-status="Vigente" data-id="GEDEP-044">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Decreto nº 3.491/990</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Decreto</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>01/07/1990</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>2. Estrutura Organizacional</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Institui o Quadro de Empregos do Departamento de Estradas de Rodagem de Goiás - DERGO  e dá outras providencias.</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://legisla.casacivil.go.gov.br/pesquisa_legislacao/64611/decreto-3491" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="4. Quadro de Pessoal" data-tipo="Norma Interna" data-status="Vigente" data-id="GEDEP-001">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Regulamento de Pessoal do CRISA</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Norma Interna</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i>01/01/1989</span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>4. Quadro de Pessoal</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Regulamento de Pessoal do CRISA</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://drive.google.com/file/d/1VzQHYqOZWdKit62nuhX0MOY9CIX-ny3_/view?usp=sharing" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="card-doc flex flex-col rounded-2xl p-6 card-in" 
+                             data-secao="1. Governança e Estrutura" data-tipo="Despacho" data-status="Vigente" data-id="GEDEP-081">
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Vigente
+                                </span>
+                                <span class="text-[9px] font-bold text-gray-300 uppercase tracking-tighter"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base font-bold text-slate-800 leading-snug mb-2 hover:text-emerald-700 transition cursor-default">Despacho nº 1.326/2025/GAB</h3>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-600/70">
+                                    <span><i class="fa-solid fa-file-lines mr-1 opacity-50"></i>Despacho</span>
+                                    <span><i class="fa-solid fa-calendar mr-1 opacity-50"></i></span>
+                                    <span><i class="fa-solid fa-folder mr-1 opacity-50"></i>1. Governança e Estrutura</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 leading-relaxed line-clamp-4 mb-6 flex-grow">Orientação referencial sobre a extensão e os limites do dever de fiscalização do Estado de Goiás em contratações terceirizadas realizadas por entidade conveniada, especialmente nos casos de “quarteirização”.  (SEI nº 82304945).</p>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <a href="https://sei.go.gov.br/" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition group">
+                                    Acessar Documento 
+                                    <i class="fa-solid fa-arrow-right-long transition group-hover:translate-x-1"></i>
+                                </a>
+                                
+                                    <div class="group relative">
+                                        <i class="fa-solid fa-circle-info text-gray-300 hover:text-amber-500 transition cursor-help"></i>
+                                        <div class="absolute bottom-full right-0 mb-2 w-48 p-2 bg-slate-800 text-white text-[9px] rounded-lg opacity-0 group-hover:opacity-100 transition pointer-events-none shadow-xl">
+                                            Documento para caso específico. A aplicação em outros contextos requer análise.
+                                        </div>
+                                    </div>
+                                
+                            </div>
+                        </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-white border-t border-gray-100 py-12">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center font-bold text-sm">G</div>
+                    <div class="text-left">
+                        <p class="text-[10px] font-bold text-slate-800 uppercase tracking-widest">Portal GEDEP</p>
+                        <p class="text-[9px] text-slate-400 font-medium uppercase tracking-tighter">Gestão de Pessoas · GOINFRA</p>
+                    </div>
+                </div>
+                <div class="text-center md:text-right">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Padrão Internacional ISAD(G)</p>
+                    <p class="text-[9px] text-slate-300 mt-1 uppercase tracking-tighter">Última atualização em 31/08/2026</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+    const ACERVO = [{"id":"GEDEP-039","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-039","titulo":"Lei nº 18.276/2013","secao":"4. Quadro de Pessoal","tipo":"Lei Estadual","data":"17/08/2026","dimensao":"Documento Digital / Arquivo Eletrônico (PDF)","produtor":"Externo / Legisla","historiaAdmin":"Documento oficial pertencente à seção '4. Quadro de Pessoal' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE. Status: Vigente.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","conteudo":"Reestrutura o Plano de Cargos e Remuneração (PCR) do pessoal ativo da Agência Goiana de Transportes e Obras, definir os Grupos Ocupacionais dos Quadros Permanente e Transitório e os seus padrões de vencimentos e salários.","citacaoABNT":"GOIÁS / GOINFRA. Lei nº 18.276/2013 (Reestruturação PCR AGETOP). Goiânia, 2026.","arranjo":"Série Documental - 4. Quadro de Pessoal","acesso":"Público","originais":"Repositório Digital Central GOINFRA","obs":"Status: Vigente | Fonte: Externo / Legisla","link":"https://legisla.casacivil.go.gov.br/pesquisa_legislacao/90412/lei-18276","status":"Vigente"},{"id":"GEDEP-069","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-069","titulo":"Portaria nº 240/2026 - SGG","secao":"3. Remuneração","tipo":"Portaria","data":"31/07/2026","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"Goinfra / Legislação","historiaAdmin":"","historiaArq":"","entrada":"Incorporação oficial via Repositório Digital GEDEP.","arranjo":"Série Documental — Seção","acesso":"Público","originais":"Repositório Digital Central GOINFRA","conteudo":"Regulamenta o Ciclo de Gestão das Concessões, estabelece a sistemática de acompanhamento dos saldos de Graticações do Sistema Estruturador das Redes de Gestão (GRGs) e Funções Comissionadas do Sistema Estruturador das Redes de Gestão (FCRGs) da área de Projetos do Poder Executivo estadual, e dá outras providências. (DIÁRIO OFICIAL/GO N° 24.833)","citacaoABNT":"GOIÁS. Portaria nº 240/2026 - SGG. Disponível em: http://diariooficial.abc.go.gov.br/.","obs":"","link":"http://diariooficial.abc.go.gov.br/","status":"Vigente"},{"id":"GEDEP-070","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-070","titulo":"Instrução Normativa SGG Nº 6","secao":"3. Remuneração","tipo":"Artigo / Palestra","data":"31/07/2026","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"Goinfra / Legislação","historiaAdmin":"","historiaArq":"","entrada":"Incorporação oficial via Repositório Digital GEDEP.","arranjo":"Série Documental — Seção","acesso":"Público","originais":"Repositório Digital Central GOINFRA","conteudo":"Dispõe sobre o Ciclo de Gestão das Concessões e Avaliações das Funções Comissionadas e Graticações das Redes de Governança - FCRG e GRG, no âmbito da Rede de Gestão de Projetos do Poder Executivo estadual.","citacaoABNT":"GOIÁS. INSTRUÇÃO NORMATIVA SGG Nº 6. Disponível em: http://diariooficial.abc.go.gov.br/.","obs":"","link":"http://diariooficial.abc.go.gov.br/","status":"Vigente"},{"id":"GEDEP-087","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-087","titulo":"Portaria nº 79/2026 - GOINFRA","secao":"1. Governança e Estrutura","tipo":"Norma Interna","data":"07/05/2026","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"Goinfra / Legislação","historiaAdmin":"","historiaArq":"","entrada":"Incorporação oficial via Repositório Digital GEDEP.","arranjo":"Série Documental — Seção","acesso":"Público","originais":"Repositório Digital Central GOINFRA","conteudo":"Dispõe sobre os procedimentos obrigatórios de revogação de acessos institucionais, internos e externos, incluindo o Sistema Eletrônico de Informações – SEI, no âmbito da Agência Goiana de Infraestrutura e Transportes – GOINFRA, em decorrência de desligamento de colaboradores, terceirizados e contratados de gerenciadoras.  (SEI nº 90066859).","citacaoABNT":"GOIÁS. Portaria nº 79/2026 - GOINFRA. Disponível em: https://sei.go.gov.br/sei.","obs":"","link":"https://sei.go.gov.br/sei","status":"Vigente"},{"id":"GEDEP-084","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-084","titulo":"Portaria nº 66/2026 - GOINFRA","secao":"1. Governança e Estrutura","tipo":"Norma Interna","data":"27/04/2026","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"Goinfra / Legislação","historiaAdmin":"","historiaArq":"","entrada":"Incorporação oficial via Repositório Digital GEDEP.","arranjo":"Série Documental — Seção","acesso":"Público","originais":"Repositório Digital Central GOINFRA","conteudo":"Delega ao titular da Diretoria de Gestão Integrada as competências que especifica.  (SEI nº 89580420).","citacaoABNT":"GOIÁS. Portaria nº 66/2026 - GOINFRA. Disponível em: https://sei.go.gov.br.","obs":"","link":"https://sei.go.gov.br","status":"Vigente"},{"id":"GEDEP-085","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-085","titulo":"Portariaº 55/2026 - GOINFRA","secao":"1. Governança e Estrutura","tipo":"Norma Interna","data":"10/04/2026","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"Goinfra / Legislação","historiaAdmin":"","historiaArq":"","entrada":"Incorporação oficial via Repositório Digital GEDEP.","arranjo":"Série Documental — Seção","acesso":"Público","originais":"Repositório Digital Central GOINFRA","conteudo":"Dispõe sobre mecanismos de controle, monitoramento e inclusão de beneficiários de pensões decorrentes de decisões judiciais na folha de pagamento da Agência Goiana de Infraestrutura e Transportes – GOINFRA.  (SEI nº 88824150).","citacaoABNT":"GOIÁS. Portariaº 55/2026 - GOINFRA. Disponível em: https://sei.go.gov.br/sei.","obs":"","link":"https://sei.go.gov.br/sei","status":"Vigente"},{"id":"GEDEP-086","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-086","titulo":"Portaria nº 49/2026 - GOINFRA","secao":"1. Governança e Estrutura","tipo":"Norma Interna","data":"06/04/2026","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"Goinfra / Legislação","historiaAdmin":"","historiaArq":"","entrada":"Incorporação oficial via Repositório Digital GEDEP.","arranjo":"Série Documental — Seção","acesso":"Público","originais":"Repositório Digital Central GOINFRA","conteudo":"Delega aos Diretores Setoriais a competência para firmar os instrumentos que específica.  (SEI nº 88543483).","citacaoABNT":"GOIÁS. Portaria nº 49/2026 - GOINFRA. Disponível em: https://sei.go.gov.br/sei.","obs":"","link":"https://sei.go.gov.br/sei","status":"Vigente"},{"id":"GEDEP-043","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-043","titulo":"Portaria nº 51/2026","secao":"1. Governança e Estrutura","tipo":"Norma Interna","data":"01/04/2026","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"GOINFRA / Legislação","historiaAdmin":"Documento oficial pertencente à seção '1. Governança e Estrutura' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","conteudo":"Instituiu o Escritório de Compliance da Agência Goiana de Infraestrutura e Transportes.","citacaoABNT":"GOINFRA. Instrução Normativa nº 51. Goiânia, 2026.","arranjo":"Série Documental — 1. Governança e Estrutura","acesso":"Público","originais":"Repositório Digital Central GOINFRA","obs":"Fonte: Planilha de lançamentos (18/08/2026)","link":"https://drive.google.com/file/d/1Tg-mZ5e_IyiFkXYJ_sVJyu_-JHUpmcJ9/view?usp=sharing","status":"Vigente"},{"id":"GEDEP-038","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-038","titulo":"Lei nº 24.188/2026","secao":"1. Governança e Estrutura","tipo":"Lei Estadual","data":"30/03/2026","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"Goinfra / Legislação","historiaAdmin":"Documento oficial pertencente à seção '1. Governança e Estrutura' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","conteudo":"Altera a Lei nº 14.226, de 8 de julho de 2002, que reajusta os valores das pensões especiais que especifica, dispõe sobre a concessão de pensões especiais às pessoas irradiadas ou contaminadas que trabalharam na descontaminação da área acidentada com o Césio 137, na vigilância do Depósito Provisório em Abadia de Goiás e no atendimento de saúde às vítimas diretas do acidente e dá outras providências, também revoga as leis indicadas.","citacaoABNT":"GOIÁS. Lei nº 24.188/2026. Disponível em: https://legisla.casacivil.go.gov.br/pesquisa_legislacao/113694/lei-24188.","arranjo":"Série Documental — Seção","acesso":"Público","originais":"Repositório Digital Central GOINFRA","obs":"","link":"https://legisla.casacivil.go.gov.br/pesquisa_legislacao/113694/lei-24188","status":"Vigente"},{"id":"GEDEP-037","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-037","titulo":"Lei nº 24.159/2026","secao":"3. Remuneração","tipo":"Lei Ordinária","data":"18/03/2026","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"Goinfra / Legislação","historiaAdmin":"Documento oficial pertencente à seção '3. Remuneração' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","conteudo":"Cria o Adicional de Responsabilidade Técnica para as atividades de Arquitetura e de Engenharia no âmbito do Poder Executivo do Estado de Goiás","citacaoABNT":"GOIÁS. Lei nº 24.159, de 2026. Disponível em: https://legisla.casacivil.go.gov.br/pesquisa_legislacao/113605/lei-24159.","arranjo":"Série Documental — Seção","acesso":"Público","originais":"Repositório Digital Central GOINFRA","obs":"","link":"https://legisla.casacivil.go.gov.br/pesquisa_legislacao/113605/lei-24159","status":"Vigente"},{"id":"GEDEP-083","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-083","titulo":"Decreto nº 10.868/2026","secao":"1. Governança e Estrutura","tipo":"Decreto","data":"03/03/2026","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"GOINFRA - Diretoria de Gestão Integrada","historiaAdmin":"DGI - Diretoria de Gestão Integrada. Assinado por Silvana Marques de Mattos, Assessora e Ponto Focal - Organização Administrativa e Regulamento.","historiaArq":"Documento SEI nº 87642017, criado por silvanamattos, versão 1.","entrada":"Incorporação oficial via SEI/GOINFRA.","arranjo":"Série Documental — Despachos","acesso":"Público","originais":"SEI - Sistema Eletrônico de Informações (GOINFRA)","conteudo":"Regulamento da Agência Goiana de Infraestrutura e Transportes – GOINFRA","citacaoABNT":"GOIÁS. Despacho nº 440/2026/GOINFRA/DGI-06102, de 13 de março de 2026. Divulgação do novo Regulamento da GOINFRA (Decreto nº 10.868/2026). Goiânia, 2026.","obs":"SEI 87642017. Processo nº 202500036008572. Refere-se ao Decreto nº 10.868/2026.","link":"https://legisla.casacivil.go.gov.br/pesquisa_legislacao/113502/decreto-10868","status":"Vigente"},{"id":"GEDEP-082","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-082","titulo":"Instrução Normativa nº 01/2026","secao":"1. Governança e Estrutura","tipo":"Instrução Normativa","data":"20/02/2026","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"GOINFRA - Agência Goiana de Infraestrutura e Transportes","historiaAdmin":"Gabinete do Presidente da GOINFRA. Presidente Pedro Henrique Ramos Sales. DGI - Diretoria de Gestão Integrada.","historiaArq":"Documento SEI nº 86618297, criado por weberds, versão 6.","entrada":"Incorporação oficial via SEI/GOINFRA.","arranjo":"Série Documental — Normas Internas","acesso":"Público","originais":"SEI - Sistema Eletrônico de Informações (GOINFRA)","conteudo":"Regulamenta o acesso, a organização e o uso do estacionamento institucional no âmbito da GOINFRA. Estabelece regras sobre vagas (comuns, reservadas, visitantes, funcionais), deveres dos usuários, vedações, mediação de conflitos, penalidades e fiscalização.  (SEI nº 86618297).","citacaoABNT":"GOIÁS. Instrução Normativa nº 01, de 20 de fevereiro de 2026. Regulamenta o uso do estacionamento institucional da GOINFRA. Goiânia, 2026.","obs":"SEI 86618297. Processo nº 202600036001943.","link":"https://sei.go.gov.br","status":"Vigente"},{"id":"GEDEP-064","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-064","titulo":"Portaria nº 13/2026","secao":"1. Governança e Estrutura","tipo":"Norma Interna","data":"28/01/2026","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"Goinfra / Legislação","historiaAdmin":"Documento oficial pertencente à seção '1. Governança e Estrutura' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","arranjo":"Série Documental — Seção","acesso":"Público","originais":"Repositório Digital Central GOINFRA","conteudo":"Altera a Portaria no 236/2025- GOINFRA, que Homologa o Resultado de Processo Eleitoral da CIPA (2026/2027) GOINFRA, e designa membros representantes da Agência na referida Comissão.","citacaoABNT":"GOIÁS. Portaria nº 13. Disponível em: https://drive.google.com/file/d/1Zrx6rEsSPixX4JnzxDVWSz_bllyMhloG/view.","obs":"","link":"https://drive.google.com/file/d/1Zrx6rEsSPixX4JnzxDVWSz_bllyMhloG/view","status":"Vigente"},{"id":"GEDEP-065","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-065","titulo":"Portaria nº 16/2026","secao":"1. Governança e Estrutura","tipo":"Norma Interna","data":"28/01/2026","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"Goinfra / Legislação","historiaAdmin":"Documento oficial pertencente à seção '1. Governança e Estrutura' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","arranjo":"Série Documental — Seção","acesso":"Público","originais":"Repositório Digital Central GOINFRA","conteudo":"Designa servidor(es)  responsável(is) pela promoção interna  ações  de combate ao mosquito Aedes Aegypti.","citacaoABNT":"GOIÁS. Portaria nº 16. Disponível em: http://portaldoservidor.goinfra.go.gov.br/wp-content/uploads/2026/08/2026-SEI_85587187_Portaria_16.pdf.","obs":"","link":"http://portaldoservidor.goinfra.go.gov.br/wp-content/uploads/2026/08/2026-SEI_85587187_Portaria_16.pdf","status":"Vigente"},{"id":"GEDEP-088","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-088","titulo":"Portaria nº 30, de 19 de fevereiro de 2026","secao":"3. Gestão de Pessoas","tipo":"Norma Interna","data":"19/01/2026","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"Goinfra / Legislação","historiaAdmin":"","historiaArq":"","entrada":"Incorporação oficial via Repositório Digital GEDEP.","arranjo":"Série Documental — Seção","acesso":"Público","originais":"Repositório Digital Central GOINFRA","conteudo":"Institui e regulamenta o Banco de Horas para registro, controle e compensação de jornada no âmbito da Agência Goiana de Infraestrutura e Transportes – GOINFRA.  (SEI nº  86559953)","citacaoABNT":"GOIÁS. Portaria nº 30, de 19 de fevereiro de 2026. Disponível em: https://sei.go.gov.br/sei/controlador_externo.php?acao=documento_conferir&id_orgao_acesso_externo=1&cv=86559953&crc=1077692C.","relacionado":"","obs":"","link":"https://sei.go.gov.br/sei/controlador_externo.php?acao=documento_conferir&id_orgao_acesso_externo=1&cv=86559953&crc=1077692C","status":"Vigente"},{"id":"GEDEP-036","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-036","titulo":"Portaria nº 179/2025","secao":"1. Governança e Estrutura","tipo":"Portaria","data":"12/09/2025","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"GOINFRA / Legislação","historiaAdmin":"Documento oficial pertencente à seção '1. Governança e Estrutura' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","arranjo":"Série Documental — 5. Carreira e Servidor","acesso":"Público","originais":"Repositório Digital Central GOINFRA","conteudo":"Altera o quadro de membros integrantes da Comissão Permanente de Mediação no âmbito da Agência Goiana de Infraestrutura e Transportes.","citacaoABNT":"GOINFRA. Portaria nº 179, de 12 de setembro de 2025. Disponível em: https://drive.google.com/file/d/17oaVlPn2VJbfGfIbynWYGo6twgZsv7kp/view.","obs":"Fonte: Planilha de lançamentos (18/08/2026)","link":"https://drive.google.com/file/d/17oaVlPn2VJbfGfIbynWYGo6twgZsv7kp/view?usp=sharing","status":"Vigente"},{"id":"GEDEP-067","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-067","titulo":"Portaria nº 99/2025","secao":"1. Governança e Estrutura","tipo":"Norma Interna","data":"29/05/2025","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"Goinfra / Legislação","historiaAdmin":"Documento oficial pertencente à seção '1. Governança e Estrutura' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","conteudo":"Institui os Comitês Permanentes para Questões da Mulher e da Diversidade, no âmbito da Goinfra.","citacaoABNT":"GOIÁS. Portaria nº 99/2025. Disponível em: https://drive.google.com/file/d/1gTiXk4JFeCct528V74_3W3XsHvOXpLjg/view?usp=sharing.","arranjo":"Série Documental — Seção","acesso":"Público","originais":"Repositório Digital Central GOINFRA","obs":"","link":"https://drive.google.com/file/d/1gTiXk4JFeCct528V74_3W3XsHvOXpLjg/view?usp=sharing","status":"Vigente"},{"id":"GEDEP-079","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-079","titulo":"Portaria nº 69/2025 - GOINFRA","secao":"3. Gestão de Pessoas","tipo":"Norma Interna","data":"10/04/2025","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"GOINFRA - Agência Goiana de Infraestrutura e Transportes","historiaAdmin":"Gabinete do Presidente da GOINFRA. Presidente Pedro Henrique Ramos Sales.","historiaArq":"Documento SEI nº 73164898, criado por 71109870515, versão 3.","entrada":"Incorporação oficial via SEI/GOINFRA.","arranjo":"Série Documental — Normas Internas","acesso":"Público","originais":"SEI - Sistema Eletrônico de Informações (GOINFRA)","conteudo":"Atribui ao titular da Diretoria de Gestão Integrada a responsabilidade/competência para efetivação dos atos de comunicação externa para encaminhamento de solicitações, resoluções e demandas relacionadas ao processamento, análise, conferência e pagamento de Diferenças Salariais, Devolução ao erário, TRCT, Encargos sociais, Parametrização do RHNet, e outros correlatos. Revoga a Portaria nº 60, de 17/03/2025.  (SEI nº 73164898).","citacaoABNT":"GOIÁS. Portaria nº 69, de 10 de abril de 2025. Atribui competências à Diretoria de Gestão Integrada. Goiânia, 2025.","obs":"SEI 73164898. Processo nº 202500036003898.","link":"https://sei.go.gov.br","status":"Vigente"},{"id":"GEDEP-077","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-077","titulo":"Despacho nº 1.932/2024/GAB","secao":"1. Governança e Estrutura","tipo":"Despacho","data":"06/01/2025","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"PGE - Procuradoria-Geral do Estado de Goiás","historiaAdmin":"Gabinete da Procuradoria-Geral do Estado. Assinado por Helianny Siqueira Alves Gomes de Andrade, Procuradora do Estado, Chefe de Gabinete.","historiaArq":"Documento SEI nº 69047811, criado por 70004961188, versão 2.","entrada":"Incorporação oficial via SEI/GOINFRA.","arranjo":"Série Documental — Ofícios Circulares","acesso":"Público","originais":"SEI - Sistema Eletrônico de Informações (GOINFRA)","conteudo":"EMENTA: DIREITO ADMINISTRATIVO. SERVIDOR PÚBLICO. CONTAGEM DE PERÍODO CELETISTA COMO PERÍODO AQUISITIVO DE LICENÇA-PRÊMIO. SUPERAÇÃO DO ENTENDIMENTO DESTA PROCURADORIA-GERAL. ALINHAMENTO À POSIÇÃO DO SUPERIOR TRIBUNAL DE JUSTIÇA E DO TRIBUNAL DE JUSTIÇA DO ESTADO DE GOIÁS. INVIABILIDADE DE INTERPOSIÇÃO DE RECURSO EXTRAORDINÁRIO. ADEQUAÇÃO DA CONDUTA ADMINISTRATIVA E REDUÇÃO DA LITIGIOSIDADE E DOS ÔNUS SUCUMBENCIAIS. DESPACHO REFERENCIAL. PORTARIA Nº 170-GAB/2020-PGE. MATÉRIA ORIENTADA.  (SEI nº 69047773)","citacaoABNT":"GOIÁS. Ofício Circular nº 2/2025/PGE, de 6 de janeiro de 2025. Procuradoria-Geral do Estado. Goiânia, 2025.","obs":"SEI 69047811. Processo nº 202500003000124.","link":"https://sei.go.gov.br/","status":"Vigente"},{"id":"GEDEP-047","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-047","titulo":"Decreto nº 10.499/2024","secao":"1. Governança e Estrutura","tipo":"Decreto","data":"08/06/2024","dimensao":"Documento Digital / Arquivo Eletrônico (PDF)","produtor":"Externo / Legisla","historiaAdmin":"Documento oficial pertencente à seção '18. Contratação Temporária' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE. Status: Em vigor.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","conteudo":"Dispõe sobre a celebração dos contratos temporários da administração estadual direta, autárquica e fundacional do Poder Executivo do Estado de Goiás.","citacaoABNT":"GOIÁS. Decreto nº 10.499/2024 (Regulamento de PSS). Goiânia, 45806. Disponível em: https://drive.google.com/file/d/1gTiXk4JFeCct528V74_3W3XsHvOXpLjg/view?usp=sharing.","arranjo":"Série Documental - 18. Contratação Temporária","acesso":"Público","originais":"Repositório Digital Central GOINFRA","obs":"Atualizado via planilha 18/08/2026","link":"https://legisla.casacivil.go.gov.br/pesquisa_legislacao/109177/decreto-10499","status":"Vigente"},{"id":"GEDEP-060","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-060","titulo":"Decreto nº 10.307/2023","secao":"6. Saúde e Segurança","tipo":"Decreto","data":"24/08/2023","dimensao":"Documento Digital / Arquivo Eletrônico (PDF)","produtor":"Externo / Legisla","historiaAdmin":"Documento oficial pertencente à seção '1. Governança e Estrutura' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE. Status: Alterado.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","conteudo":"Dispõe sobre o Sistema Estruturador das Redes de Gestão – SIGES, criado pela Lei estadual nº 21.792, de 16 de fevereiro de 2023, na área de gestão de compras e contratos e designa essa área como Rede de Contratações – REDECON no Poder Executivo estadual.","citacaoABNT":"GOIÁS. Decreto nº 10.307/2023 (REDECON). Goiânia, 2003. Disponível em: https://drive.google.com/file/d/1oEVfLa1XZ7H7SP6hsU0UlOjnPX3hpMMh/view?usp=sharing.","arranjo":"Série Documental - 1. Governança e Estrutura","acesso":"Público","originais":"Repositório Digital Central GOINFRA","obs":"Atualizado via planilha 18/08/2026","link":"https://legisla.casacivil.go.gov.br/pesquisa_legislacao/107672/decreto-10307","status":"Vigente"},{"id":"GEDEP-050","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-050","titulo":"Decreto nº 10.289/2023","secao":"1. Governança e Estrutura","tipo":"Decreto","data":"12/07/2023","dimensao":"Documento Digital / Arquivo Eletrônico (PDF)","produtor":"Externo / Legisla","historiaAdmin":"Documento oficial pertencente à seção '1. Governança e Estrutura' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE. Status: Vigente.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","conteudo":"Institui o Sistema Estruturador Integrado de Planejamento, Orçamento e Finanças Estadual – SIPOFE, no Poder Executivo estadual.","citacaoABNT":"GOIÁS / GOINFRA. Decreto nº 10.289/2023 (SIPOFE). Goiânia, 2026.","arranjo":"Série Documental - 1. Governança e Estrutura","acesso":"Público","originais":"Repositório Digital Central GOINFRA","obs":"Status: Vigente | Fonte: Externo / Legisla","link":"https://legisla.casacivil.go.gov.br/pesquisa_legislacao/107469/decreto-10289","status":"Vigente"},{"id":"GEDEP-049","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-049","titulo":"Decreto nº 10.287/2023","secao":"1. Governança e Estrutura","tipo":"Decreto","data":"10/07/2023","dimensao":"Documento Digital / Arquivo Eletrônico (PDF)","produtor":"Externo / Legisla","historiaAdmin":"Documento oficial pertencente à seção '1. Governança e Estrutura' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE. Status: Alterado.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","arranjo":"Série Documental - 1. Governança e Estrutura","acesso":"Público","originais":"Repositório Digital Central GOINFRA","conteudo":"Dispõe sobre o Sistema Estruturador das Redes de Gestão – SIGES, criado pela Lei nº 21.792, de 16 de fevereiro de 2023, na área de inovação da gestão e dos serviços públicos, designa essa área como Rede TransformaGOV e institui o Observatório de Inovação em Políticas Públicas de Goiás e o Hub Goiás.","citacaoABNT":"GOIÁS / GOINFRA. Decreto nº 10.287/2023 (Rede TransformaGOV). Goiânia, 2026.","obs":"Status: Alterado | Fonte: Externo / Legisla","link":"https://legisla.casacivil.go.gov.br/pesquisa_legislacao/107467/decreto-10287","status":"Vigente"},{"id":"GEDEP-058","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-058","titulo":"Decreto nº 10.275/2023","secao":"1. Governança e Estrutura","tipo":"Decreto","data":"22/06/2023","dimensao":"Documento Digital / Arquivo Eletrônico (PDF)","produtor":"Externo / Legisla","historiaAdmin":"Documento oficial pertencente à seção '1. Governança e Estrutura' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE. Status: Vigente.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","conteudo":"Integra a Rede de Gestão de Pessoas ao Sistema Estruturador das Redes de Gestão – SIGES, regulamenta a designação para o exercício das atribuições e das responsabilidades diferenciadas e a concessão da Gratificação das Redes de Gestão de Pessoas, instituídas pela Lei estadual nº 21.792, de 16 de fevereiro de 2023, revigora o Programa MOVE Goiás na administração direta, autárquica e fundacional do Poder Executivo e revoga o Decreto estadual nº 9.462, de 11 de julho de 2019.","citacaoABNT":"GOIÁS / GOINFRA. Decreto nº 10.275/2023 (Rede Gestão de Pessoas). Goiânia, 2026.","arranjo":"Série Documental - 1. Governança e Estrutura","acesso":"Público","originais":"Repositório Digital Central GOINFRA","obs":"Status: Vigente | Fonte: Externo / Legisla","link":"https://legisla.casacivil.go.gov.br/pesquisa_legislacao/107267/decreto-10275","status":"Vigente"},{"id":"GEDEP-055","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-055","titulo":"Decreto nº 10.218/2023","secao":"1. Governança e Estrutura","tipo":"Decreto","data":"16/02/2023","dimensao":"Documento Digital / Arquivo Eletrônico (PDF)","produtor":"Externo / Legisla","historiaAdmin":"Documento oficial pertencente à seção '1. Governança e Estrutura' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE. Status: Alterado.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","conteudo":"Estabelece a composição da estrutura dos órgãos e das entidades da administração direta, autárquica e fundacional, bem como os cargos de provimento em comissão do Poder Executivo do Estado de Goiás.","citacaoABNT":"GOIÁS / GOINFRA. Decreto nº 10.218/2023 (Regulamento Organização). Goiânia, 2026.","arranjo":"Série Documental - 1. Governança e Estrutura","acesso":"Público","originais":"Repositório Digital Central GOINFRA","obs":"Status: Alterado | Fonte: Externo / Legisla","link":"https://legisla.casacivil.go.gov.br/api/v2/pesquisa/legislacoes/106750/pdf","status":"Vigente"},{"id":"GEDEP-035","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-035","titulo":"Ata de Reunião","secao":"3. Remuneração","tipo":"Pauta","data":"19/10/2022","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"GOINFRA / Legislação","historiaAdmin":"Documento oficial pertencente à seção '3. Remuneração' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","conteudo":"Especificação da forma de inclusão das diárias no inclusão das diárias no Sistema de Recursos Humanos (RHNet)","citacaoABNT":"GOINFRA. Pauta: Inclusão de Diárias no RH. Goiânia, 2022.","arranjo":"Série Documental — 3. Remuneração","acesso":"Público","originais":"Repositório Digital Central GOINFRA","obs":"Fonte: Planilha de lançamentos (18/08/2026)","link":"https://drive.google.com/file/d/1SDsVVWTHfYCVxp9-MGBrqTvC-zRwPtM3/view?usp=sharing","status":"Vigente"},{"id":"GEDEP-045","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-045","titulo":"Portaria nº 233/2022","secao":"1. Governança e Estrutura","tipo":"Portaria","data":"04/08/2022","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"GOINFRA / Legislação","historiaAdmin":"Documento oficial pertencente à seção '1. Governança e Estrutura' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","arranjo":"Série Documental — 1. Governança e Estrutura","acesso":"Público","originais":"Repositório Digital Central GOINFRA","conteudo":"Altera a Portaria no 123/2020-GOINFRA, para acrescer nova jornada de trabalho para os servidores em exercício nesta Agência.","citacaoABNT":"GOINFRA. Portaria nº 233. Goiânia, 2025.","obs":"Fonte: Planilha de lançamentos (18/08/2026)","link":"https://drive.google.com/file/d/1wjHuK-u8XwBTUit4r2JdJ7bri1TM2M3y/view","status":"Vigente"},{"id":"GEDEP-053","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-053","titulo":"Lei nº 21.309/2022","secao":"1. Governança e Estrutura","tipo":"Lei Estadual","data":"13/04/2022","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"Goinfra / Legislação","historiaAdmin":"Documento oficial pertencente à seção '1. Governança e Estrutura' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","conteudo":"Institui, na Agência Goiana de Infraestrutura e Transportes – GOINFRA, o Programa de Auxílio-Alimentação.","citacaoABNT":"GOIÁS. Lei nº 21.309/2022. Disponível em: https://legisla.casacivil.go.gov.br/pesquisa_legislacao/105401/lei-21309.","arranjo":"Série Documental — Seção","acesso":"Público","originais":"Repositório Digital Central GOINFRA","obs":"","link":"https://legisla.casacivil.go.gov.br/pesquisa_legislacao/105401/lei-21309","status":"Vigente"},{"id":"GEDEP-034","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-034","titulo":"Código de Ética e Conduta Profissional do Servidor e da Alta Administração da administração pública direta, autárquica e fundacional do Poder Executivo estadual","secao":"1. Governança e Estrutura","tipo":"Decreto","data":"23/03/2021","dimensao":"Documento Digital / Arquivo Eletrônico (PDF)","produtor":"📚 E-mail da Biblioteca / DGI","historiaAdmin":"Documento oficial pertencente à seção '' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE. Status: Vigente.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","conteudo":"Documento arquivístico oficial vinculado à seção '3. Remuneração', versando sobre Manual Operacional: Vale-Transporte, com diretrizes aplicáveis à GOINFRA e conformidade com a legislação estadual vigente. (Manual da Rede de Gestão de Pessoas)","citacaoABNT":"","arranjo":"Série Documental","acesso":"Público","originais":"Repositório Digital Central GOINFRA","obs":"Status: Vigente | Fonte: 📚 E-mail da Biblioteca / DGI","link":"https://www.goinfra.go.gov.br/arquivos/arquivos/Acesso%20%C3%A0%20informa%C3%A7%C3%A3o/Codigo_de_Etica_e_Conduta_Profissional_2025.pdf","status":"Vigente"},{"id":"GEDEP-054","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-054","titulo":"Lei Complementar nº 161/2020","secao":"5. Carreira e Servidor","tipo":"Lei Estadual","data":"13/12/2020","dimensao":"Documento Digital / Arquivo Eletrônico (PDF)","produtor":"Externo / Legisla","historiaAdmin":"Documento oficial pertencente à seção '12. Aposentadoria e Pensão' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE. Status: Em vigor.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","arranjo":"Série Documental - 12. Aposentadoria e Pensão","acesso":"Público","originais":"Repositório Digital Central GOINFRA","conteudo":"Dispõe sobre o Regime Próprio de Previdência Social do Estado de Goiás – RPPS/GO e dá outras providências.","citacaoABNT":"GOIÁS. Lei Complementar nº 161/2020 (RPPS-GO). Goiânia, 46050. Disponível em: http://portaldoservidor.goinfra.go.gov.br/wp-content/uploads/2026/08/2026-SEI_85587187_Portaria_16.pdf.","obs":"Atualizado via planilha 18/08/2026","link":"https://legisla.casacivil.go.gov.br/pesquisa_legislacao/103671/lei-complementar-161","status":"Vigente"},{"id":"GEDEP-073","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-073","titulo":"Portaria nº 164/2020","secao":"2. Tecnologia da Informação e SEI","tipo":"Portaria","data":"31/08/2020","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"GOINFRA - Agência Goiana de Infraestrutura e Transportes","historiaAdmin":"Gabinete do Presidente da GOINFRA. Presidente Pedro Henrique Ramos Sales.","historiaArq":"Documento SEI nº 000012309703, criado por simonini, versão 2.","entrada":"Incorporação oficial via SEI/GOINFRA.","arranjo":"Série Documental — Normas Internas","acesso":"Público","originais":"SEI - Sistema Eletrônico de Informações (GOINFRA)","conteudo":"Torna obrigatórios os procedimentos para inclusão e exclusão de usuários com acesso ao SEI, sempre que houver movimentação de pessoal (remanejamento, afastamento temporário ou desligamento). (SEI nº 000014897844)","citacaoABNT":"GOIÁS. Portaria nº 164, de 27 de março de 2020. Dispõe sobre procedimentos para inclusão e exclusão de usuários do SEI. Goiânia, 2020.","obs":"SEI 000012309703. Processo nº 202000036003317.","link":"https://sei.go.gov.br","status":"Vigente"},{"id":"GEDEP-074","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-074","titulo":"Portaria nº 332/2020","secao":"2. Tecnologia da Informação e SEI","tipo":"Portaria","data":"31/08/2020","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"GOINFRA - Agência Goiana de Infraestrutura e Transportes","historiaAdmin":"Gabinete do Presidente da GOINFRA. Presidente Pedro Henrique Ramos Sales.","historiaArq":"Documento SEI nº 000014897844, criado por 81553439104, versão 9.","entrada":"Incorporação oficial via SEI/GOINFRA.","arranjo":"Série Documental — Normas Internas","acesso":"Público","originais":"SEI - Sistema Eletrônico de Informações (GOINFRA)","conteudo":"Dispõe sobre orientações e procedimentos para concessão de acesso externo para consulta a processos públicos do SEI de origem da GOINFRA, mediante requerimento formal.","citacaoABNT":"GOIÁS. Portaria nº 332, de 21 de agosto de 2020. Dispõe sobre acesso externo a processos públicos do SEI. Goiânia, 2020.","obs":"SEI 000014897844. Processo nº 202000036009676.","link":"https://sei.go.gov.br","status":"Vigente"},{"id":"GEDEP-063","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-063","titulo":"Lei nº 20.756/2020","secao":"5. Carreira e Servidor","tipo":"Lei Ordinária","data":"28/01/2020","dimensao":"Documento Digital / Arquivo Eletrônico (PDF)","produtor":"Externo / Legisla","historiaAdmin":"Documento oficial pertencente à seção '2. Regime Jurídico' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE. Status: Em vigor.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","conteudo":"Dispõe sobre o regime jurídico dos servidores públicos civis do Estado de Goiás, das autarquias e fundações públicas estaduais, e dá outras providências.","citacaoABNT":"GOIÁS. Lei nº 20.756/2020 (Estatuto do Servidor). Goiânia, 46050. Disponível em: http://portaldoservidor.goinfra.go.gov.br/wp-content/uploads/2026/07/PCMSO_GOINFRA_SEDE___jan_2026_assinado.pdf.","arranjo":"Série Documental - 2. Regime Jurídico","acesso":"Público","originais":"Repositório Digital Central GOINFRA","obs":"Atualizado via planilha 18/08/2026","link":"https://legisla.casacivil.go.gov.br/pesquisa_legislacao/100979/lei-20756","status":"Vigente"},{"id":"GEDEP-062","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-062","titulo":"Decreto nº 9.566/2019","secao":"3. Remuneração","tipo":"Decreto","data":"25/11/2019","dimensao":"Documento Digital / Arquivo Eletrônico (PDF)","produtor":"Externo / Legisla","historiaAdmin":"Documento oficial pertencente à seção '3. Remuneração' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE. Status: Alterado.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","conteudo":"Regulamenta a gestão das Funções Comissionadas no âmbito do Poder Executivo estadual.","citacaoABNT":"GOIÁS / GOINFRA. Decreto nº 9.566/2019 (Gestão de FCPE). Goiânia, 2026.","arranjo":"Série Documental - 3. Remuneração","acesso":"Público","originais":"Repositório Digital Central GOINFRA","obs":"Status: Alterado | Fonte: Externo / Legisla","link":"https://legisla.casacivil.go.gov.br/pesquisa_legislacao/72476/decreto-9566","status":"Vigente"},{"id":"GEDEP-033","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-033","titulo":"Código de Ética e Conduta da GOINFRA","secao":"1. Governança e Estrutura","tipo":"Norma Interna","data":"02/01/2019","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"GOINFRA / Legislação","historiaAdmin":"Documento oficial pertencente à seção '1. Governança e Estrutura' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","conteudo":"O Código de Conduta desta Agência foi elaborado com o propósito de consolidar no âmbito da GOINFRA as diretrizes éticas e de integridade.","citacaoABNT":"GOINFRA. Código de Conduta. Goiânia.","arranjo":"Série Documental — 1. Governança e Estrutura","acesso":"Público","originais":"Repositório Digital Central GOINFRA","obs":"Fonte: Planilha de lançamentos (18/08/2026)","link":"https://www.goinfra.go.gov.br/arquivos/arquivos/Acesso%20%C3%A0%20informa%C3%A7%C3%A3o/Codigo_de_Etica_GOINFRA_2025.pdf","status":"Vigente"},{"id":"GEDEP-057","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-057","titulo":"Lei Estadual nº 20.918/2020","secao":"1. Governança e Estrutura","tipo":"Lei Ordinária","data":"20/12/2013","dimensao":"Documento Digital / Arquivo Eletrônico (PDF)","produtor":"Externo / Legisla","historiaAdmin":"Documento oficial pertencente à seção '18. Contratação Temporária' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE. Status: Em vigor.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","conteudo":"Dispõe sobre a contratação por tempo determinado para atender a necessidade temporária de excepcional interesse público, nos termos do art. 92, inciso X, da Constituição do Estado de Goiás, e dá outras providências.","citacaoABNT":"GOIÁS. Lei Estadual nº 20.918/2020 (Contratos Temporários). Goiânia, 41628. Disponível em: https://legisla.casacivil.go.gov.br/pesquisa_legislacao/90412/lei-18276.","arranjo":"Série Documental - 18. Contratação Temporária","acesso":"Público","originais":"Repositório Digital Central GOINFRA","obs":"Atualizado via planilha 18/08/2026","link":"https://legisla.casacivil.go.gov.br/pesquisa_legislacao/103634/lei-20918","status":"Vigente"},{"id":"GEDEP-068","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-068","titulo":"Lei nº 17.537/2011","secao":"1. Governança e Estrutura","tipo":"Lei Ordinária","data":"29/12/2011","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"GOINFRA / Legislação","historiaAdmin":"Documento oficial pertencente à seção '1. Governança e Estrutura' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","conteudo":"Institui, no âmbito da Agência Goiana de Transportes e Obras, a gratificação e o adicional que especifica.","citacaoABNT":"GOIÁS. Lei nº 17.537, de 29 de dezembro de 2011. Disponível em: http://legisla.casacivil.go.gov.br/pesquisa_legislacao/89531/lei-17537.","arranjo":"Série Documental — 1. Governança e Estrutura","acesso":"Público","originais":"Repositório Digital Central GOINFRA","obs":"Fonte: Planilha de lançamentos (18/08/2026)","link":"http://legisla.casacivil.go.gov.br/pesquisa_legislacao/89531/lei-17537","status":"Vigente"},{"id":"GEDEP-059","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-059","titulo":"Lei nº 15.665/2006","secao":"3. Remuneração","tipo":"Lei Estadual","data":"23/05/2006","dimensao":"Documento Digital / Arquivo Eletrônico (PDF)","produtor":"Externo / Legisla","historiaAdmin":"Documento oficial pertencente à seção '4. Quadro de Pessoal' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE. Status: Parcialmente Revogado.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","conteudo":"Dispõe sobre o Quadro Permanente de Pessoal e o Plano de Cargos e Remuneração, dos servidores da Agência Goiana de Transportes e Obras, e dá outras providências.","citacaoABNT":"GOIÁS. Lei nº 15.665/2006 (PCR Antiga AGETOP). Goiânia, 38860. Disponível em: https://legisla.casacivil.go.gov.br/pesquisa_legislacao/79709/lei-15665.","arranjo":"Série Documental - 4. Quadro de Pessoal","acesso":"Público","originais":"Repositório Digital Central GOINFRA","obs":"Atualizado via planilha 18/08/2026","link":"https://legisla.casacivil.go.gov.br/pesquisa_legislacao/79709/lei-15665","status":"Vigente"},{"id":"GEDEP-046","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-046","titulo":"Lei nº 14.653/2004","secao":"2. Estrutura Organizacional","tipo":"Lei Ordinária","data":"08/01/2004","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"GOINFRA / Legislação","historiaAdmin":"Documento oficial pertencente à seção '2. Estrutura Organizacional' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","conteudo":"Institui a Junta Administrativa de Recursos de Infrações - JARI e dá outras providências.","citacaoABNT":"GOIÁS. Lei nº 14.653, de 08 de janeiro de 2004. Disponível em: https://drive.google.com/file/d/1MT0bnt4-ew0Wv-6StwYsCAcDsRq2_EUu/view.","arranjo":"Série Documental — 2. Estrutura Organizacional","acesso":"Público","originais":"Repositório Digital Central GOINFRA","obs":"Fonte: Planilha de lançamentos (18/08/2026)","link":"https://legisla.casacivil.go.gov.br/pesquisa_legislacao/80599/lei-14653","status":"Vigente"},{"id":"GEDEP-048","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-048","titulo":"Lei nº 14.226/2002","secao":"1. Governança e Estrutura","tipo":"Lei Ordinária","data":"08/07/2002","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"GOINFRA / Legislação","historiaAdmin":"Documento oficial pertencente à seção '1. Governança e Estrutura' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","conteudo":"Reajusta os valores das pensões especiais que especifica, dispõe sobre a concessão de pensões especiais às pessoas irradiadas ou contaminadas que trabalharam na descontaminação da área acidentada com o Césio 137, na vigilância do Depósito Provisório em Abadia de Goiás e no atendimento de saúde às vítimas diretas do acidente e dá outras providências.","citacaoABNT":"GOIÁS. Lei nº 14.226, de 8 de julho de 2002. Disponível em: https://drive.google.com/file/d/1u-E2TdLohbFXGn3viU00k4nvo2qxHVDR/view.","arranjo":"Série Documental — 1. Governança e Estrutura","acesso":"Público","originais":"Repositório Digital Central GOINFRA","obs":"Fonte: Planilha de lançamentos (18/08/2026)","link":"https://drive.google.com/file/d/1u-E2TdLohbFXGn3viU00k4nvo2qxHVDR/view?usp=sharing","status":"Vigente"},{"id":"GEDEP-052","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-052","titulo":"Portaria nº 576/2001","secao":"5. Carreira e Servidor","tipo":"Portaria","data":"12/12/2001","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"GOINFRA / Legislação","historiaAdmin":"Documento oficial pertencente à seção '5. Carreira e Servidor' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","conteudo":"Remanejamento dos servidores relacionados do Consórcio Rodoviário Intermunicipal S/A (CRISA), em liquidação, para a Agência Goiana de Transportes e 0bras, em cumprimento à Lei nº 13,994, de 12de dezembro de 2001.","citacaoABNT":"GOINFRA. Portaria nº 576, de 2001. Disponível em: https://drive.google.com/file/d/1Vmo3sWahVMgFre2ZhdhYggNMB3jcmpgX/view.","arranjo":"Série Documental — 5. Carreira e Servidor","acesso":"Público","originais":"Repositório Digital Central GOINFRA","obs":"Fonte: Planilha de lançamentos (18/08/2026)","link":"https://drive.google.com/file/d/1Vmo3sWahVMgFre2ZhdhYggNMB3jcmpgX/view?usp=sharing","status":"Vigente"},{"id":"GEDEP-066","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-066","titulo":"Lei nº 12.831/1995","secao":"3. Remuneração","tipo":"Lei Ordinária","data":"28/12/1995","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"GOINFRA / Legislação","historiaAdmin":"Documento oficial pertencente à seção '3. Remuneração' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","conteudo":"Altera o percentual da vantagem que especifica e dá outras providências (gratificação adicional por tempo de serviço)","citacaoABNT":"GOIÁS. Lei nº 12.831, de 28 de dezembro de 1995. Disponível em: https://legisla.casacivil.go.gov.br/api/v2/pesquisa/legislacoes/82170/pdf.","arranjo":"Série Documental — 3. Remuneração","acesso":"Público","originais":"Repositório Digital Central GOINFRA","obs":"Fonte: Planilha de lançamentos (18/08/2026)","link":"https://legisla.casacivil.go.gov.br/pesquisa_legislacao/82170/lei-12831","status":"Vigente"},{"id":"GEDEP-044","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-044","titulo":"Decreto nº 3.491/990","secao":"2. Estrutura Organizacional","tipo":"Decreto","data":"01/07/1990","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"Goinfra / Legislação","historiaAdmin":"Documento oficial pertencente à seção '2. Estrutura Organizacional' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","conteudo":"Institui o Quadro de Empregos do Departamento de Estradas de Rodagem de Goiás - DERGO  e dá outras providencias.","citacaoABNT":"GOIÁS. DECRETO Nº 3.491, DE 03 DE JULHO DE 1990.. Disponível em: https://legisla.casacivil.go.gov.br/pesquisa_legislacao/64611/decreto-3491.","arranjo":"Série Documental — Seção","acesso":"Público","originais":"Repositório Digital Central GOINFRA","obs":"","link":"https://legisla.casacivil.go.gov.br/pesquisa_legislacao/64611/decreto-3491","status":"Vigente"},{"id":"GEDEP-001","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-001","titulo":"Regulamento de Pessoal do CRISA","secao":"4. Quadro de Pessoal","tipo":"Norma Interna","data":"01/01/1989","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"Goinfra / Legislação","historiaAdmin":"Documento oficial pertencente à seção '4. Quadro de Pessoal' incorporado ao acervo da GOINFRA.","historiaArq":"Catalogado conforme padrão ISAD(G)/NOBRADE.","entrada":"Incorporação oficial via Repositório Digital GEDEP.","conteudo":"Regulamento de Pessoal do CRISA","citacaoABNT":"GOIÁS. Regulamento de Pessoal do CRISA. Disponível em: https://drive.google.com/file/d/1VzQHYqOZWdKit62nuhX0MOY9CIX-ny3_/view?usp=sharing.","arranjo":"Série Documental — Seção","acesso":"Público","originais":"Repositório Digital Central GOINFRA","obs":"","link":"https://drive.google.com/file/d/1VzQHYqOZWdKit62nuhX0MOY9CIX-ny3_/view?usp=sharing","status":"Vigente"},{"id":"GEDEP-081","ref":"BR-GO-GOINFRA-GEDEP-GEDEP-081","titulo":"Despacho nº 1.326/2025/GAB","secao":"1. Governança e Estrutura","tipo":"Despacho","data":"","dimensao":"Documento Digital | Arquivo Eletrônico (PDF)","produtor":"GOINFRA - Diretoria de Gestão Integrada","historiaAdmin":"DGI - Diretoria de Gestão Integrada. Assinado por Catiane Ferreira da Silva, Analista de Gestão.","historiaArq":"Documento SEI nº 82503568, criado por catieneferreira, versão 2.","entrada":"Incorporação oficial via SEI/GOINFRA.","arranjo":"Série Documental — Despachos","acesso":"Público","originais":"SEI - Sistema Eletrônico de Informações (GOINFRA)","conteudo":"Orientação referencial sobre a extensão e os limites do dever de fiscalização do Estado de Goiás em contratações terceirizadas realizadas por entidade conveniada, especialmente nos casos de “quarteirização”.  (SEI nº 82304945).","citacaoABNT":"GOIÁS. Despacho nº 3747/2025/GOINFRA/DGI-06102, de 14 de novembro de 2025. Divulgação de orientação da PGE sobre fiscalização em terceirização e quarteirização. Goiânia, 2025.","obs":"SEI 82503568. Processo nº 202500003020310. Interessado: Gabinete da PGE.","link":"https://sei.go.gov.br/","status":"Vigente"}];
+    let currentSection = 'Todos';
+    let currentType = 'Todos';
+    let currentStatus = 'Todos';
+
+    function filterBy(section) {
+        currentSection = section;
+        document.querySelectorAll('.section-chip').forEach(c => c.classList.remove('active'));
+        const id = section.replace(/[^a-z0-9]/gi, '_');
+        document.getElementById('chip-' + id).classList.add('active');
+        applyFilters();
+    }
+
+    function filterType(type) {
+        currentType = type;
+        applyFilters();
+    }
+
+    function filterStatus(status) {
+        currentStatus = status;
+        applyFilters();
+    }
+
+    function applyFilters() {
+        const search = document.getElementById('search-input').value.toLowerCase().trim();
+        let visible = 0;
+        document.querySelectorAll('.card-doc').forEach(card => {
+            const doc = ACERVO.find(d => d.id === card.dataset.id);
+            if (!doc) return;
+            
+            const hay = (doc.titulo + ' ' + doc.tipo + ' ' + doc.conteudo + ' ' + (doc.observacao || doc.obs || '') + ' ' + (doc.ref || '') + ' ' + doc.secao).toLowerCase();
+            
+            const matchSearch = !search || hay.includes(search);
+            const matchSec = currentSection === 'Todos' || doc.secao === currentSection;
+            const matchType = currentType === 'Todos' || doc.tipo === currentType;
+            
+            let matchStatus = true;
+            if (currentStatus !== 'Todos') {
+                const s = (doc.status || '').toLowerCase();
+                if (currentStatus === 'Vigente') matchStatus = s.includes('vig') || s.includes('vigor') || s.includes('pub');
+                else if (currentStatus === 'Alterado') matchStatus = s.includes('alt');
+                else if (currentStatus === 'Revogado') matchStatus = s.includes('revog');
+            }
+
+            const show = matchSearch && matchSec && matchType && matchStatus;
+            card.style.display = show ? 'block' : 'none';
+            if (show) visible++;
+        });
+        document.getElementById('result-count').textContent = 'Mostrando ' + visible + ' documentos';
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    </script>
+</body>
+</html>
